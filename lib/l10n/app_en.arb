@@ -1,0 +1,11 @@
+{
+  "@@locale": "en",
+  "appName": "Bitok",
+  "@appName": {
+    "description": "The application name"
+  },
+  "appTagline": "Before you bite, check if it's OK.",
+  "@appTagline": {
+    "description": "Brand tagline shown on the onboarding intro screen"
+  }
+}
