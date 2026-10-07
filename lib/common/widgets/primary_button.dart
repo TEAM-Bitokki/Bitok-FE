@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 
-import '../../core/design_system/colors.dart';
+import '../../core/design_system/bitok_colors.dart';
 
 // common/widgets: 특정 feature에 속하지 않고 여러 화면에서 재사용하는 공용 위젯입니다.
 // 예: 온보딩(ONB-05 프로필 확인), 결과 화면(RESULT-05) 등에서 같은 스타일의 버튼이
@@ -14,7 +14,7 @@ class PrimaryButton extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ElevatedButton(
-      style: ElevatedButton.styleFrom(backgroundColor: AppColors.primary),
+      style: ElevatedButton.styleFrom(backgroundColor: BitokColors.primary),
       onPressed: onPressed,
       child: Text(label),
     );
