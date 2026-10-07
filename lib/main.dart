@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-import 'core/design_system/colors.dart';
+import 'core/design_system/bitok_colors.dart';
 import 'core/providers/shared_preferences_provider.dart';
 import 'l10n/generated/app_localizations.dart';
 
@@ -28,7 +28,7 @@ class BitokApp extends StatelessWidget {
     return MaterialApp(
       title: 'Bitok',
       theme: ThemeData(
-        colorScheme: ColorScheme.fromSeed(seedColor: AppColors.primary),
+        colorScheme: ColorScheme.fromSeed(seedColor: BitokColors.primary),
       ),
       localizationsDelegates: AppLocalizations.localizationsDelegates,
       supportedLocales: AppLocalizations.supportedLocales,
