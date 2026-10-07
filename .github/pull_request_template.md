@@ -1,14 +1,19 @@
-## 📌 관련 이슈
+<!-- 제목 : [유형/#이슈번호] 작업 내용 (ex. "[UI/#6] 홈화면 구현") -->
+
+## 📌 Related Issue
 - close #
 
-## ✨ 변경 사항 (Description)
-- 이번 PR에서 작업한 핵심 내용
-- 변경 전/후의 차이점
+## ✨ Description
+<!-- 이번 PR에서 작업한 핵심 내용과 변경 전/후의 차이점을 적어주세요! -->
+- [ ] Task1
+- [ ] Task2
 
-## 📸 스크린샷 (선택 사항)
-- UI 변경 사항이 있다면 캡쳐 이미지를 첨부
+## 📸 Screenshot
+<img src="" width="360"/> 
+<video src="" width="360"/>
 
-## ✅ 체크리스트
-- [ ] 브랜치 방향이 올바른가요? (예: `feature` -> `develop`)
-- [ ] 불필요한 콘솔 로그나 주석을 제거했나요?
-- [ ] 관련 이슈를 연결했나요? (예: `Close #1`)
+## ➕ Uncompleted Task
+- [ ] Task1
+- [ ] Task2
+
+## 📢 To Reviewers
