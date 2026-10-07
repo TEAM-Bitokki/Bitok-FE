@@ -11,14 +11,14 @@ class BitokTextStyles {
     fontWeight: FontWeight.w500,
     fontSize: 24,
     height: 32 / 24,
-    letterSpacing: -0.1,
+    letterSpacing: -0.24,
   );
 
   static const TextStyle header = TextStyle(
     fontFamily: 'Roboto',
     fontWeight: FontWeight.w400,
     fontSize: 20,
-    height: 38 / 20,
+    height: 28 / 20,
     letterSpacing: -0.0,
   );
 
@@ -26,7 +26,7 @@ class BitokTextStyles {
     fontFamily: 'Roboto',
     fontWeight: FontWeight.w500,
     fontSize: 24,
-    height: 32 / 24,
+    height: 28 / 24,
     letterSpacing: -0.0,
   );
 
