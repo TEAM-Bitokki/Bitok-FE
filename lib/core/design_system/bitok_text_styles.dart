@@ -94,6 +94,14 @@ class BitokTextStyles {
     letterSpacing: -0.0,
   );
 
+  static const TextStyle buttonKOR = TextStyle(
+    fontFamily: 'Pretendard',
+    fontWeight: FontWeight.w500,
+    fontSize: 18,
+    height: 24 / 18,
+    letterSpacing: -0.0,
+  );
+
   static const TextStyle body1KOR = TextStyle(
     fontFamily: 'Pretendard',
     fontWeight: FontWeight.w500,
@@ -243,6 +251,7 @@ class _TypographyGuide extends StatelessWidget {
 
   static const List<_TextToken> _koreanTokens = [
     ('Title', BitokTextStyles.titleKOR),
+    ('Button', BitokTextStyles.buttonKOR),
     ('Body1', BitokTextStyles.body1KOR),
   ];
 
