@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/widget_previews.dart';
 
 import '../../core/design_system/bitok_colors.dart';
 import '../../core/design_system/bitok_text_styles.dart';
@@ -55,3 +56,19 @@ class BitokStatusCard extends StatelessWidget {
     );
   }
 }
+
+@Preview(group: 'Components', name: 'Status Card', size: Size(390, 260))
+Widget statusCardPreview() => MaterialApp(
+  debugShowCheckedModeBanner: false,
+  home: Scaffold(
+    backgroundColor: BitokColors.white,
+    body: ListView(
+      padding: const EdgeInsets.all(24),
+      children: const [
+        BitokStatusCard(status: BitokStatus.avoid, ingredient: 'Shrimp'),
+        SizedBox(height: 12),
+        BitokStatusCard(status: BitokStatus.notSure, ingredient: 'Shrimp'),
+      ],
+    ),
+  ),
+);
