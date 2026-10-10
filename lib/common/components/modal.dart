@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/widget_previews.dart';
 
 import '../../core/design_system/bitok_colors.dart';
 import '../../core/design_system/bitok_text_styles.dart';
@@ -183,3 +184,19 @@ class _DialogButton extends StatelessWidget {
     );
   }
 }
+
+@Preview(group: 'Components', name: 'Modal', size: Size(390, 500))
+Widget modalPreview() => MaterialApp(
+  debugShowCheckedModeBanner: false,
+  home: Scaffold(
+    backgroundColor: BitokColors.grey3,
+    body: ListView(
+      padding: const EdgeInsets.all(24),
+      children: [
+        BitokConfirmDialog.deleteItem(itemName: 'Kimchi Jjigae'),
+        const SizedBox(height: 12),
+        BitokConfirmDialog.deleteAccount(),
+      ],
+    ),
+  ),
+);
