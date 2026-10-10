@@ -61,10 +61,15 @@ class BitokHeader extends StatelessWidget implements PreferredSizeWidget {
     return BitokHeader._(
       key: key,
       leading: logo,
-      trailing: _IconTap(
-        onTap: onProfile,
-        child: SvgPicture.asset(BitokIcons.myPage24, width: 24, height: 24),
-      ),
+        trailing: _IconTap(
+          onTap: onProfile,
+          child: SvgPicture.asset(
+            BitokIcons.myPage24,
+            width: 24,
+            height: 24,
+            colorFilter: const ColorFilter.mode(BitokColors.text, BlendMode.srcIn),
+          ),
+        ),
     );
   }
 
