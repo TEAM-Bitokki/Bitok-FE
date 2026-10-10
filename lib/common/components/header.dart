@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/widget_previews.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
 import '../../core/design_system/bitok_colors.dart';
 import '../../core/design_system/bitok_icons.dart';
+import '../../core/design_system/bitok_images.dart';
 import '../../core/design_system/bitok_text_styles.dart';
 
 
@@ -136,3 +138,25 @@ class _IconTap extends StatelessWidget {
     );
   }
 }
+
+@Preview(group: 'Components', name: 'Header', size: Size(390, 240))
+Widget headerPreview() => MaterialApp(
+  debugShowCheckedModeBanner: false,
+  home: Scaffold(
+    backgroundColor: BitokColors.grey3,
+    body: ListView(
+      padding: const EdgeInsets.all(24),
+      children: [
+        BitokHeader.sub(title: 'Set Up Your Profile', onBack: () {}),
+        const SizedBox(height: 12),
+        BitokHeader.explore(title: 'Explore', onProfile: () {}),
+        const SizedBox(height: 12),
+        // 시안의 남색 bitok 로고 에셋이 없어서 assets 의 임시 이미지를 사용합니다.
+        BitokHeader.home(
+          logo: Image.asset(BitokImages.title, height: 20),
+          onProfile: () {},
+        ),
+      ],
+    ),
+  ),
+);
