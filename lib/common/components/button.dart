@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/widget_previews.dart';
 
 import '../../core/design_system/bitok_colors.dart';
 import '../../core/design_system/bitok_text_styles.dart';
@@ -113,3 +114,49 @@ class _ButtonStyle {
   final double radius;
   final TextStyle textStyle;
 }
+
+@Preview(group: 'Components', name: 'Button', size: Size(390, 620))
+Widget buttonPreview() => MaterialApp(
+  debugShowCheckedModeBanner: false,
+  home: Scaffold(
+    backgroundColor: BitokColors.white,
+    body: ListView(
+      padding: const EdgeInsets.all(24),
+      children: [
+        const BitokButton(label: 'Next'),
+        const SizedBox(height: 12),
+        BitokButton(label: 'Next', onPressed: () {}),
+        const SizedBox(height: 12),
+        BitokButton(
+          label: '들어가요',
+          variant: BitokButtonVariant.red,
+          onPressed: () {},
+        ),
+        const SizedBox(height: 12),
+        BitokButton(
+          label: '모르겠어요',
+          variant: BitokButtonVariant.yellow,
+          onPressed: () {},
+        ),
+        const SizedBox(height: 12),
+        BitokButton(
+          label: '안 들어가요',
+          variant: BitokButtonVariant.green,
+          onPressed: () {},
+        ),
+        const SizedBox(height: 12),
+        BitokButton(
+          label: 'Delete Account',
+          variant: BitokButtonVariant.delete,
+          onPressed: () {},
+        ),
+        const SizedBox(height: 12),
+        BitokButton(
+          label: 'Get Started',
+          variant: BitokButtonVariant.login,
+          onPressed: () {},
+        ),
+      ],
+    ),
+  ),
+);
