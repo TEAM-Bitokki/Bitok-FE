@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/widget_previews.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 
 import '../../core/design_system/bitok_colors.dart';
@@ -118,3 +119,33 @@ class BitokOcrMenuItem extends StatelessWidget {
     );
   }
 }
+
+
+@Preview(group: 'Components', name: 'OCR Menu', size: Size(390, 380))
+Widget ocrMenuPreview() => MaterialApp(
+  debugShowCheckedModeBanner: false,
+  home: Scaffold(
+    backgroundColor: BitokColors.white,
+    body: ListView(
+      padding: const EdgeInsets.all(24),
+      children: [
+        BitokOcrMenuItem.selectable(
+          koreanName: '김치찌개',
+          englishName: 'Kimchi Jjigae',
+          selected: false,
+        ),
+        const SizedBox(height: 12),
+        BitokOcrMenuItem.selectable(
+          koreanName: '김치찌개',
+          englishName: 'Kimchi Jjigae',
+          selected: true,
+        ),
+        const SizedBox(height: 12),
+        BitokOcrMenuItem.editable(
+          koreanName: '김치찌개',
+          englishName: 'Kimchi Jjigae',
+        ),
+      ],
+    ),
+  ),
+);
