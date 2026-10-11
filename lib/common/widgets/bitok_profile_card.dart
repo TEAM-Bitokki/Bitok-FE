@@ -53,9 +53,7 @@ class BitokProfileCard extends StatelessWidget {
                         title,
                         maxLines: 1,
                         overflow: TextOverflow.ellipsis,
-                        // Figma BitOK/EN/SubTitle: Roboto Medium 20 / 28
                         style: BitokTextStyles.subTitle.copyWith(
-                          fontSize: 20,
                           color: BitokColors.text,
                         ),
                       ),

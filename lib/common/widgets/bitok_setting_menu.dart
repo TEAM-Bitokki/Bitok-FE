@@ -12,7 +12,7 @@ import '../../core/design_system/bitok_text_styles.dart';
 class BitokSettingMenu extends StatelessWidget {
   const BitokSettingMenu({super.key, required this.label, this.onTap});
 
-  /// 예: 'Saved Menues'
+  /// 예: 'Saved Menus'
   final String label;
   final VoidCallback? onTap;
 
@@ -62,6 +62,6 @@ Widget settingMenuPreview() => ColoredBox(
   color: BitokColors.grey3,
   child: Padding(
     padding: const EdgeInsets.all(24),
-    child: BitokSettingMenu(label: 'Saved Menues', onTap: () {}),
+    child: BitokSettingMenu(label: 'Saved Menus', onTap: () {}),
   ),
 );
