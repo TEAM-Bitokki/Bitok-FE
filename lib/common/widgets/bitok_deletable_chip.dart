@@ -6,13 +6,14 @@ import '../../core/design_system/bitok_colors.dart';
 import '../../core/design_system/bitok_icons.dart';
 import '../../core/design_system/bitok_text_styles.dart';
 
-/// 삭제 가능한 칩 (Figma: SelectedDietTag)
-///
-/// 오른쪽 X 아이콘을 누르면 [onDelete]가 호출됩니다.
+/// 오른쪽에 X 삭제 버튼이 있는 칩입니다. 너비는 문구 길이에 맞춰집니다.
 class BitokDeletableChip extends StatelessWidget {
   const BitokDeletableChip({super.key, required this.label, this.onDelete});
 
+  /// 칩에 표시할 문구입니다. 예: 'Prawn'
   final String label;
+
+  /// X 버튼을 누르면 호출됩니다.
   final VoidCallback? onDelete;
 
   static const double height = 32;

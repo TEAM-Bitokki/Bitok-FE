@@ -6,9 +6,9 @@ import '../../core/design_system/bitok_colors.dart';
 import '../../core/design_system/bitok_icons.dart';
 import '../../core/design_system/bitok_text_styles.dart';
 
-/// 하단 네비게이션 바 (Figma: Bottom Navigation, 543:2854)
+/// Home과 Explore 탭을 전환하는 하단 네비게이션 바입니다.
 ///
-/// 선택된 탭 뒤의 하늘색 알약 인디케이터는 탭 변경 시 좌우로 슬라이드됩니다.
+/// 탭을 바꾸면 선택된 탭 뒤의 알약 모양 인디케이터가 좌우로 슬라이드됩니다.
 class BitokBottomNavigation extends StatelessWidget {
   const BitokBottomNavigation({
     super.key,
@@ -16,10 +16,14 @@ class BitokBottomNavigation extends StatelessWidget {
     required this.onTap,
   });
 
+  /// 선택된 탭의 인덱스입니다. 0은 Home, 1은 Explore입니다.
   final int currentIndex;
+
+  /// 탭을 누르면 해당 탭의 인덱스와 함께 호출됩니다.
   final ValueChanged<int> onTap;
 
   static const double width = 220;
+
   static const double height = 55;
 
   static const double _horizontalPadding = 12;
@@ -143,7 +147,6 @@ class _NavButton extends StatelessWidget {
         child: SizedBox(
           width: width,
           height: height,
-          // 아이콘과 라벨을 같은 세로축(가로 중앙)에 정렬
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             crossAxisAlignment: CrossAxisAlignment.center,

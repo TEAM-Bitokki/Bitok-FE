@@ -6,10 +6,10 @@ import '../../core/design_system/bitok_colors.dart';
 import '../../core/design_system/bitok_icons.dart';
 import '../../core/design_system/bitok_text_styles.dart';
 
-/// 단일 선택 항목 (Figma: Selection / Chips, 543:2847의 DietCheck_off / DietCheck_on)
+/// 라디오 버튼이 있는 단일 선택 항목입니다. 항목 전체를 누를 수 있습니다.
 ///
-/// 항목 전체가 터치 영역입니다. 여러 항목 중 하나만 선택되도록 하는
-/// 그룹 상태는 사용하는 쪽에서 관리합니다.
+/// 여러 항목 중 하나만 선택되도록 하려면, 사용하는 쪽에서 선택된 항목을
+/// 관리하고 각 항목의 [selected]에 넘깁니다.
 class BitokSelectionTile extends StatelessWidget {
   const BitokSelectionTile({
     super.key,
@@ -18,8 +18,13 @@ class BitokSelectionTile extends StatelessWidget {
     this.onTap,
   });
 
+  /// 항목 이름입니다. 예: 'Vegan'
   final String label;
+
+  /// 선택 여부입니다.
   final bool selected;
+
+  /// 항목을 누르면 호출됩니다.
   final VoidCallback? onTap;
 
   static const double height = 60;
@@ -45,7 +50,6 @@ class BitokSelectionTile extends StatelessWidget {
             color: BitokColors.white,
             borderRadius: _borderRadius,
           ),
-          // 테두리가 내부 콘텐츠 위치를 밀지 않도록 foregroundDecoration으로 그립니다.
           foregroundDecoration: BoxDecoration(
             border: Border.all(
               color: selected ? BitokColors.blue1 : BitokColors.grey1,
@@ -54,7 +58,6 @@ class BitokSelectionTile extends StatelessWidget {
           ),
           child: Row(
             children: [
-              // 표시 전용입니다. 터치는 항목 전체(GestureDetector)가 받습니다.
               AnimatedSwitcher(
                 duration: _animationDuration,
                 child: SvgPicture.asset(

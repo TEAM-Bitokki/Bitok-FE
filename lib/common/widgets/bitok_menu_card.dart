@@ -7,12 +7,9 @@ import '../../core/design_system/bitok_icons.dart';
 import '../../core/design_system/bitok_text_styles.dart';
 import 'bitok_status_chip.dart';
 
-// Figma: Card / Menu (543:3020)
-// - BitokRecentMenuCard      : RecentChekedMenu (최근 확인 메뉴)
-// - BitokMenuDetailCard      : Menu_detail_personal / Menu_detail_notpersonal
-// - BitokSavedRestaurantCard : Saved_resturant (저장한 음식점)
-
-/// 최근 확인한 메뉴 카드. 메뉴명, 음식점·확인 시점, 판정 칩을 보여줍니다.
+/// 최근 확인한 메뉴 카드입니다.
+///
+/// 메뉴명, 음식점과 확인 시점, View details 링크, 판정 칩을 보여줍니다.
 class BitokRecentMenuCard extends StatelessWidget {
   const BitokRecentMenuCard({
     super.key,
@@ -24,15 +21,22 @@ class BitokRecentMenuCard extends StatelessWidget {
     this.onViewDetailsTap,
   });
 
+  /// 한글 메뉴명입니다. 예: '비빔밥'
   final String koreanName;
+
+  /// 영문 메뉴명입니다. 예: 'Bibimbap'
   final String englishName;
 
-  /// 예: 'Myeongdong Kyoja · Today'
+  /// 메뉴명 아래에 표시할 음식점과 확인 시점입니다. 예: 'Myeongdong Kyoja · Today'
   final String subtitle;
+
+  /// 칩에 표시할 판정 결과입니다.
   final BitokMenuStatus status;
+
+  /// 카드를 누르면 호출됩니다.
   final VoidCallback? onTap;
 
-  /// 'View details' 탭 시 호출됩니다. 없으면 [onTap]이 호출됩니다.
+  /// View details를 누르면 호출됩니다. 없으면 [onTap]이 호출됩니다.
   final VoidCallback? onViewDetailsTap;
 
   @override
@@ -63,10 +67,10 @@ class BitokRecentMenuCard extends StatelessWidget {
   }
 }
 
-/// 메뉴 상세 카드.
+/// 메뉴 판정 결과 화면의 메뉴 카드입니다.
 ///
-/// [status]가 있으면 개인 맞춤 판정(칩 + View details)을,
-/// 없으면 판정 없이 메뉴명과 chevron만 보여줍니다.
+/// [status]를 넘기면 View details 링크와 판정 칩이 있는 카드가,
+/// 넘기지 않으면 메뉴명과 화살표만 있는 카드가 됩니다.
 class BitokMenuDetailCard extends StatelessWidget {
   const BitokMenuDetailCard({
     super.key,
@@ -77,13 +81,19 @@ class BitokMenuDetailCard extends StatelessWidget {
     this.onViewDetailsTap,
   });
 
+  /// 한글 메뉴명입니다. 예: '김치찌개'
   final String koreanName;
+
+  /// 영문 메뉴명입니다. 예: 'Kimchi Jjigae'
   final String englishName;
+
+  /// 칩에 표시할 판정 결과입니다. 없으면 판정 없는 카드가 됩니다.
   final BitokMenuStatus? status;
+
+  /// 카드를 누르면 호출됩니다.
   final VoidCallback? onTap;
 
-  /// 'View details' 탭 시 호출됩니다. 없으면 [onTap]이 호출됩니다.
-  /// [status]가 없으면 'View details'가 표시되지 않으므로 사용되지 않습니다.
+  /// View details를 누르면 호출됩니다. 없으면 [onTap]이 호출됩니다. [status]가 없으면 쓰이지 않습니다.
   final VoidCallback? onViewDetailsTap;
 
   @override
@@ -124,7 +134,9 @@ class BitokMenuDetailCard extends StatelessWidget {
   }
 }
 
-/// 저장한 음식점 카드.
+/// 저장한 음식점 카드입니다.
+///
+/// 음식점 이름, 업종, 주소와 오른쪽 화살표를 보여줍니다.
 class BitokSavedRestaurantCard extends StatelessWidget {
   const BitokSavedRestaurantCard({
     super.key,
@@ -134,9 +146,16 @@ class BitokSavedRestaurantCard extends StatelessWidget {
     this.onTap,
   });
 
+  /// 음식점 이름입니다. 예: 'Myeongdong Kyoja'
   final String name;
+
+  /// 업종입니다. 예: 'Korean Restaurant'
   final String category;
+
+  /// 주소입니다. 예: '29 Myeongdong 10-gil, Jung-gu'
   final String address;
+
+  /// 카드를 누르면 호출됩니다.
   final VoidCallback? onTap;
 
   @override
@@ -177,8 +196,6 @@ class BitokSavedRestaurantCard extends StatelessWidget {
   }
 }
 
-/// 공통 카드 틀: grey3 배경, 모서리 12, 상하 15 / 좌우 18 여백.
-/// [trailing]은 카드 오른쪽에 세로 중앙 정렬됩니다.
 class _MenuCardContainer extends StatelessWidget {
   const _MenuCardContainer({
     required this.child,
@@ -213,7 +230,6 @@ class _MenuCardContainer extends StatelessWidget {
   }
 }
 
-/// 한글 메뉴명 + 영문 메뉴명 (가로 배치, 간격 10)
 class _MenuName extends StatelessWidget {
   const _MenuName({
     required this.koreanName,
@@ -227,8 +243,6 @@ class _MenuName extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // 폰트(Pretendard/Roboto)와 크기가 달라 박스 중앙 정렬로는 글자 바닥선이
-    // 어긋나므로, 기준선(baseline)에 맞춰 정렬합니다.
     return Row(
       crossAxisAlignment: CrossAxisAlignment.baseline,
       textBaseline: TextBaseline.alphabetic,
@@ -283,7 +297,6 @@ class _ViewDetails extends StatelessWidget {
     return Semantics(
       button: true,
       child: GestureDetector(
-        // 글자 사이 빈 공간까지 터치 영역에 포함합니다.
         behavior: HitTestBehavior.opaque,
         onTap: onTap,
         child: Row(
@@ -293,7 +306,6 @@ class _ViewDetails extends StatelessWidget {
               'View details',
               style: BitokTextStyles.body2.copyWith(color: BitokColors.primary),
             ),
-            // 에셋 이름과 달리 오른쪽을 향하는 파란색 chevron입니다.
             SvgPicture.asset(BitokIcons.leftArrow20, width: 20, height: 20),
           ],
         ),
@@ -307,7 +319,6 @@ class _TrailingChevron extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // 에셋 이름과 달리 오른쪽을 향하는 회색 chevron입니다.
     return SvgPicture.asset(BitokIcons.leftArrow24, width: 24, height: 24);
   }
 }

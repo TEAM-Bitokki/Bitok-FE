@@ -6,9 +6,9 @@ import '../../core/design_system/bitok_colors.dart';
 import '../../core/design_system/bitok_icons.dart';
 import 'bitok_text_field.dart';
 
-/// 검색창 (Figma: Input / Search, 543:2874의 Search_off/on_grey, Search_off/on_white)
+/// 앞에 검색 아이콘이 있는 검색 입력창입니다.
 ///
-/// [variant]가 grey면 grey3 배경, white면 흰 배경에 grey1 테두리입니다.
+/// 키보드 완료 버튼이 검색 버튼으로 표시됩니다.
 class BitokSearchField extends StatelessWidget {
   const BitokSearchField({
     super.key,
@@ -21,12 +21,25 @@ class BitokSearchField extends StatelessWidget {
     this.autofocus = false,
   });
 
+  /// 검색어를 읽거나 바꿀 때 사용하는 컨트롤러입니다.
   final TextEditingController? controller;
+
+  /// 포커스를 직접 제어할 때 사용하는 포커스 노드입니다.
   final FocusNode? focusNode;
+
+  /// 입력 전 표시할 안내 문구입니다. 예: 'Search restaurants'
   final String? hintText;
+
+  /// 배경 스타일입니다. 기본값은 [BitokTextFieldVariant.grey]입니다.
   final BitokTextFieldVariant variant;
+
+  /// 검색어가 바뀔 때마다 호출됩니다.
   final ValueChanged<String>? onChanged;
+
+  /// 키보드의 검색 버튼을 누르면 검색어와 함께 호출됩니다.
   final ValueChanged<String>? onSubmitted;
+
+  /// true면 화면에 나타날 때 자동으로 포커스를 받습니다. 기본값은 false입니다.
   final bool autofocus;
 
   @override

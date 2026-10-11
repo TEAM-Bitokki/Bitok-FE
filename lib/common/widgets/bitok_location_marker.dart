@@ -6,9 +6,9 @@ import '../../core/design_system/bitok_colors.dart';
 import '../../core/design_system/bitok_icons.dart';
 import '../../core/design_system/bitok_text_styles.dart';
 
-/// 지도 위치 마커 칩 (Figma: Location Marker / Location Marker Selected)
+/// 지도 위에 표시하는 숫자 위치 마커입니다.
 ///
-/// 마커 모양은 28×36이며, 그림자는 레이아웃 크기 밖(사방 4)으로 그려집니다.
+/// 크기는 28×36이며, 그림자는 이 크기 바깥으로 그려집니다.
 class BitokLocationMarker extends StatelessWidget {
   const BitokLocationMarker({
     super.key,
@@ -17,15 +17,19 @@ class BitokLocationMarker extends StatelessWidget {
     this.onTap,
   });
 
-  /// 마커 안에 표시할 숫자
+  /// 마커 안에 표시할 숫자입니다.
   final int count;
+
+  /// 선택 여부입니다. 선택되면 파란 마커에 흰 숫자로 표시됩니다. 기본값은 false입니다.
   final bool selected;
+
+  /// 마커를 누르면 호출됩니다.
   final VoidCallback? onTap;
 
   static const double width = 28;
+
   static const double height = 36;
 
-  // SVG 에셋(36×44)에 포함된 그림자 여백
   static const double _shadowInset = 4;
 
   @override

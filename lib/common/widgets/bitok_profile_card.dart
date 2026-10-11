@@ -6,9 +6,9 @@ import '../../core/design_system/bitok_colors.dart';
 import '../../core/design_system/bitok_icons.dart';
 import '../../core/design_system/bitok_text_styles.dart';
 
-/// 프로필 정보 카드 (Figma: Profile / Settings, 543:2958의 Menu_Profile_show / Menu_Profile_edit)
+/// 알레르기, 식단 같은 프로필 정보 카드입니다.
 ///
-/// [onEdit]이 있으면 오른쪽에 편집 아이콘이 표시됩니다(edit 상태).
+/// [onEdit]을 넘기면 오른쪽에 편집 아이콘이 표시됩니다.
 class BitokProfileCard extends StatelessWidget {
   const BitokProfileCard({
     super.key,
@@ -18,14 +18,16 @@ class BitokProfileCard extends StatelessWidget {
     this.onEdit,
   });
 
-  /// 예: 'Food Allergies'
+  /// 카드 제목입니다. 예: 'Food Allergies'
   final String title;
 
-  /// 예: 'Shrimp · Anchovy · Walnut'
+  /// 제목 아래에 표시할 내용입니다. 예: 'Shrimp · Anchovy · Walnut'
   final String description;
 
-  /// 제목 왼쪽의 30×30 아이콘
+  /// 제목 왼쪽에 표시할 30×30 SVG 아이콘 경로입니다. 기본값은 [BitokIcons.meal30]입니다.
   final String iconAsset;
+
+  /// 편집 아이콘을 누르면 호출됩니다. 없으면 편집 아이콘이 표시되지 않습니다.
   final VoidCallback? onEdit;
 
   @override

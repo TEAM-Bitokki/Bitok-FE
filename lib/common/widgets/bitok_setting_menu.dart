@@ -6,14 +6,14 @@ import '../../core/design_system/bitok_colors.dart';
 import '../../core/design_system/bitok_icons.dart';
 import '../../core/design_system/bitok_text_styles.dart';
 
-/// 설정 메뉴 항목 (Figma: Profile / Settings, 543:2958의 Setting_menu)
-///
-/// 항목 전체가 터치 영역입니다.
+/// 오른쪽 화살표가 있는 설정 메뉴 항목입니다. 항목 전체를 누를 수 있습니다.
 class BitokSettingMenu extends StatelessWidget {
   const BitokSettingMenu({super.key, required this.label, this.onTap});
 
-  /// 예: 'Saved Menus'
+  /// 메뉴 이름입니다. 예: 'Saved Menus'
   final String label;
+
+  /// 항목을 누르면 호출됩니다.
   final VoidCallback? onTap;
 
   static const double height = 60;
@@ -47,7 +47,6 @@ class BitokSettingMenu extends StatelessWidget {
                 ),
               ),
               const SizedBox(width: 12),
-              // 에셋 이름과 달리 오른쪽을 향하는 회색 chevron입니다.
               SvgPicture.asset(BitokIcons.leftArrow24, width: 24, height: 24),
             ],
           ),
