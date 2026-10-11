@@ -227,7 +227,11 @@ class _MenuName extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // 폰트(Pretendard/Roboto)와 크기가 달라 박스 중앙 정렬로는 글자 바닥선이
+    // 어긋나므로, 기준선(baseline)에 맞춰 정렬합니다.
     return Row(
+      crossAxisAlignment: CrossAxisAlignment.baseline,
+      textBaseline: TextBaseline.alphabetic,
       children: [
         _KoreanName(koreanName),
         const SizedBox(width: 10),

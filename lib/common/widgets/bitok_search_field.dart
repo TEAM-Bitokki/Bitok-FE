@@ -46,7 +46,7 @@ class BitokSearchField extends StatelessWidget {
   }
 }
 
-@Preview(group: 'Common', name: 'Search', size: Size(400, 280))
+@Preview(group: 'Common', name: 'Search', size: Size(400, 330))
 Widget searchFieldPreview() => ColoredBox(
   color: BitokColors.white,
   child: Padding(
