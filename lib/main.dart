@@ -4,6 +4,7 @@ import 'package:shared_preferences/shared_preferences.dart';
 
 import 'core/design_system/bitok_colors.dart';
 import 'core/providers/shared_preferences_provider.dart';
+import 'core/router/app_router.dart';
 import 'l10n/generated/app_localizations.dart';
 
 Future<void> main() async {
@@ -25,28 +26,14 @@ class BitokApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MaterialApp(
+    return MaterialApp.router(
       title: 'Bitok',
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: BitokColors.primary),
       ),
       localizationsDelegates: AppLocalizations.localizationsDelegates,
       supportedLocales: AppLocalizations.supportedLocales,
-      home: const HomePlaceholder(),
-    );
-  }
-}
-
-// TODO: features/*/presentation/screens 화면이 준비되면 go_router로 교체합니다.
-class HomePlaceholder extends StatelessWidget {
-  const HomePlaceholder({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return Scaffold(
-      body: Center(
-        child: Image.asset('assets/images/img_title.png', width: 240),
-      ),
+      routerConfig: appRouter,
     );
   }
 }
