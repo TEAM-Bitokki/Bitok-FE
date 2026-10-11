@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/widget_previews.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 
 import '../../core/design_system/bitok_colors.dart';
+import '../../core/design_system/bitok_icons.dart';
 import '../../core/design_system/bitok_text_styles.dart';
 
 /// 단일 선택 항목 (Figma: Selection / Chips, 543:2847의 DietCheck_off / DietCheck_on)
@@ -52,7 +54,18 @@ class BitokSelectionTile extends StatelessWidget {
           ),
           child: Row(
             children: [
-              _RadioIndicator(selected: selected, duration: _animationDuration),
+              // 표시 전용입니다. 터치는 항목 전체(GestureDetector)가 받습니다.
+              AnimatedSwitcher(
+                duration: _animationDuration,
+                child: SvgPicture.asset(
+                  selected
+                      ? BitokIcons.radioSelected16
+                      : BitokIcons.radioDefault16,
+                  key: ValueKey(selected),
+                  width: 16,
+                  height: 16,
+                ),
+              ),
               const SizedBox(width: 21),
               Expanded(
                 child: Text(
@@ -66,42 +79,6 @@ class BitokSelectionTile extends StatelessWidget {
               ),
             ],
           ),
-        ),
-      ),
-    );
-  }
-}
-
-/// 16×16 라디오 표시. 터치는 [BitokSelectionTile]이 받으므로 표시 전용입니다.
-class _RadioIndicator extends StatelessWidget {
-  const _RadioIndicator({required this.selected, required this.duration});
-
-  final bool selected;
-  final Duration duration;
-
-  // Figma 원본 값입니다. 디자인 시스템(BitokColors)에 대응 토큰이 없습니다.
-  static const Color _offColor = Color(0xFFC6C6C6);
-  static const Color _onColor = Color(0xFF7E7E7E);
-
-  @override
-  Widget build(BuildContext context) {
-    final color = selected ? _onColor : _offColor;
-
-    return AnimatedContainer(
-      duration: duration,
-      width: 16,
-      height: 16,
-      alignment: Alignment.center,
-      decoration: BoxDecoration(
-        shape: BoxShape.circle,
-        border: Border.all(color: color),
-      ),
-      child: AnimatedScale(
-        duration: duration,
-        scale: selected ? 1 : 0,
-        child: const DecoratedBox(
-          decoration: BoxDecoration(color: _onColor, shape: BoxShape.circle),
-          child: SizedBox.square(dimension: 10),
         ),
       ),
     );

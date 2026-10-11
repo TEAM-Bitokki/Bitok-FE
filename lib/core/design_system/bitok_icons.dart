@@ -41,6 +41,9 @@ class BitokIcons {
 
   static const String myPage24 = '$_basePath/ic_mypage_24.svg';
 
+  static const String radioDefault16 = '$_basePath/ic_radio_default_16.svg';
+  static const String radioSelected16 = '$_basePath/ic_radio_selected_16.svg';
+
   static const String rightArrow24 = '$_basePath/ic_right_arrow_24.svg';
 
   static const String saveOff24 = '$_basePath/ic_save_off_24.svg';
