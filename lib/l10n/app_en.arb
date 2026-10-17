@@ -4,8 +4,12 @@
   "@appName": {
     "description": "The application name"
   },
-  "appTagline": "Before you bite, check if it's OK.",
+  "appTagline": "Before you bite,\ncheck if it’s OK.",
   "@appTagline": {
     "description": "Brand tagline shown on the onboarding intro screen"
+  },
+  "getStarted": "Get Started",
+  "@getStarted": {
+    "description": "Primary button label on the intro (login) screen"
   }
 }

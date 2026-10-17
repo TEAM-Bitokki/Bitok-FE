@@ -1,5 +1,6 @@
 {
   "@@locale": "ko",
   "appName": "비톡",
-  "appTagline": "먹기 전, 괜찮은지 확인하세요."
+  "appTagline": "먹기 전,\n괜찮은지 확인하세요.",
+  "getStarted": "시작하기"
 }
