@@ -14,15 +14,18 @@ class BitokHeader extends StatelessWidget implements PreferredSizeWidget {
     this.leading,
     this.trailing,
     this.centerTitle = false,
+    this.backgroundColor = BitokColors.white,
   });
 
   factory BitokHeader.sub({
     Key? key,
     required String title,
     VoidCallback? onBack,
+    Color backgroundColor = BitokColors.white,
   }) {
     return BitokHeader._(
       key: key,
+      backgroundColor: backgroundColor,
       title: title,
       centerTitle: true,
       leading: _IconTap(
@@ -36,9 +39,11 @@ class BitokHeader extends StatelessWidget implements PreferredSizeWidget {
     Key? key,
     required String title,
     VoidCallback? onProfile,
+    Color backgroundColor = BitokColors.white,
   }) {
     return BitokHeader._(
       key: key,
+      backgroundColor: backgroundColor,
       title: title,
       trailing: _IconTap(
         onTap: onProfile,
@@ -56,9 +61,11 @@ class BitokHeader extends StatelessWidget implements PreferredSizeWidget {
     Key? key,
     required Widget logo,
     VoidCallback? onProfile,
+    Color backgroundColor = BitokColors.white,
   }) {
     return BitokHeader._(
       key: key,
+      backgroundColor: backgroundColor,
       leading: logo,
       trailing: _IconTap(
         onTap: onProfile,
@@ -76,6 +83,7 @@ class BitokHeader extends StatelessWidget implements PreferredSizeWidget {
   final Widget? leading;
   final Widget? trailing;
   final bool centerTitle;
+  final Color backgroundColor;
 
   @override
   Size get preferredSize => const Size.fromHeight(52);
@@ -83,7 +91,7 @@ class BitokHeader extends StatelessWidget implements PreferredSizeWidget {
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: BitokColors.white,
+      color: backgroundColor,
       child: SizedBox(
         height: 52,
         child: Padding(
