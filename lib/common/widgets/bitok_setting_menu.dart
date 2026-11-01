@@ -8,13 +8,14 @@ import '../../core/design_system/bitok_text_styles.dart';
 
 /// 오른쪽 화살표가 있는 설정 메뉴 항목입니다. 항목 전체를 누를 수 있습니다.
 class BitokSettingMenu extends StatelessWidget {
-  const BitokSettingMenu({super.key, required this.label, this.onTap});
+  const BitokSettingMenu({super.key, required this.label, this.onTap, this.labelColor = BitokColors.text,});
 
   /// 메뉴 이름입니다. 예: 'Saved Menus'
   final String label;
 
   /// 항목을 누르면 호출됩니다.
   final VoidCallback? onTap;
+  final Color labelColor;
 
   static const double height = 60;
 
@@ -42,7 +43,7 @@ class BitokSettingMenu extends StatelessWidget {
                   maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: BitokTextStyles.body1KOR.copyWith(
-                    color: BitokColors.text,
+                    color: labelColor,
                   ),
                 ),
               ),
