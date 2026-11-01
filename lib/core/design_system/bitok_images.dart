@@ -8,5 +8,9 @@ class BitokImages {
 
   static const String noChecks = '$_basePath/img_no_checks.png';
 
+  static const String profileReady = '$_basePath/img_profile_ready.png';
+
   static const String title = '$_basePath/img_title.png';
+
+  static const String wordmarkNavy = '$_basePath/img_wordmark_navy.png';
 }

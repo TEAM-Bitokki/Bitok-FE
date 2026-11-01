@@ -11,5 +11,121 @@
   "getStarted": "Get Started",
   "@getStarted": {
     "description": "Primary button label on the intro (login) screen"
+  },
+  "onboardingNext": "Next",
+  "@onboardingNext": {
+    "description": "Bottom button label on onboarding steps"
+  },
+  "onboardingSkip": "Skip",
+  "@onboardingSkip": {
+    "description": "Header action to skip an optional onboarding step"
+  },
+  "onboardingStart": "Start",
+  "@onboardingStart": {
+    "description": "Button on the onboarding completion screen"
+  },
+  "onboardingProfileHeader": "Set Up Your Profile",
+  "@onboardingProfileHeader": {
+    "description": "Header title of the nickname step"
+  },
+  "onboardingNicknameTitle": "Enter your nickname",
+  "@onboardingNicknameTitle": {
+    "description": "Title of the nickname step"
+  },
+  "onboardingNicknameHint": "Nickname",
+  "@onboardingNicknameHint": {
+    "description": "Placeholder of the nickname field"
+  },
+  "onboardingAllergiesHeader": "Food Allergies",
+  "@onboardingAllergiesHeader": {
+    "description": "Header title of the allergies step"
+  },
+  "onboardingAllergiesTitle": "Any food allergies?",
+  "@onboardingAllergiesTitle": {
+    "description": "Title of the allergies step"
+  },
+  "onboardingAllergiesSearchHint": "Search allergies",
+  "@onboardingAllergiesSearchHint": {
+    "description": "Placeholder of the allergy search field"
+  },
+  "onboardingDietHeader": "Dietary Preferences",
+  "@onboardingDietHeader": {
+    "description": "Header title of the diet step"
+  },
+  "onboardingDietTitle": "Choose your diet",
+  "@onboardingDietTitle": {
+    "description": "Title of the diet step"
+  },
+  "onboardingDietEatsEggs": "I eat eggs",
+  "@onboardingDietEatsEggs": {
+    "description": "Vegetarian sub-option"
+  },
+  "onboardingDietEatsDairy": "I eat dairy",
+  "@onboardingDietEatsDairy": {
+    "description": "Vegetarian sub-option"
+  },
+  "onboardingReviewHeader": "Review Profile",
+  "@onboardingReviewHeader": {
+    "description": "Header title of the review step"
+  },
+  "onboardingReviewTitle": "Review your profile",
+  "@onboardingReviewTitle": {
+    "description": "Title of the review step"
+  },
+  "onboardingReviewAllergiesTitle": "Food Allergies",
+  "@onboardingReviewAllergiesTitle": {
+    "description": "Review card title for allergies"
+  },
+  "onboardingReviewDietTitle": "Dietary Preference",
+  "@onboardingReviewDietTitle": {
+    "description": "Review card title for diet"
+  },
+  "onboardingReviewNone": "None",
+  "@onboardingReviewNone": {
+    "description": "Shown when no allergies were selected"
+  },
+  "onboardingCompleteTitle": "Your profile is ready",
+  "@onboardingCompleteTitle": {
+    "description": "Title of the onboarding completion screen"
+  },
+  "onboardingCompleteDescription": "You’re all set. Start checking restaurant menus for what matters to you.",
+  "@onboardingCompleteDescription": {
+    "description": "Description of the onboarding completion screen"
+  },
+  "dietNoParticular": "No particular diet",
+  "@dietNoParticular": {
+    "description": "Diet option"
+  },
+  "dietVegan": "Vegan",
+  "@dietVegan": {
+    "description": "Diet option"
+  },
+  "dietVegetarian": "Vegetarian",
+  "@dietVegetarian": {
+    "description": "Diet option"
+  },
+  "dietPescatarian": "Pescatarian",
+  "@dietPescatarian": {
+    "description": "Diet option"
+  },
+  "dietEggs": "Eggs",
+  "@dietEggs": {
+    "description": "Vegetarian detail shown in the profile summary"
+  },
+  "dietDairy": "Dairy",
+  "@dietDairy": {
+    "description": "Vegetarian detail shown in the profile summary"
+  },
+  "onboardingStepLabel": "STEP {step} OF {total}",
+  "@onboardingStepLabel": {
+    "description": "Progress label on onboarding steps",
+    "placeholders": {
+      "step": {
+        "type": "int"
+      },
+      "total": {
+        "type": "int"
+      }
+    }
   }
 }

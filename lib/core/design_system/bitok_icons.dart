@@ -5,6 +5,8 @@ class BitokIcons {
 
   static const String camera40 = '$_basePath/ic_camera_40.svg';
 
+  static const String check13 = '$_basePath/ic_check_13.svg';
+
   static const String checkboxChecked20 =
       '$_basePath/ic_checkbox_checked_20.svg';
   static const String checkboxDefault20 =
