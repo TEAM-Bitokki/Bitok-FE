@@ -37,9 +37,9 @@ class _AccountDeletionScreenState extends State<AccountDeletionScreen> {
         onBack: widget.onBack ?? () => Navigator.maybePop(context),
       ),
       body: SafeArea(
-        minimum: const EdgeInsets.only(bottom: 10),
+        minimum: const EdgeInsets.only(bottom: 34),
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(24, 12, 24, 0),
+          padding: const EdgeInsets.fromLTRB(24, 12, 24, 15),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -60,7 +60,8 @@ class _AccountDeletionScreenState extends State<AccountDeletionScreen> {
               const Spacer(),
               BitokCheckboxRow(
                 label: 'Required · I agree to delete my account.',
-                description: 'All account information will be permanently deleted.',
+                description:
+                    'All account information will be permanently deleted.',
                 checked: _agreed,
                 onChanged: (v) => setState(() => _agreed = v),
               ),
