@@ -51,86 +51,94 @@ class RestaurantDetailScreen extends StatelessWidget {
         title: 'Restaurant Detail',
         onBack: onBack ?? () => Navigator.maybePop(context),
       ),
-      body: ListView(
-        padding: const EdgeInsets.fromLTRB(24, 12, 24, 24),
-        children: [
-          Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Expanded(
-                child: Text(
-                  name,
-                  style: BitokTextStyles.title.copyWith(color: BitokColors.text),
-                ),
-              ),
-              GestureDetector(
-                behavior: HitTestBehavior.opaque,
-                onTap: onToggleSaved,
-                child: Padding(
-                  padding: const EdgeInsets.only(top: 4),
-                  child: SvgPicture.asset(
-                    saved ? BitokIcons.saveOn24 : BitokIcons.saveOff24,
-                    width: 24,
-                    height: 24,
+      body: SafeArea(
+        top: false,
+        child: ListView(
+          padding: const EdgeInsets.fromLTRB(24, 12, 24, 24),
+          children: [
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: Text(
+                    name,
+                    style: BitokTextStyles.title.copyWith(
+                      color: BitokColors.text,
+                    ),
                   ),
                 ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 3),
-          Text(
-            info,
-            style: BitokTextStyles.body2.copyWith(color: BitokColors.grey0),
-          ),
-          const SizedBox(height: 25),
-          ClipRRect(
-            borderRadius: BorderRadius.circular(18),
-            child: SizedBox(height: 180, child: image ?? const _ImagePlaceholder()),
-          ),
-          const SizedBox(height: 30),
-          Row(
-            children: [
-              Expanded(
-                child: Text(
-                  'Checked Menu',
-                  style: BitokTextStyles.subTitle.copyWith(
-                    fontSize: 20,
-                    color: BitokColors.text,
+                GestureDetector(
+                  behavior: HitTestBehavior.opaque,
+                  onTap: onToggleSaved,
+                  child: Padding(
+                    padding: const EdgeInsets.only(top: 4),
+                    child: SvgPicture.asset(
+                      saved ? BitokIcons.saveOn24 : BitokIcons.saveOff24,
+                      width: 24,
+                      height: 24,
+                    ),
                   ),
                 ),
-              ),
-              GestureDetector(
-                behavior: HitTestBehavior.opaque,
-                onTap: onForYouTap,
-                child: Row(
-                  mainAxisSize: MainAxisSize.min,
-                  children: [
-                    Text(
-                      'For you',
-                      style: BitokTextStyles.buttonText2.copyWith(
-                        color: BitokColors.primary,
-                      ),
-                    ),
-                    SvgPicture.asset(
-                      BitokIcons.leftArrow20,
-                      width: 20,
-                      height: 20,
-                    ),
-                  ],
-                ),
-              ),
-            ],
-          ),
-          const SizedBox(height: 15),
-          for (final menu in menus) ...[
-            BitokMenuDetailCard(
-              koreanName: menu.koreanName,
-              englishName: menu.englishName,
-              onTap: () => onMenuTap?.call(menu),
+              ],
             ),
-            const SizedBox(height: 8),
+            const SizedBox(height: 3),
+            Text(
+              info,
+              style: BitokTextStyles.body2.copyWith(color: BitokColors.grey0),
+            ),
+            const SizedBox(height: 25),
+            ClipRRect(
+              borderRadius: BorderRadius.circular(18),
+              child: SizedBox(
+                height: 180,
+                child: image ?? const _ImagePlaceholder(),
+              ),
+            ),
+            const SizedBox(height: 30),
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    'Checked Menu',
+                    style: BitokTextStyles.subTitle.copyWith(
+                      fontSize: 20,
+                      color: BitokColors.text,
+                    ),
+                  ),
+                ),
+                GestureDetector(
+                  behavior: HitTestBehavior.opaque,
+                  onTap: onForYouTap,
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        'For you',
+                        style: BitokTextStyles.buttonText2.copyWith(
+                          color: BitokColors.primary,
+                        ),
+                      ),
+                      SvgPicture.asset(
+                        BitokIcons.leftArrow20,
+                        width: 20,
+                        height: 20,
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 15),
+            for (final menu in menus) ...[
+              BitokMenuDetailCard(
+                koreanName: menu.koreanName,
+                englishName: menu.englishName,
+                onTap: () => onMenuTap?.call(menu),
+              ),
+              const SizedBox(height: 8),
+            ],
           ],
-        ],
+        ),
       ),
     );
   }
