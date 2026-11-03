@@ -39,19 +39,22 @@ class SavedRestaurantsScreen extends StatelessWidget {
         title: 'Saved Restaurants',
         onBack: onBack ?? () => Navigator.maybePop(context),
       ),
-      body: ListView.separated(
-        padding: const EdgeInsets.fromLTRB(24, 12, 24, 24),
-        itemCount: restaurants.length,
-        separatorBuilder: (_, _) => const SizedBox(height: 8),
-        itemBuilder: (context, index) {
-          final restaurant = restaurants[index];
-          return BitokSavedRestaurantCard(
-            name: restaurant.name,
-            category: restaurant.category,
-            address: restaurant.address,
-            onTap: () => onRestaurantTap?.call(restaurant),
-          );
-        },
+      body: SafeArea(
+        top: false,
+        child: ListView.separated(
+          padding: const EdgeInsets.fromLTRB(24, 12, 24, 24),
+          itemCount: restaurants.length,
+          separatorBuilder: (_, _) => const SizedBox(height: 8),
+          itemBuilder: (context, index) {
+            final restaurant = restaurants[index];
+            return BitokSavedRestaurantCard(
+              name: restaurant.name,
+              category: restaurant.category,
+              address: restaurant.address,
+              onTap: () => onRestaurantTap?.call(restaurant),
+            );
+          },
+        ),
       ),
     );
   }
