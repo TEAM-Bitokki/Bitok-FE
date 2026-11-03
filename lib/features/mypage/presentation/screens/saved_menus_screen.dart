@@ -43,20 +43,23 @@ class SavedMenusScreen extends StatelessWidget {
         title: 'Saved Menues',
         onBack: onBack ?? () => Navigator.maybePop(context),
       ),
-      body: ListView.separated(
-        padding: const EdgeInsets.fromLTRB(24, 12, 24, 24),
-        itemCount: menus.length,
-        separatorBuilder: (_, _) => const SizedBox(height: 8),
-        itemBuilder: (context, index) {
-          final menu = menus[index];
-          return BitokRecentMenuCard(
-            koreanName: menu.koreanName,
-            englishName: menu.englishName,
-            subtitle: menu.subtitle,
-            status: menu.status,
-            onTap: () => onMenuTap?.call(menu),
-          );
-        },
+      body: SafeArea(
+        top: false,
+        child: ListView.separated(
+          padding: const EdgeInsets.fromLTRB(24, 12, 24, 24),
+          itemCount: menus.length,
+          separatorBuilder: (_, _) => const SizedBox(height: 8),
+          itemBuilder: (context, index) {
+            final menu = menus[index];
+            return BitokRecentMenuCard(
+              koreanName: menu.koreanName,
+              englishName: menu.englishName,
+              subtitle: menu.subtitle,
+              status: menu.status,
+              onTap: () => onMenuTap?.call(menu),
+            );
+          },
+        ),
       ),
     );
   }
