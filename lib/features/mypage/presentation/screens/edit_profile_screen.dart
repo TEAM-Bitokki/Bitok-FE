@@ -51,9 +51,9 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
         onBack: widget.onBack ?? () => Navigator.maybePop(context),
       ),
       body: SafeArea(
-        minimum: const EdgeInsets.only(bottom: 10),
+        minimum: const EdgeInsets.only(bottom: 34),
         child: Padding(
-          padding: const EdgeInsets.fromLTRB(24, 12, 24, 0),
+          padding: const EdgeInsets.fromLTRB(24, 12, 24, 15),
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
