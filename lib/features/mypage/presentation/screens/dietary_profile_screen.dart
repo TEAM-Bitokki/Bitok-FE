@@ -32,21 +32,24 @@ class DietaryProfileScreen extends StatelessWidget {
         title: 'Dietary Profile',
         onBack: onBack ?? () => Navigator.maybePop(context),
       ),
-      body: ListView(
-        padding: const EdgeInsets.fromLTRB(24, 12, 24, 24),
-        children: [
-          BitokProfileCard(
-            title: 'Food Allergies',
-            description: allergySummary,
-            onEdit: onEditAllergies,
-          ),
-          const SizedBox(height: 12),
-          BitokProfileCard(
-            title: 'Dietary Preference',
-            description: dietSummary,
-            onEdit: onEditDiet,
-          ),
-        ],
+      body: SafeArea(
+        top: false,
+        child: ListView(
+          padding: const EdgeInsets.fromLTRB(24, 12, 24, 24),
+          children: [
+            BitokProfileCard(
+              title: 'Food Allergies',
+              description: allergySummary,
+              onEdit: onEditAllergies,
+            ),
+            const SizedBox(height: 12),
+            BitokProfileCard(
+              title: 'Dietary Preference',
+              description: dietSummary,
+              onEdit: onEditDiet,
+            ),
+          ],
+        ),
       ),
     );
   }
