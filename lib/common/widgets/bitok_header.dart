@@ -92,11 +92,14 @@ class BitokHeader extends StatelessWidget implements PreferredSizeWidget {
   Widget build(BuildContext context) {
     return Material(
       color: backgroundColor,
-      child: SizedBox(
-        height: 52,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 24),
-          child: centerTitle ? _centered() : _spaced(),
+      child: SafeArea(
+        bottom: false,
+        child: SizedBox(
+          height: 52,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 24),
+            child: centerTitle ? _centered() : _spaced(),
+          ),
         ),
       ),
     );
