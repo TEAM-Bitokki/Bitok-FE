@@ -43,34 +43,37 @@ class MyPageScreen extends StatelessWidget {
         onBack: onBack ?? () => Navigator.maybePop(context),
         backgroundColor: BitokColors.grey3,
       ),
-      body: ListView(
-        padding: const EdgeInsets.fromLTRB(24, 12, 24, 24),
-        children: [
-          MyPageProfileCard(
-            nickname: nickname,
-            email: email,
-            onTap: onProfileTap,
-          ),
-          const SizedBox(height: 15),
-          MyPageDietaryCard(summary: dietarySummary, onTap: onDietaryTap),
-          const SizedBox(height: 25),
-          const _SectionTitle('My Activity'),
-          const SizedBox(height: 8),
-          BitokSettingMenu(
-            label: 'Saved Restaurants',
-            onTap: onSavedRestaurantsTap,
-          ),
-          const SizedBox(height: 10),
-          BitokSettingMenu(label: 'Saved Menues', onTap: onSavedMenusTap),
-          const SizedBox(height: 25),
-          const _SectionTitle('Settings'),
-          const SizedBox(height: 8),
-          BitokSettingMenu(
-            label: 'Delete Account',
-            labelColor: BitokColors.red1,
-            onTap: onDeleteAccountTap,
-          ),
-        ],
+      body: SafeArea(
+        top: false,
+        child: ListView(
+          padding: const EdgeInsets.fromLTRB(24, 12, 24, 24),
+          children: [
+            MyPageProfileCard(
+              nickname: nickname,
+              email: email,
+              onTap: onProfileTap,
+            ),
+            const SizedBox(height: 15),
+            MyPageDietaryCard(summary: dietarySummary, onTap: onDietaryTap),
+            const SizedBox(height: 25),
+            const _SectionTitle('My Activity'),
+            const SizedBox(height: 8),
+            BitokSettingMenu(
+              label: 'Saved Restaurants',
+              onTap: onSavedRestaurantsTap,
+            ),
+            const SizedBox(height: 10),
+            BitokSettingMenu(label: 'Saved Menues', onTap: onSavedMenusTap),
+            const SizedBox(height: 25),
+            const _SectionTitle('Settings'),
+            const SizedBox(height: 8),
+            BitokSettingMenu(
+              label: 'Delete Account',
+              labelColor: BitokColors.red1,
+              onTap: onDeleteAccountTap,
+            ),
+          ],
+        ),
       ),
     );
   }
