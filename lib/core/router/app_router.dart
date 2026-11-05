@@ -194,42 +194,42 @@ const List<String> _mockAllergens = [
   'Peanut',
 ];
 const List<RecentCheck> _mockRecentChecks = [
-  // RecentCheck(
-  //   koreanName: '비빔밥',
-  //   englishName: 'Bibimbap',
-  //   subtitle: 'Myeongdong Kyoja · Today',
-  //   status: BitokMenuStatus.safe,
-  // ),
-  // RecentCheck(
-  //   koreanName: '김치찌개',
-  //   englishName: 'Kimchi Jjigae',
-  //   subtitle: 'Myeongdong Kyoja · Today',
-  //   status: BitokMenuStatus.avoid,
-  // ),
-  // RecentCheck(
-  //   koreanName: '불고기',
-  //   englishName: 'Bulgogi',
-  //   subtitle: 'Myeongdong Kyoja · Today',
-  //   status: BitokMenuStatus.notSure,
-  // ),
-  // RecentCheck(
-  //   koreanName: '비빔밥',
-  //   englishName: 'Bibimbap',
-  //   subtitle: 'Myeongdong Kyoja · Today',
-  //   status: BitokMenuStatus.safe,
-  // ),
-  // RecentCheck(
-  //   koreanName: '김치찌개',
-  //   englishName: 'Kimchi Jjigae',
-  //   subtitle: 'Myeongdong Kyoja · Today',
-  //   status: BitokMenuStatus.avoid,
-  // ),
-  // RecentCheck(
-  //   koreanName: '불고기',
-  //   englishName: 'Bulgogi',
-  //   subtitle: 'Myeongdong Kyoja · Today',
-  //   status: BitokMenuStatus.notSure,
-  // ),
+  RecentCheck(
+    koreanName: '비빔밥',
+    englishName: 'Bibimbap',
+    subtitle: 'Myeongdong Kyoja · Today',
+    status: BitokMenuStatus.safe,
+  ),
+  RecentCheck(
+    koreanName: '김치찌개',
+    englishName: 'Kimchi Jjigae',
+    subtitle: 'Myeongdong Kyoja · Today',
+    status: BitokMenuStatus.avoid,
+  ),
+  RecentCheck(
+    koreanName: '불고기',
+    englishName: 'Bulgogi',
+    subtitle: 'Myeongdong Kyoja · Today',
+    status: BitokMenuStatus.notSure,
+  ),
+  RecentCheck(
+    koreanName: '비빔밥',
+    englishName: 'Bibimbap',
+    subtitle: 'Myeongdong Kyoja · Today',
+    status: BitokMenuStatus.safe,
+  ),
+  RecentCheck(
+    koreanName: '김치찌개',
+    englishName: 'Kimchi Jjigae',
+    subtitle: 'Myeongdong Kyoja · Today',
+    status: BitokMenuStatus.avoid,
+  ),
+  RecentCheck(
+    koreanName: '불고기',
+    englishName: 'Bulgogi',
+    subtitle: 'Myeongdong Kyoja · Today',
+    status: BitokMenuStatus.notSure,
+  ),
 ];
 const List<SavedRestaurant> _mockSavedRestaurants = [
   SavedRestaurant(
