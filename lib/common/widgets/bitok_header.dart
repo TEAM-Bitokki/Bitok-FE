@@ -75,7 +75,7 @@ class BitokHeader extends StatelessWidget implements PreferredSizeWidget {
           BitokIcons.myPage24,
           width: 24,
           height: 24,
-          colorFilter: const ColorFilter.mode(BitokColors.text, BlendMode.srcIn),
+          colorFilter: const ColorFilter.mode(BitokColors.grey0, BlendMode.srcIn),
         ),
       ),
     );

@@ -85,7 +85,10 @@ final GoRouter appRouter = GoRouter(
             GoRoute(
               path: AppRoutes.home,
               builder: (context, state) => HomeScreen(
+                recentChecks: _mockRecentChecks,
                 onProfileTap: () => context.push(AppRoutes.myPage),
+                onCheckMenuTap: () => context.go(AppRoutes.explore),
+                // TODO: 메뉴 상세 화면이 만들어지면 onRecentCheckTap을 연결합니다.
               ),
             ),
           ],
@@ -189,6 +192,44 @@ const List<String> _mockAllergens = [
   'Walnut',
   'Anchovy',
   'Peanut',
+];
+const List<RecentCheck> _mockRecentChecks = [
+  RecentCheck(
+    koreanName: '비빔밥',
+    englishName: 'Bibimbap',
+    subtitle: 'Myeongdong Kyoja · Today',
+    status: BitokMenuStatus.safe,
+  ),
+  RecentCheck(
+    koreanName: '김치찌개',
+    englishName: 'Kimchi Jjigae',
+    subtitle: 'Myeongdong Kyoja · Today',
+    status: BitokMenuStatus.avoid,
+  ),
+  RecentCheck(
+    koreanName: '불고기',
+    englishName: 'Bulgogi',
+    subtitle: 'Myeongdong Kyoja · Today',
+    status: BitokMenuStatus.notSure,
+  ),
+  RecentCheck(
+    koreanName: '비빔밥',
+    englishName: 'Bibimbap',
+    subtitle: 'Myeongdong Kyoja · Today',
+    status: BitokMenuStatus.safe,
+  ),
+  RecentCheck(
+    koreanName: '김치찌개',
+    englishName: 'Kimchi Jjigae',
+    subtitle: 'Myeongdong Kyoja · Today',
+    status: BitokMenuStatus.avoid,
+  ),
+  RecentCheck(
+    koreanName: '불고기',
+    englishName: 'Bulgogi',
+    subtitle: 'Myeongdong Kyoja · Today',
+    status: BitokMenuStatus.notSure,
+  ),
 ];
 const List<SavedRestaurant> _mockSavedRestaurants = [
   SavedRestaurant(
