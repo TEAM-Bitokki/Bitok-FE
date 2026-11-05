@@ -13,6 +13,10 @@ class MainShell extends StatelessWidget {
 
   static const double _bottomNavigationGap = 10;
 
+  /// 네비게이션 바가 안전 영역 위로 차지하는 높이입니다. 탭 화면의 스크롤 하단 여백에 사용합니다.
+  static const double contentBottomInset =
+      BitokBottomNavigation.height + _bottomNavigationGap;
+
   @override
   Widget build(BuildContext context) {
     return Stack(
