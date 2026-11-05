@@ -28,6 +28,7 @@ class BitokApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MaterialApp.router(
       title: 'Bitok',
+      debugShowCheckedModeBanner: false,
       // 기기 언어와 관계없이 영어로 고정합니다.
       locale: const Locale('en'),
       theme: ThemeData(
