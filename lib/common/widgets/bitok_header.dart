@@ -21,6 +21,7 @@ class BitokHeader extends StatelessWidget implements PreferredSizeWidget {
     Key? key,
     required String title,
     VoidCallback? onBack,
+    Widget? trailing,
     Color backgroundColor = BitokColors.white,
   }) {
     return BitokHeader._(
@@ -32,6 +33,7 @@ class BitokHeader extends StatelessWidget implements PreferredSizeWidget {
         onTap: onBack,
         child: SvgPicture.asset(BitokIcons.rightArrow24, width: 24, height: 24),
       ),
+      trailing: trailing,
     );
   }
 
