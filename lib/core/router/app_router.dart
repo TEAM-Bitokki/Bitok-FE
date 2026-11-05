@@ -84,7 +84,9 @@ final GoRouter appRouter = GoRouter(
           routes: [
             GoRoute(
               path: AppRoutes.home,
-              builder: (context, state) => const HomeScreen(),
+              builder: (context, state) => HomeScreen(
+                onProfileTap: () => context.push(AppRoutes.myPage),
+              ),
             ),
           ],
         ),
