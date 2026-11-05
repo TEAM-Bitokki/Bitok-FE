@@ -84,9 +84,16 @@ class BitokButton extends StatelessWidget {
           textStyle: BitokTextStyles.buttonKOR,
         );
       case BitokButtonVariant.delete:
-        return _ButtonStyle(
+        return enabled
+            ? const _ButtonStyle(
           background: BitokColors.red2,
           foreground: BitokColors.text,
+          radius: 10,
+          textStyle: BitokTextStyles.buttonText,
+        )
+            : const _ButtonStyle(
+          background: BitokColors.grey2,
+          foreground: BitokColors.grey0,
           radius: 10,
           textStyle: BitokTextStyles.buttonText,
         );

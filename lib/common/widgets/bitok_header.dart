@@ -14,6 +14,7 @@ class BitokHeader extends StatelessWidget implements PreferredSizeWidget {
     this.leading,
     this.trailing,
     this.centerTitle = false,
+    this.backgroundColor = BitokColors.white,
   });
 
   factory BitokHeader.sub({
@@ -21,9 +22,11 @@ class BitokHeader extends StatelessWidget implements PreferredSizeWidget {
     required String title,
     VoidCallback? onBack,
     Widget? trailing,
+    Color backgroundColor = BitokColors.white,
   }) {
     return BitokHeader._(
       key: key,
+      backgroundColor: backgroundColor,
       title: title,
       centerTitle: true,
       leading: _IconTap(
@@ -38,9 +41,11 @@ class BitokHeader extends StatelessWidget implements PreferredSizeWidget {
     Key? key,
     required String title,
     VoidCallback? onProfile,
+    Color backgroundColor = BitokColors.white,
   }) {
     return BitokHeader._(
       key: key,
+      backgroundColor: backgroundColor,
       title: title,
       trailing: _IconTap(
         onTap: onProfile,
@@ -58,9 +63,11 @@ class BitokHeader extends StatelessWidget implements PreferredSizeWidget {
     Key? key,
     required Widget logo,
     VoidCallback? onProfile,
+    Color backgroundColor = BitokColors.white,
   }) {
     return BitokHeader._(
       key: key,
+      backgroundColor: backgroundColor,
       leading: logo,
       trailing: _IconTap(
         onTap: onProfile,
@@ -78,6 +85,7 @@ class BitokHeader extends StatelessWidget implements PreferredSizeWidget {
   final Widget? leading;
   final Widget? trailing;
   final bool centerTitle;
+  final Color backgroundColor;
 
   @override
   Size get preferredSize => const Size.fromHeight(52);
@@ -85,12 +93,15 @@ class BitokHeader extends StatelessWidget implements PreferredSizeWidget {
   @override
   Widget build(BuildContext context) {
     return Material(
-      color: BitokColors.white,
-      child: SizedBox(
-        height: 52,
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 24),
-          child: centerTitle ? _centered() : _spaced(),
+      color: backgroundColor,
+      child: SafeArea(
+        bottom: false,
+        child: SizedBox(
+          height: 52,
+          child: Padding(
+            padding: const EdgeInsets.symmetric(horizontal: 24),
+            child: centerTitle ? _centered() : _spaced(),
+          ),
         ),
       ),
     );
