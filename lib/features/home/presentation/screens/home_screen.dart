@@ -44,12 +44,16 @@ class HomeScreen extends StatelessWidget {
 
   static const double _horizontalPadding = 24;
 
-  /// 스크롤 끝에서 마지막 카드와 네비게이션 바 사이에 남겨 둘 간격입니다.
-  static const double _listEndGap = 20;
+  /// 스크롤 끝에서 콘텐츠와 네비게이션 바 사이에 남겨 둘 간격입니다.
+  static const double _contentEndGap = 20;
 
   @override
   Widget build(BuildContext context) {
-    final bottomSafeArea = MediaQuery.paddingOf(context).bottom;
+    // 네비게이션 바가 콘텐츠 위에 떠 있으므로, 스크롤 끝의 콘텐츠가 가려지지 않게 여백을 둡니다.
+    final contentBottomPadding =
+        MediaQuery.paddingOf(context).bottom +
+        MainShell.contentBottomInset +
+        _contentEndGap;
 
     return Scaffold(
       backgroundColor: BitokColors.white,
@@ -88,28 +92,36 @@ class HomeScreen extends StatelessWidget {
             ),
           ),
           if (recentChecks.isEmpty)
-            SliverFillRemaining(
-              hasScrollBody: false,
-              child: Padding(
-                padding: EdgeInsets.only(bottom: bottomSafeArea),
-                child: Center(
-                  child: Text(
-                    'No checks yet',
-                    style: BitokTextStyles.body1.copyWith(
-                      color: BitokColors.grey0,
+            SliverPadding(
+              padding: EdgeInsets.fromLTRB(
+                _horizontalPadding,
+                33,
+                _horizontalPadding,
+                contentBottomPadding,
+              ),
+              sliver: SliverToBoxAdapter(
+                child: Column(
+                  children: [
+                    Image.asset(BitokImages.noChecks, width: 200, height: 200),
+                    const SizedBox(height: 17),
+                    Text(
+                      'No checks yet',
+                      textAlign: TextAlign.center,
+                      style: BitokTextStyles.body1.copyWith(
+                        color: BitokColors.grey0,
+                      ),
                     ),
-                  ),
+                  ],
                 ),
               ),
             )
           else
             SliverPadding(
-              // 네비게이션 바가 콘텐츠 위에 떠 있으므로, 마지막 카드가 가려지지 않게 여백을 둡니다.
               padding: EdgeInsets.fromLTRB(
                 _horizontalPadding,
                 15,
                 _horizontalPadding,
-                bottomSafeArea + MainShell.contentBottomInset + _listEndGap,
+                contentBottomPadding,
               ),
               sliver: SliverList.separated(
                 itemCount: recentChecks.length,
