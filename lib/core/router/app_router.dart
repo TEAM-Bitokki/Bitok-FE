@@ -16,6 +16,8 @@ import '../../features/onboarding/presentation/screens/onboarding_complete_scree
 import '../../features/onboarding/presentation/screens/onboarding_diet_screen.dart';
 import '../../features/onboarding/presentation/screens/onboarding_nickname_screen.dart';
 import '../../features/onboarding/presentation/screens/onboarding_review_screen.dart';
+import '../../features/scan/data/models/scan_restaurant.dart';
+import '../../features/scan/presentation/screens/scan_screen.dart';
 import 'main_shell.dart';
 
 class AppRoutes {
@@ -43,6 +45,9 @@ class AppRoutes {
   static const String dietPreference = '/onboarding/diet';
 
   static const String restaurantDetail = '/restaurant';
+
+  // 메뉴 스캔 (REST-02 ~ REST-08)
+  static const String scan = '/scan';
 }
 
 // 바텀 네비게이션이 필요한 화면은 StatefulShellRoute의 branch에만 추가합니다.
@@ -87,7 +92,9 @@ final GoRouter appRouter = GoRouter(
               builder: (context, state) => HomeScreen(
                 recentChecks: _mockRecentChecks,
                 onProfileTap: () => context.push(AppRoutes.myPage),
-                onCheckMenuTap: () => context.go(AppRoutes.explore),
+                // TODO: REST-02 진입점(식당 상세 등)이 만들어지면 원래대로 explore로 이동합니다.
+                // 그전까지는 스캔 화면 확인을 위한 임시 진입점으로 사용합니다.
+                onCheckMenuTap: () => context.push(AppRoutes.scan),
                 // TODO: 메뉴 상세 화면이 만들어지면 onRecentCheckTap을 연결합니다.
               ),
             ),
@@ -165,7 +172,6 @@ final GoRouter appRouter = GoRouter(
 
     // ---- 온보딩 (알레르기 / 식단) ----
 
-
     // ---- 식당 상세 ----
     // TODO: 식당 id를 받도록 '/restaurant/:id' 형태로 바꿉니다.
     GoRoute(
@@ -175,6 +181,18 @@ final GoRouter appRouter = GoRouter(
         info: 'Korean · 350 m',
         menus: _mockCheckedMenus,
         onBack: () => context.pop(),
+      ),
+    ),
+
+    // ---- 메뉴 스캔 (네비게이션 바 없음) ----
+    // TODO: 식당 정보는 진입한 화면에서 넘겨받도록 바꿉니다.
+    GoRoute(
+      path: AppRoutes.scan,
+      builder: (context, state) => ScanScreen(
+        restaurant: _mockScanRestaurant,
+        onBack: () => context.pop(),
+        // TODO: REST-03 이미지 확인 화면으로 이동합니다.
+        onImageSelected: (image) {},
       ),
     ),
   ],
@@ -246,6 +264,11 @@ const List<SavedMenu> _mockSavedMenus = [
     status: BitokMenuStatus.safe,
   ),
 ];
+const ScanRestaurant _mockScanRestaurant = ScanRestaurant(
+  name: 'Myeongdong Kyoja',
+  category: 'Korean Restaurant',
+  address: '29 Myeongdong 10-gil, Jung-gu',
+);
 const List<CheckedMenu> _mockCheckedMenus = [
   CheckedMenu(koreanName: '김치찌개', englishName: 'Kimchi Jjigae'),
   CheckedMenu(koreanName: '비빔밥', englishName: 'Bibimbap'),
