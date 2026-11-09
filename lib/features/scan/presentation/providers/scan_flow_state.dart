@@ -10,6 +10,7 @@ class ScanFlowState {
     this.selectedIds = const {},
     this.questions = const [],
     this.answers = const {},
+    this.savedAt,
   });
 
   /// 스캔한 메뉴판 이미지 경로입니다.
@@ -26,6 +27,9 @@ class ScanFlowState {
 
   /// 질문 id([StaffQuestion.id])별 직원 답변입니다.
   final Map<String, StaffAnswer> answers;
+
+  /// REST-07에서 결과를 저장한 시각입니다. 저장 전에는 null입니다.
+  final DateTime? savedAt;
 
   /// [selectedIds]에 해당하는 메뉴를 목록 순서대로 반환합니다.
   List<ScanMenuItem> get selectedItems =>
@@ -59,6 +63,7 @@ class ScanFlowState {
     Set<String>? selectedIds,
     List<StaffQuestion>? questions,
     Map<String, StaffAnswer>? answers,
+    DateTime? savedAt,
   }) {
     return ScanFlowState(
       imagePath: imagePath ?? this.imagePath,
@@ -66,6 +71,7 @@ class ScanFlowState {
       selectedIds: selectedIds ?? this.selectedIds,
       questions: questions ?? this.questions,
       answers: answers ?? this.answers,
+      savedAt: savedAt ?? this.savedAt,
     );
   }
 }

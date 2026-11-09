@@ -23,6 +23,7 @@ import '../../features/scan/presentation/screens/scan_ask_staff_screen.dart';
 import '../../features/scan/presentation/screens/scan_check_screen.dart';
 import '../../features/scan/presentation/screens/scan_preview_screen.dart';
 import '../../features/scan/presentation/screens/scan_result_screen.dart';
+import '../../features/scan/presentation/screens/scan_saved_screen.dart';
 import '../../features/scan/presentation/screens/scan_screen.dart';
 import '../../features/scan/presentation/screens/scan_select_screen.dart';
 import 'main_shell.dart';
@@ -60,6 +61,7 @@ class AppRoutes {
   static const String scanSelect = '/scan/select';
   static const String scanAskStaff = '/scan/ask-staff';
   static const String scanResult = '/scan/result';
+  static const String scanSaved = '/scan/saved';
 }
 
 // 바텀 네비게이션이 필요한 화면은 StatefulShellRoute의 branch에만 추가합니다.
@@ -265,10 +267,22 @@ final GoRouter appRouter = GoRouter(
       path: AppRoutes.scanResult,
       builder: (context, state) => ScanResultScreen(
         onBack: () => context.pop(),
-        // TODO: 저장 API 호출 후 REST-08 저장 완료 화면으로 이동합니다.
-        onSave: () {},
+        onSave: () async {
+          await ProviderScope.containerOf(
+            context,
+          ).read(scanFlowProvider.notifier).save();
+          if (context.mounted) context.push(AppRoutes.scanSaved);
+        },
         onFinish: () => context.go(AppRoutes.home),
         // TODO: 메뉴 상세 화면이 만들어지면 연결합니다.
+      ),
+    ),
+    GoRoute(
+      path: AppRoutes.scanSaved,
+      builder: (context, state) => ScanSavedScreen(
+        restaurant: _mockScanRestaurant,
+        onBack: () => context.pop(),
+        onDone: () => context.go(AppRoutes.home),
       ),
     ),
   ],

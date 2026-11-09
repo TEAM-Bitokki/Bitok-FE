@@ -1,7 +1,14 @@
 // core/utils: 여러 feature가 공통으로 쓰는 순수 함수·확장(extension)을 모아둡니다.
 // 예: 서버에서 받은 DateTime을 화면에 표시할 형태로 바꿀 때 아래 확장을 사용합니다.
 //   RESULT-01 분석 결과 화면에서 `analyzedAt.toYmd()` 형태로 호출.
+import 'package:intl/intl.dart';
+
 extension DateFormatter on DateTime {
   String toYmd() =>
       '$year-${month.toString().padLeft(2, '0')}-${day.toString().padLeft(2, '0')}';
+
+  /// 예: 'Sep 18, 2026 · 11:30' (REST-08 저장 완료 화면)
+  String toDateTimeLabel() =>
+      '${DateFormat('MMM d, y', 'en_US').format(this)} · '
+      '${DateFormat('HH:mm', 'en_US').format(this)}';
 }

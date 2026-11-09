@@ -105,6 +105,12 @@ class ScanFlowNotifier extends Notifier<ScanFlowState> {
     state = state.copyWith(answers: {...state.answers, questionId: answer});
   }
 
+  /// REST-07 결과를 My Checks에 저장합니다.
+  Future<void> save() async {
+    // TODO: 저장 API를 연결합니다. 연동 전까지는 저장 시각만 기록합니다.
+    state = state.copyWith(savedAt: DateTime.now());
+  }
+
   ScanMenuItem _newItem({
     required String koreanName,
     required String englishName,

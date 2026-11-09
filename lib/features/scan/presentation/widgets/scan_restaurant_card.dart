@@ -6,9 +6,16 @@ import '../../data/models/scan_restaurant.dart';
 
 /// 스캔 화면 상단에 표시하는 식당 정보 카드입니다.
 class ScanRestaurantCard extends StatelessWidget {
-  const ScanRestaurantCard({super.key, required this.restaurant});
+  const ScanRestaurantCard({
+    super.key,
+    required this.restaurant,
+    this.borderRadius = 20,
+  });
 
   final ScanRestaurant restaurant;
+
+  /// 모서리 반경입니다. REST-02는 20, REST-08은 18입니다.
+  final double borderRadius;
 
   @override
   Widget build(BuildContext context) {
@@ -17,7 +24,7 @@ class ScanRestaurantCard extends StatelessWidget {
       padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 30),
       decoration: BoxDecoration(
         color: BitokColors.blue2,
-        borderRadius: BorderRadius.circular(20),
+        borderRadius: BorderRadius.circular(borderRadius),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
