@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../data/models/scan_menu_item.dart';
+import '../../data/models/staff_question.dart';
 import 'scan_flow_state.dart';
 
 /// 메뉴 스캔 플로우의 상태(이미지, 인식한 메뉴 목록, 선택한 메뉴)를 관리합니다.
@@ -65,6 +66,38 @@ class ScanFlowNotifier extends Notifier<ScanFlowState> {
     );
   }
 
+  /// REST-05에서 고른 메뉴를 분석해 직원에게 확인할 질문을 만듭니다.
+  ///
+  /// 같은 질문(메뉴와 재료가 같은 질문)에 이미 답했다면 그 답변은 유지합니다.
+  /// (REST-06 → REST-05로 돌아가 선택을 바꾼 뒤 다시 Next를 누르는 경우)
+  Future<void> analyze() async {
+    // TODO: 메뉴 분석 API를 연결하면 응답으로 질문 목록을 채웁니다.
+    // 연동 전까지는 임시 데이터(_mockIngredientsToCheck)로 질문을 만듭니다.
+    final questions = [
+      for (final item in state.selectedItems)
+        for (final ingredient
+            in _mockIngredientsToCheck[item.koreanName] ?? const [])
+          StaffQuestion(
+            itemId: item.id,
+            menuKoreanName: item.koreanName,
+            menuEnglishName: item.englishName,
+            ingredient: ingredient,
+          ),
+    ];
+    final questionIds = questions.map((question) => question.id).toSet();
+    state = state.copyWith(
+      questions: questions,
+      answers: Map.fromEntries(
+        state.answers.entries.where((e) => questionIds.contains(e.key)),
+      ),
+    );
+  }
+
+  /// REST-06에서 직원의 답변을 기록합니다.
+  void answer(String questionId, StaffAnswer answer) {
+    state = state.copyWith(answers: {...state.answers, questionId: answer});
+  }
+
   ScanMenuItem _newItem({
     required String koreanName,
     required String englishName,
@@ -80,3 +113,12 @@ class ScanFlowNotifier extends Notifier<ScanFlowState> {
 final scanFlowProvider = NotifierProvider<ScanFlowNotifier, ScanFlowState>(
   ScanFlowNotifier.new,
 );
+
+// TODO: 메뉴 분석 API 연동 후 삭제합니다. 메뉴(한글 이름)별로 직원에게 확인할 재료입니다.
+const Map<String, List<StaffCheckIngredient>> _mockIngredientsToCheck = {
+  '김치찌개': [
+    StaffCheckIngredient(koreanName: '새우', englishName: 'shrimp'),
+    StaffCheckIngredient(koreanName: '멸치', englishName: 'anchovy'),
+  ],
+  '불고기': [StaffCheckIngredient(koreanName: '고기', englishName: 'meat')],
+};

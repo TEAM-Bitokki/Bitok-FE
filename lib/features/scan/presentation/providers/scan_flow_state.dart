@@ -1,4 +1,5 @@
 import '../../data/models/scan_menu_item.dart';
+import '../../data/models/staff_question.dart';
 
 /// 메뉴 스캔 플로우(REST-02 ~ REST-08) 동안 화면끼리 공유하는 상태입니다.
 class ScanFlowState {
@@ -6,6 +7,8 @@ class ScanFlowState {
     this.imagePath,
     this.items = const [],
     this.selectedIds = const {},
+    this.questions = const [],
+    this.answers = const {},
   });
 
   /// 스캔한 메뉴판 이미지 경로입니다.
@@ -16,6 +19,12 @@ class ScanFlowState {
 
   /// REST-05에서 분석하려고 고른 메뉴의 id입니다.
   final Set<String> selectedIds;
+
+  /// REST-06에서 직원에게 확인할 질문 목록입니다.
+  final List<StaffQuestion> questions;
+
+  /// 질문 id([StaffQuestion.id])별 직원 답변입니다.
+  final Map<String, StaffAnswer> answers;
 
   /// [selectedIds]에 해당하는 메뉴를 목록 순서대로 반환합니다.
   List<ScanMenuItem> get selectedItems =>
@@ -30,11 +39,15 @@ class ScanFlowState {
     String? imagePath,
     List<ScanMenuItem>? items,
     Set<String>? selectedIds,
+    List<StaffQuestion>? questions,
+    Map<String, StaffAnswer>? answers,
   }) {
     return ScanFlowState(
       imagePath: imagePath ?? this.imagePath,
       items: items ?? this.items,
       selectedIds: selectedIds ?? this.selectedIds,
+      questions: questions ?? this.questions,
+      answers: answers ?? this.answers,
     );
   }
 }

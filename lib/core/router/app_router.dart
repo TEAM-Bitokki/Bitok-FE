@@ -19,6 +19,7 @@ import '../../features/onboarding/presentation/screens/onboarding_nickname_scree
 import '../../features/onboarding/presentation/screens/onboarding_review_screen.dart';
 import '../../features/scan/data/models/scan_restaurant.dart';
 import '../../features/scan/presentation/providers/scan_flow_provider.dart';
+import '../../features/scan/presentation/screens/scan_ask_staff_screen.dart';
 import '../../features/scan/presentation/screens/scan_check_screen.dart';
 import '../../features/scan/presentation/screens/scan_preview_screen.dart';
 import '../../features/scan/presentation/screens/scan_screen.dart';
@@ -56,6 +57,7 @@ class AppRoutes {
   static const String scanPreview = '/scan/preview';
   static const String scanCheck = '/scan/check';
   static const String scanSelect = '/scan/select';
+  static const String scanAskStaff = '/scan/ask-staff';
 }
 
 // 바텀 네비게이션이 필요한 화면은 StatefulShellRoute의 branch에만 추가합니다.
@@ -231,8 +233,25 @@ final GoRouter appRouter = GoRouter(
       path: AppRoutes.scanSelect,
       builder: (context, state) => ScanSelectScreen(
         onBack: () => context.pop(),
-        // TODO: REST-06 분석 결과 화면으로 이동합니다.
-        onNext: () {},
+        onNext: () async {
+          final container = ProviderScope.containerOf(context);
+          await container.read(scanFlowProvider.notifier).analyze();
+          if (!context.mounted) return;
+          if (container.read(scanFlowProvider).questions.isEmpty) {
+            // 직원에게 확인할 질문이 없으면 REST-06을 건너뜁니다.
+            // TODO: REST-07 결과 화면으로 이동합니다.
+            return;
+          }
+          context.push(AppRoutes.scanAskStaff);
+        },
+      ),
+    ),
+    GoRoute(
+      path: AppRoutes.scanAskStaff,
+      builder: (context, state) => ScanAskStaffScreen(
+        onBack: () => context.pop(),
+        // TODO: REST-07 결과 화면으로 이동합니다.
+        onComplete: () {},
       ),
     ),
   ],
