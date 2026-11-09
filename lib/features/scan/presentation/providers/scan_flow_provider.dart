@@ -11,6 +11,9 @@ class ScanFlowNotifier extends Notifier<ScanFlowState> {
   @override
   ScanFlowState build() => const ScanFlowState();
 
+  /// 이전 스캔 결과를 모두 지웁니다. 새 스캔 플로우를 시작할 때 호출합니다.
+  void reset() => state = const ScanFlowState();
+
   /// 메뉴판 이미지에서 메뉴를 인식합니다.
   ///
   /// 이미 인식한 이미지와 같으면 다시 인식하지 않아, REST-04에서 고친 목록이 유지됩니다.

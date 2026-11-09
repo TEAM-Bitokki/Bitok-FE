@@ -22,6 +22,7 @@ import '../../features/scan/presentation/providers/scan_flow_provider.dart';
 import '../../features/scan/presentation/screens/scan_ask_staff_screen.dart';
 import '../../features/scan/presentation/screens/scan_check_screen.dart';
 import '../../features/scan/presentation/screens/scan_preview_screen.dart';
+import '../../features/scan/presentation/screens/scan_result_screen.dart';
 import '../../features/scan/presentation/screens/scan_screen.dart';
 import '../../features/scan/presentation/screens/scan_select_screen.dart';
 import 'main_shell.dart';
@@ -58,6 +59,7 @@ class AppRoutes {
   static const String scanCheck = '/scan/check';
   static const String scanSelect = '/scan/select';
   static const String scanAskStaff = '/scan/ask-staff';
+  static const String scanResult = '/scan/result';
 }
 
 // 바텀 네비게이션이 필요한 화면은 StatefulShellRoute의 branch에만 추가합니다.
@@ -104,7 +106,13 @@ final GoRouter appRouter = GoRouter(
                 onProfileTap: () => context.push(AppRoutes.myPage),
                 // TODO: REST-02 진입점(식당 상세 등)이 만들어지면 원래대로 explore로 이동합니다.
                 // 그전까지는 스캔 화면 확인을 위한 임시 진입점으로 사용합니다.
-                onCheckMenuTap: () => context.push(AppRoutes.scan),
+                onCheckMenuTap: () {
+                  // 새 스캔을 시작하므로 이전 스캔 결과를 지웁니다.
+                  ProviderScope.containerOf(
+                    context,
+                  ).read(scanFlowProvider.notifier).reset();
+                  context.push(AppRoutes.scan);
+                },
                 // TODO: 메뉴 상세 화면이 만들어지면 onRecentCheckTap을 연결합니다.
               ),
             ),
@@ -239,7 +247,7 @@ final GoRouter appRouter = GoRouter(
           if (!context.mounted) return;
           if (container.read(scanFlowProvider).questions.isEmpty) {
             // 직원에게 확인할 질문이 없으면 REST-06을 건너뜁니다.
-            // TODO: REST-07 결과 화면으로 이동합니다.
+            context.push(AppRoutes.scanResult);
             return;
           }
           context.push(AppRoutes.scanAskStaff);
@@ -250,8 +258,17 @@ final GoRouter appRouter = GoRouter(
       path: AppRoutes.scanAskStaff,
       builder: (context, state) => ScanAskStaffScreen(
         onBack: () => context.pop(),
-        // TODO: REST-07 결과 화면으로 이동합니다.
-        onComplete: () {},
+        onComplete: () => context.push(AppRoutes.scanResult),
+      ),
+    ),
+    GoRoute(
+      path: AppRoutes.scanResult,
+      builder: (context, state) => ScanResultScreen(
+        onBack: () => context.pop(),
+        // TODO: 저장 API 호출 후 REST-08 저장 완료 화면으로 이동합니다.
+        onSave: () {},
+        onFinish: () => context.go(AppRoutes.home),
+        // TODO: 메뉴 상세 화면이 만들어지면 연결합니다.
       ),
     ),
   ],

@@ -1,3 +1,4 @@
+import '../../../../common/widgets/bitok_status_chip.dart';
 import '../../data/models/scan_menu_item.dart';
 import '../../data/models/staff_question.dart';
 
@@ -29,6 +30,23 @@ class ScanFlowState {
   /// [selectedIds]에 해당하는 메뉴를 목록 순서대로 반환합니다.
   List<ScanMenuItem> get selectedItems =>
       items.where((item) => selectedIds.contains(item.id)).toList();
+
+  /// REST-07에 표시할 메뉴의 판정 결과입니다.
+  ///
+  /// 직원 답변이 '들어가요'면 Avoid, '모르겠어요'면 Not Sure, '안 들어가요'면 Safe입니다.
+  /// 아직 답하지 않은 메뉴는 Not Sure로 표시합니다.
+  BitokMenuStatus statusOf(String itemId) {
+    return switch (answers[itemId]) {
+      StaffAnswer.contains => BitokMenuStatus.avoid,
+      StaffAnswer.notContains => BitokMenuStatus.safe,
+      StaffAnswer.notSure || null => BitokMenuStatus.notSure,
+    };
+  }
+
+  /// 예: '3 menu items checked'
+  String get checkedLabel => selectedIds.length == 1
+      ? '1 menu item checked'
+      : '${selectedIds.length} menu items checked';
 
   /// 예: '3 menu items recognized'
   String get recognizedLabel => items.length == 1

@@ -247,8 +247,11 @@ class _MenuName extends StatelessWidget {
       crossAxisAlignment: CrossAxisAlignment.baseline,
       textBaseline: TextBaseline.alphabetic,
       children: [
-        _KoreanName(koreanName),
-        const SizedBox(width: 10),
+        // 사용자가 직접 추가한 메뉴처럼 한글 이름이 없으면 영문 이름만 보여줍니다.
+        if (koreanName.isNotEmpty) ...[
+          _KoreanName(koreanName),
+          const SizedBox(width: 10),
+        ],
         Flexible(child: _EnglishName(englishName, color: englishColor)),
       ],
     );
