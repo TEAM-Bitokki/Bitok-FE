@@ -81,6 +81,8 @@ class BitokConfirmDialog extends StatelessWidget {
       ) {
     return showDialog<bool>(
       context: context,
+      // 시안의 Modal Scrim(검정 28%)과 맞춥니다.
+      barrierColor: const Color(0x47000000),
       builder: (c) => Dialog(
         backgroundColor: Colors.transparent,
         elevation: 0,

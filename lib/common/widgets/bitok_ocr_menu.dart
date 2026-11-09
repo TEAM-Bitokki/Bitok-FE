@@ -102,6 +102,14 @@ class BitokOcrMenuItem extends StatelessWidget {
   }
 
   Widget _names() {
+    // 사용자가 직접 추가한 메뉴처럼 한글 이름이 없으면 영문 이름만 한 줄로 보여줍니다.
+    if (koreanName.isEmpty) {
+      return Text(
+        englishName,
+        style: BitokTextStyles.body1.copyWith(color: BitokColors.text),
+      );
+    }
+
     return Column(
       mainAxisSize: MainAxisSize.min,
       crossAxisAlignment: CrossAxisAlignment.start,

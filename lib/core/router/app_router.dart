@@ -1,3 +1,4 @@
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../common/widgets/bitok_status_chip.dart';
@@ -17,6 +18,8 @@ import '../../features/onboarding/presentation/screens/onboarding_diet_screen.da
 import '../../features/onboarding/presentation/screens/onboarding_nickname_screen.dart';
 import '../../features/onboarding/presentation/screens/onboarding_review_screen.dart';
 import '../../features/scan/data/models/scan_restaurant.dart';
+import '../../features/scan/presentation/providers/scan_flow_provider.dart';
+import '../../features/scan/presentation/screens/scan_check_screen.dart';
 import '../../features/scan/presentation/screens/scan_preview_screen.dart';
 import '../../features/scan/presentation/screens/scan_screen.dart';
 import 'main_shell.dart';
@@ -50,6 +53,7 @@ class AppRoutes {
   // 메뉴 스캔 (REST-02 ~ REST-08)
   static const String scan = '/scan';
   static const String scanPreview = '/scan/preview';
+  static const String scanCheck = '/scan/check';
 }
 
 // 바텀 네비게이션이 필요한 화면은 StatefulShellRoute의 branch에만 추가합니다.
@@ -205,7 +209,20 @@ final GoRouter appRouter = GoRouter(
       builder: (context, state) => ScanPreviewScreen(
         imagePath: state.extra! as String,
         onBack: () => context.pop(),
-        // TODO: REST-04 인식 결과 확인 화면으로 이동합니다.
+        onNext: () async {
+          // 라우터는 위젯 트리 밖에 있으므로 ProviderScope에서 직접 provider를 읽습니다.
+          await ProviderScope.containerOf(
+            context,
+          ).read(scanFlowProvider.notifier).recognize(state.extra! as String);
+          if (context.mounted) context.push(AppRoutes.scanCheck);
+        },
+      ),
+    ),
+    GoRoute(
+      path: AppRoutes.scanCheck,
+      builder: (context, state) => ScanCheckScreen(
+        onBack: () => context.pop(),
+        // TODO: REST-05 메뉴 선택 화면으로 이동합니다.
         onNext: () {},
       ),
     ),
