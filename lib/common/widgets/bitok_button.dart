@@ -4,14 +4,7 @@ import 'package:flutter/widget_previews.dart';
 import '../../core/design_system/bitok_colors.dart';
 import '../../core/design_system/bitok_text_styles.dart';
 
-enum BitokButtonVariant {
-  primary,
-  red,
-  yellow,
-  green,
-  delete,
-  login,
-}
+enum BitokButtonVariant { primary, red, yellow, green, delete, login }
 
 class BitokButton extends StatelessWidget {
   const BitokButton({
@@ -38,8 +31,15 @@ class BitokButton extends StatelessWidget {
         clipBehavior: Clip.antiAlias,
         child: InkWell(
           onTap: onPressed,
-          child: Center(
-            child: Text(label, style: s.textStyle.copyWith(color: s.foreground)),
+          child: Padding(
+            padding: EdgeInsets.symmetric(horizontal: s.horizontalPadding),
+            child: Align(
+              alignment: s.alignment,
+              child: Text(
+                label,
+                style: s.textStyle.copyWith(color: s.foreground),
+              ),
+            ),
           ),
         ),
       ),
@@ -51,23 +51,25 @@ class BitokButton extends StatelessWidget {
       case BitokButtonVariant.primary:
         return enabled
             ? const _ButtonStyle(
-          background: BitokColors.primary,
-          foreground: BitokColors.white,
-          radius: 10,
-          textStyle: BitokTextStyles.buttonText,
-        )
+                background: BitokColors.primary,
+                foreground: BitokColors.white,
+                radius: 10,
+                textStyle: BitokTextStyles.buttonText,
+              )
             : const _ButtonStyle(
-          background: BitokColors.grey2,
-          foreground: BitokColors.grey0,
-          radius: 10,
-          textStyle: BitokTextStyles.buttonText,
-        );
+                background: BitokColors.grey2,
+                foreground: BitokColors.grey0,
+                radius: 10,
+                textStyle: BitokTextStyles.buttonText,
+              );
       case BitokButtonVariant.red:
         return const _ButtonStyle(
           background: BitokColors.red1,
           foreground: BitokColors.white,
           radius: 30,
           textStyle: BitokTextStyles.buttonKOR,
+          alignment: _answerAlignment,
+          horizontalPadding: _answerPadding,
         );
       case BitokButtonVariant.yellow:
         return const _ButtonStyle(
@@ -75,6 +77,8 @@ class BitokButton extends StatelessWidget {
           foreground: BitokColors.white,
           radius: 30,
           textStyle: BitokTextStyles.buttonKOR,
+          alignment: _answerAlignment,
+          horizontalPadding: _answerPadding,
         );
       case BitokButtonVariant.green:
         return const _ButtonStyle(
@@ -82,21 +86,23 @@ class BitokButton extends StatelessWidget {
           foreground: BitokColors.white,
           radius: 30,
           textStyle: BitokTextStyles.buttonKOR,
+          alignment: _answerAlignment,
+          horizontalPadding: _answerPadding,
         );
       case BitokButtonVariant.delete:
         return enabled
             ? const _ButtonStyle(
-          background: BitokColors.red2,
-          foreground: BitokColors.text,
-          radius: 10,
-          textStyle: BitokTextStyles.buttonText,
-        )
+                background: BitokColors.red2,
+                foreground: BitokColors.text,
+                radius: 10,
+                textStyle: BitokTextStyles.buttonText,
+              )
             : const _ButtonStyle(
-          background: BitokColors.grey2,
-          foreground: BitokColors.grey0,
-          radius: 10,
-          textStyle: BitokTextStyles.buttonText,
-        );
+                background: BitokColors.grey2,
+                foreground: BitokColors.grey0,
+                radius: 10,
+                textStyle: BitokTextStyles.buttonText,
+              );
       case BitokButtonVariant.login:
         return const _ButtonStyle(
           background: BitokColors.primary,
@@ -108,18 +114,26 @@ class BitokButton extends StatelessWidget {
   }
 }
 
+// red / yellow / green(직원 답변 버튼)은 시안처럼 글자를 왼쪽에서 30만큼 띄워 배치합니다.
+const Alignment _answerAlignment = Alignment.centerLeft;
+const double _answerPadding = 30;
+
 class _ButtonStyle {
   const _ButtonStyle({
     required this.background,
     required this.foreground,
     required this.radius,
     required this.textStyle,
+    this.alignment = Alignment.center,
+    this.horizontalPadding = 0,
   });
 
   final Color background;
   final Color foreground;
   final double radius;
   final TextStyle textStyle;
+  final Alignment alignment;
+  final double horizontalPadding;
 }
 
 @Preview(group: 'Components', name: 'Button', size: Size(390, 620))
