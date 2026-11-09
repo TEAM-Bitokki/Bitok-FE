@@ -26,11 +26,9 @@ class ScanCheckScreen extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final items = ref.watch(scanFlowProvider.select((state) => state.items));
+    final flow = ref.watch(scanFlowProvider);
+    final items = flow.items;
     final notifier = ref.read(scanFlowProvider.notifier);
-    final countLabel = items.length == 1
-        ? '1 menu item recognized'
-        : '${items.length} menu items recognized';
 
     return Scaffold(
       backgroundColor: BitokColors.white,
@@ -60,7 +58,7 @@ class ScanCheckScreen extends ConsumerWidget {
                 children: [
                   Expanded(
                     child: Text(
-                      countLabel,
+                      flow.recognizedLabel,
                       style: BitokTextStyles.body2.copyWith(
                         color: BitokColors.grey0,
                       ),

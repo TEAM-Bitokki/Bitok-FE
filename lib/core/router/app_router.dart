@@ -22,6 +22,7 @@ import '../../features/scan/presentation/providers/scan_flow_provider.dart';
 import '../../features/scan/presentation/screens/scan_check_screen.dart';
 import '../../features/scan/presentation/screens/scan_preview_screen.dart';
 import '../../features/scan/presentation/screens/scan_screen.dart';
+import '../../features/scan/presentation/screens/scan_select_screen.dart';
 import 'main_shell.dart';
 
 class AppRoutes {
@@ -54,6 +55,7 @@ class AppRoutes {
   static const String scan = '/scan';
   static const String scanPreview = '/scan/preview';
   static const String scanCheck = '/scan/check';
+  static const String scanSelect = '/scan/select';
 }
 
 // 바텀 네비게이션이 필요한 화면은 StatefulShellRoute의 branch에만 추가합니다.
@@ -222,7 +224,14 @@ final GoRouter appRouter = GoRouter(
       path: AppRoutes.scanCheck,
       builder: (context, state) => ScanCheckScreen(
         onBack: () => context.pop(),
-        // TODO: REST-05 메뉴 선택 화면으로 이동합니다.
+        onNext: () => context.push(AppRoutes.scanSelect),
+      ),
+    ),
+    GoRoute(
+      path: AppRoutes.scanSelect,
+      builder: (context, state) => ScanSelectScreen(
+        onBack: () => context.pop(),
+        // TODO: REST-06 분석 결과 화면으로 이동합니다.
         onNext: () {},
       ),
     ),

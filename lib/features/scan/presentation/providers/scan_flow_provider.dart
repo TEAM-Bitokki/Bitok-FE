@@ -3,7 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../data/models/scan_menu_item.dart';
 import 'scan_flow_state.dart';
 
-/// 메뉴 스캔 플로우의 상태(이미지, 인식한 메뉴 목록)를 관리합니다.
+/// 메뉴 스캔 플로우의 상태(이미지, 인식한 메뉴 목록, 선택한 메뉴)를 관리합니다.
 class ScanFlowNotifier extends Notifier<ScanFlowState> {
   int _nextId = 0;
 
@@ -40,11 +40,19 @@ class ScanFlowNotifier extends Notifier<ScanFlowState> {
     );
   }
 
-  /// 메뉴를 목록에서 지웁니다.
+  /// 메뉴를 목록에서 지웁니다. 선택되어 있었다면 선택도 해제합니다.
   void removeItem(String id) {
     state = state.copyWith(
       items: state.items.where((item) => item.id != id).toList(),
+      selectedIds: {...state.selectedIds}..remove(id),
     );
+  }
+
+  /// REST-05에서 메뉴 선택 여부를 바꿉니다.
+  void toggleSelection(String id) {
+    final selectedIds = {...state.selectedIds};
+    if (!selectedIds.remove(id)) selectedIds.add(id);
+    state = state.copyWith(selectedIds: selectedIds);
   }
 
   /// 인식되지 않은 메뉴를 직접 추가합니다.
