@@ -190,10 +190,10 @@ class _PreviewScanFlowNotifier extends ScanFlowNotifier {
         itemId: _kimchi.id,
         menuKoreanName: _kimchi.koreanName,
         menuEnglishName: _kimchi.englishName,
-        ingredient: const StaffCheckIngredient(
-          koreanName: '새우',
-          englishName: 'shrimp',
-        ),
+        ingredients: const [
+          StaffCheckIngredient(koreanName: '새우', englishName: 'shrimp'),
+          StaffCheckIngredient(koreanName: '멸치', englishName: 'anchovy'),
+        ],
       ),
     ],
   );

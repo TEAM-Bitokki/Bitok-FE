@@ -68,21 +68,25 @@ class ScanFlowNotifier extends Notifier<ScanFlowState> {
 
   /// REST-05에서 고른 메뉴를 분석해 직원에게 확인할 질문을 만듭니다.
   ///
-  /// 같은 질문(메뉴와 재료가 같은 질문)에 이미 답했다면 그 답변은 유지합니다.
+  /// 고른 메뉴마다 질문이 한 개씩 만들어집니다(고르지 않은 메뉴는 질문하지 않습니다).
+  /// 이미 답한 메뉴의 답변은 유지합니다.
   /// (REST-06 → REST-05로 돌아가 선택을 바꾼 뒤 다시 Next를 누르는 경우)
   Future<void> analyze() async {
-    // TODO: 메뉴 분석 API를 연결하면 응답으로 질문 목록을 채웁니다.
+    // TODO: 메뉴 분석 API를 연결하면 응답으로 메뉴별 확인할 재료를 채웁니다.
     // 연동 전까지는 임시 데이터(_mockIngredientsToCheck)로 질문을 만듭니다.
     final questions = [
       for (final item in state.selectedItems)
-        for (final ingredient
-            in _mockIngredientsToCheck[item.koreanName] ?? const [])
-          StaffQuestion(
-            itemId: item.id,
-            menuKoreanName: item.koreanName,
-            menuEnglishName: item.englishName,
-            ingredient: ingredient,
-          ),
+        StaffQuestion(
+          itemId: item.id,
+          // 직접 추가한 메뉴는 한글 이름이 없어서 입력한 이름으로 질문합니다.
+          menuKoreanName: item.koreanName.isEmpty
+              ? item.englishName
+              : item.koreanName,
+          menuEnglishName: item.englishName,
+          ingredients:
+              _mockIngredientsToCheck[item.koreanName] ??
+              _mockDefaultIngredients,
+        ),
     ];
     final questionIds = questions.map((question) => question.id).toSet();
     state = state.copyWith(
@@ -122,3 +126,9 @@ const Map<String, List<StaffCheckIngredient>> _mockIngredientsToCheck = {
   ],
   '불고기': [StaffCheckIngredient(koreanName: '고기', englishName: 'meat')],
 };
+
+// TODO: 메뉴 분석 API 연동 후 삭제합니다.
+// 위 표에 없는 메뉴(직접 추가한 메뉴 포함)에 쓰는 기본 재료입니다.
+const List<StaffCheckIngredient> _mockDefaultIngredients = [
+  StaffCheckIngredient(koreanName: '새우', englishName: 'shrimp'),
+];
