@@ -17,6 +17,7 @@ import '../../features/onboarding/presentation/screens/onboarding_diet_screen.da
 import '../../features/onboarding/presentation/screens/onboarding_nickname_screen.dart';
 import '../../features/onboarding/presentation/screens/onboarding_review_screen.dart';
 import '../../features/scan/data/models/scan_restaurant.dart';
+import '../../features/scan/presentation/screens/scan_preview_screen.dart';
 import '../../features/scan/presentation/screens/scan_screen.dart';
 import 'main_shell.dart';
 
@@ -48,6 +49,7 @@ class AppRoutes {
 
   // 메뉴 스캔 (REST-02 ~ REST-08)
   static const String scan = '/scan';
+  static const String scanPreview = '/scan/preview';
 }
 
 // 바텀 네비게이션이 필요한 화면은 StatefulShellRoute의 branch에만 추가합니다.
@@ -191,8 +193,20 @@ final GoRouter appRouter = GoRouter(
       builder: (context, state) => ScanScreen(
         restaurant: _mockScanRestaurant,
         onBack: () => context.pop(),
-        // TODO: REST-03 이미지 확인 화면으로 이동합니다.
-        onImageSelected: (image) {},
+        onImageSelected: (image) =>
+            context.push(AppRoutes.scanPreview, extra: image.path),
+      ),
+    ),
+    // extra로 선택한 이미지 경로(String)를 넘겨받습니다.
+    GoRoute(
+      path: AppRoutes.scanPreview,
+      redirect: (context, state) =>
+          state.extra is String ? null : AppRoutes.scan,
+      builder: (context, state) => ScanPreviewScreen(
+        imagePath: state.extra! as String,
+        onBack: () => context.pop(),
+        // TODO: REST-04 인식 결과 확인 화면으로 이동합니다.
+        onNext: () {},
       ),
     ),
   ],
