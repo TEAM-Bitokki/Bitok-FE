@@ -10,8 +10,14 @@ class ScanFlowNotifier extends Notifier<ScanFlowState> {
   @override
   ScanFlowState build() => const ScanFlowState();
 
-  /// 메뉴판 이미지에서 메뉴를 인식합니다. 이전 스캔 결과는 지웁니다.
+  /// 메뉴판 이미지에서 메뉴를 인식합니다.
+  ///
+  /// 이미 인식한 이미지와 같으면 다시 인식하지 않아, REST-04에서 고친 목록이 유지됩니다.
+  /// (REST-04 → REST-03으로 돌아갔다가 다시 Next를 누르는 경우)
+  /// 다른 이미지면 이전 스캔 결과를 지우고 새로 인식합니다.
   Future<void> recognize(String imagePath) async {
+    if (state.imagePath == imagePath) return;
+
     // TODO: OCR API를 연결하면 응답으로 메뉴 목록을 채웁니다.
     // 연동 전까지는 화면 확인을 위해 임시 데이터를 사용합니다.
     state = ScanFlowState(
