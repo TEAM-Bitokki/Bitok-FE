@@ -106,15 +106,7 @@ final GoRouter appRouter = GoRouter(
               builder: (context, state) => HomeScreen(
                 recentChecks: _mockRecentChecks,
                 onProfileTap: () => context.push(AppRoutes.myPage),
-                // TODO: REST-02 진입점(식당 상세 등)이 만들어지면 원래대로 explore로 이동합니다.
-                // 그전까지는 스캔 화면 확인을 위한 임시 진입점으로 사용합니다.
-                onCheckMenuTap: () {
-                  // 새 스캔을 시작하므로 이전 스캔 결과를 지웁니다.
-                  ProviderScope.containerOf(
-                    context,
-                  ).read(scanFlowProvider.notifier).reset();
-                  context.push(AppRoutes.scan);
-                },
+                onCheckMenuTap: () => context.go(AppRoutes.explore),
                 // TODO: 메뉴 상세 화면이 만들어지면 onRecentCheckTap을 연결합니다.
               ),
             ),
@@ -205,7 +197,11 @@ final GoRouter appRouter = GoRouter(
     ),
 
     // ---- 메뉴 스캔 (네비게이션 바 없음) ----
-    // TODO: 식당 정보는 진입한 화면에서 넘겨받도록 바꿉니다.
+    // TODO: REST-02 진입점(식당 상세 등)을 만들면 아래 두 가지를 처리합니다.
+    //  - 식당 정보를 진입한 화면에서 넘겨받습니다.
+    //  - 이전 스캔 결과가 남지 않도록 이동 전에 상태를 초기화합니다.
+    //      ProviderScope.containerOf(context).read(scanFlowProvider.notifier).reset();
+    //      context.push(AppRoutes.scan);
     GoRoute(
       path: AppRoutes.scan,
       builder: (context, state) => ScanScreen(
