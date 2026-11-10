@@ -26,6 +26,10 @@
 	<string>$(FLUTTER_BUILD_NUMBER)</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
+	<key>NSCameraUsageDescription</key>
+	<string>Bitok uses the camera to take a photo of the menu.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>Bitok needs access to your photos to choose a menu image.</string>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>

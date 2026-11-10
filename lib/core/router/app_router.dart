@@ -1,3 +1,4 @@
+import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../common/widgets/bitok_status_chip.dart';
@@ -16,6 +17,15 @@ import '../../features/onboarding/presentation/screens/onboarding_complete_scree
 import '../../features/onboarding/presentation/screens/onboarding_diet_screen.dart';
 import '../../features/onboarding/presentation/screens/onboarding_nickname_screen.dart';
 import '../../features/onboarding/presentation/screens/onboarding_review_screen.dart';
+import '../../features/scan/data/models/scan_restaurant.dart';
+import '../../features/scan/presentation/providers/scan_flow_provider.dart';
+import '../../features/scan/presentation/screens/scan_ask_staff_screen.dart';
+import '../../features/scan/presentation/screens/scan_check_screen.dart';
+import '../../features/scan/presentation/screens/scan_preview_screen.dart';
+import '../../features/scan/presentation/screens/scan_result_screen.dart';
+import '../../features/scan/presentation/screens/scan_saved_screen.dart';
+import '../../features/scan/presentation/screens/scan_screen.dart';
+import '../../features/scan/presentation/screens/scan_select_screen.dart';
 import 'main_shell.dart';
 
 class AppRoutes {
@@ -43,6 +53,15 @@ class AppRoutes {
   static const String dietPreference = '/onboarding/diet';
 
   static const String restaurantDetail = '/restaurant';
+
+  // 메뉴 스캔 (REST-02 ~ REST-08)
+  static const String scan = '/scan';
+  static const String scanPreview = '/scan/preview';
+  static const String scanCheck = '/scan/check';
+  static const String scanSelect = '/scan/select';
+  static const String scanAskStaff = '/scan/ask-staff';
+  static const String scanResult = '/scan/result';
+  static const String scanSaved = '/scan/saved';
 }
 
 // 바텀 네비게이션이 필요한 화면은 StatefulShellRoute의 branch에만 추가합니다.
@@ -165,7 +184,6 @@ final GoRouter appRouter = GoRouter(
 
     // ---- 온보딩 (알레르기 / 식단) ----
 
-
     // ---- 식당 상세 ----
     // TODO: 식당 id를 받도록 '/restaurant/:id' 형태로 바꿉니다.
     GoRoute(
@@ -175,6 +193,92 @@ final GoRouter appRouter = GoRouter(
         info: 'Korean · 350 m',
         menus: _mockCheckedMenus,
         onBack: () => context.pop(),
+      ),
+    ),
+
+    // ---- 메뉴 스캔 (네비게이션 바 없음) ----
+    // TODO: REST-02 진입점(식당 상세 등)을 만들면 아래 두 가지를 처리합니다.
+    //  - 식당 정보를 진입한 화면에서 넘겨받습니다.
+    //  - 이전 스캔 결과가 남지 않도록 이동 전에 상태를 초기화합니다.
+    //      ProviderScope.containerOf(context).read(scanFlowProvider.notifier).reset();
+    //      context.push(AppRoutes.scan);
+    GoRoute(
+      path: AppRoutes.scan,
+      builder: (context, state) => ScanScreen(
+        restaurant: _mockScanRestaurant,
+        onBack: () => context.pop(),
+        onImageSelected: (image) =>
+            context.push(AppRoutes.scanPreview, extra: image.path),
+      ),
+    ),
+    // extra로 선택한 이미지 경로(String)를 넘겨받습니다.
+    GoRoute(
+      path: AppRoutes.scanPreview,
+      redirect: (context, state) =>
+          state.extra is String ? null : AppRoutes.scan,
+      builder: (context, state) => ScanPreviewScreen(
+        imagePath: state.extra! as String,
+        onBack: () => context.pop(),
+        onNext: () async {
+          // 라우터는 위젯 트리 밖에 있으므로 ProviderScope에서 직접 provider를 읽습니다.
+          await ProviderScope.containerOf(
+            context,
+          ).read(scanFlowProvider.notifier).recognize(state.extra! as String);
+          if (context.mounted) context.push(AppRoutes.scanCheck);
+        },
+      ),
+    ),
+    GoRoute(
+      path: AppRoutes.scanCheck,
+      builder: (context, state) => ScanCheckScreen(
+        onBack: () => context.pop(),
+        onNext: () => context.push(AppRoutes.scanSelect),
+      ),
+    ),
+    GoRoute(
+      path: AppRoutes.scanSelect,
+      builder: (context, state) => ScanSelectScreen(
+        onBack: () => context.pop(),
+        onNext: () async {
+          final container = ProviderScope.containerOf(context);
+          await container.read(scanFlowProvider.notifier).analyze();
+          if (!context.mounted) return;
+          if (container.read(scanFlowProvider).questions.isEmpty) {
+            // 직원에게 확인할 질문이 없으면 REST-06을 건너뜁니다.
+            context.push(AppRoutes.scanResult);
+            return;
+          }
+          context.push(AppRoutes.scanAskStaff);
+        },
+      ),
+    ),
+    GoRoute(
+      path: AppRoutes.scanAskStaff,
+      builder: (context, state) => ScanAskStaffScreen(
+        onBack: () => context.pop(),
+        onComplete: () => context.push(AppRoutes.scanResult),
+      ),
+    ),
+    GoRoute(
+      path: AppRoutes.scanResult,
+      builder: (context, state) => ScanResultScreen(
+        onBack: () => context.pop(),
+        onSave: () async {
+          await ProviderScope.containerOf(
+            context,
+          ).read(scanFlowProvider.notifier).save();
+          if (context.mounted) context.push(AppRoutes.scanSaved);
+        },
+        onFinish: () => context.go(AppRoutes.home),
+        // TODO: 메뉴 상세 화면이 만들어지면 연결합니다.
+      ),
+    ),
+    GoRoute(
+      path: AppRoutes.scanSaved,
+      builder: (context, state) => ScanSavedScreen(
+        restaurant: _mockScanRestaurant,
+        onBack: () => context.pop(),
+        onDone: () => context.go(AppRoutes.home),
       ),
     ),
   ],
@@ -246,6 +350,11 @@ const List<SavedMenu> _mockSavedMenus = [
     status: BitokMenuStatus.safe,
   ),
 ];
+const ScanRestaurant _mockScanRestaurant = ScanRestaurant(
+  name: 'Myeongdong Kyoja',
+  category: 'Korean Restaurant',
+  address: '29 Myeongdong 10-gil, Jung-gu',
+);
 const List<CheckedMenu> _mockCheckedMenus = [
   CheckedMenu(koreanName: '김치찌개', englishName: 'Kimchi Jjigae'),
   CheckedMenu(koreanName: '비빔밥', englishName: 'Bibimbap'),
