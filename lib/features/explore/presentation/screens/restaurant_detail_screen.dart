@@ -16,14 +16,14 @@ class CheckedMenu {
   final String englishName;
 }
 
+/// 저장(북마크) 상태는 바깥에서 받습니다. ([saved], [onToggleSaved])
 class RestaurantDetailScreen extends StatelessWidget {
   const RestaurantDetailScreen({
     super.key,
     required this.name,
     required this.info,
     required this.menus,
-    this.image,
-    this.saved = true,
+    this.saved = false,
     this.onBack,
     this.onToggleSaved,
     this.onForYouTap,
@@ -31,11 +31,8 @@ class RestaurantDetailScreen extends StatelessWidget {
   });
 
   final String name;
-
-  /// 예: "Korean · 350 m"
   final String info;
   final List<CheckedMenu> menus;
-  final Widget? image;
   final bool saved;
 
   final VoidCallback? onBack;
@@ -67,32 +64,13 @@ class RestaurantDetailScreen extends StatelessWidget {
                     ),
                   ),
                 ),
-                GestureDetector(
-                  behavior: HitTestBehavior.opaque,
-                  onTap: onToggleSaved,
-                  child: Padding(
-                    padding: const EdgeInsets.only(top: 4),
-                    child: SvgPicture.asset(
-                      saved ? BitokIcons.saveOn24 : BitokIcons.saveOff24,
-                      width: 24,
-                      height: 24,
-                    ),
-                  ),
-                ),
+                _BookmarkButton(saved: saved, onTap: onToggleSaved),
               ],
             ),
             const SizedBox(height: 3),
             Text(
               info,
               style: BitokTextStyles.body2.copyWith(color: BitokColors.grey0),
-            ),
-            const SizedBox(height: 25),
-            ClipRRect(
-              borderRadius: BorderRadius.circular(18),
-              child: SizedBox(
-                height: 180,
-                child: image ?? const _ImagePlaceholder(),
-              ),
             ),
             const SizedBox(height: 30),
             Row(
@@ -144,21 +122,23 @@ class RestaurantDetailScreen extends StatelessWidget {
   }
 }
 
-class _ImagePlaceholder extends StatelessWidget {
-  const _ImagePlaceholder();
+class _BookmarkButton extends StatelessWidget {
+  const _BookmarkButton({required this.saved, this.onTap});
+
+  final bool saved;
+  final VoidCallback? onTap;
 
   @override
   Widget build(BuildContext context) {
-    return ColoredBox(
-      color: BitokColors.grey1,
-      child: Center(
-        child: Text(
-          'RESTAURANT',
-          style: BitokTextStyles.subTitle.copyWith(
-            fontSize: 20,
-            fontWeight: FontWeight.w600,
-            color: BitokColors.grey0,
-          ),
+    return GestureDetector(
+      behavior: HitTestBehavior.opaque,
+      onTap: onTap,
+      child: Padding(
+        padding: const EdgeInsets.only(top: 4),
+        child: SvgPicture.asset(
+          saved ? BitokIcons.saveOn24 : BitokIcons.saveOff24,
+          width: 24,
+          height: 24,
         ),
       ),
     );
