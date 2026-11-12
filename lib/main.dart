@@ -1,5 +1,7 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:kakao_map_sdk/kakao_map_sdk.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 import 'core/design_system/bitok_colors.dart';
@@ -7,8 +9,12 @@ import 'core/providers/shared_preferences_provider.dart';
 import 'core/router/app_router.dart';
 import 'l10n/generated/app_localizations.dart';
 
+const _kakaoNativeKey = String.fromEnvironment('KAKAO_NATIVE_KEY');
+
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  await KakaoMapSdk.instance.initialize(_kakaoNativeKey);
+  if (kDebugMode) await KakaoMapSdk.instance.hashKey();
   final sharedPreferences = await SharedPreferences.getInstance();
 
   runApp(
@@ -29,7 +35,6 @@ class BitokApp extends StatelessWidget {
     return MaterialApp.router(
       title: 'Bitok',
       debugShowCheckedModeBanner: false,
-      // 기기 언어와 관계없이 영어로 고정합니다.
       locale: const Locale('en'),
       theme: ThemeData(
         colorScheme: ColorScheme.fromSeed(seedColor: BitokColors.primary),
