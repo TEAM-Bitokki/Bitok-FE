@@ -26,6 +26,18 @@ android {
         versionName = flutter.versionName
     }
 
+    // 팀 공용 debug 키스토어. 모든 PC에서 같은 서명(키 해시)이 되어
+    // 카카오 콘솔에 해시를 한 번만 등록하면 됩니다.
+    // 비밀번호가 공개된 debug 용이므로 커밋해도 됩니다. (정식 배포용 키스토어는 절대 올리지 마세요.)
+    signingConfigs {
+        getByName("debug") {
+            storeFile = file("bitok-debug.keystore")
+            storePassword = "android"
+            keyAlias = "androiddebugkey"
+            keyPassword = "android"
+        }
+    }
+
     buildTypes {
         release {
             // TODO: Add your own signing config for the release build.
