@@ -39,7 +39,9 @@ class _RestaurantMapSearchViewState extends State<RestaurantMapSearchView> {
   void initState() {
     super.initState();
     _focusNode.addListener(() {
-      setState(() => _searching = _focusNode.hasFocus);
+      if (_focusNode.hasFocus && !_searching) {
+        setState(() => _searching = true);
+      }
     });
   }
 
@@ -63,8 +65,17 @@ class _RestaurantMapSearchViewState extends State<RestaurantMapSearchView> {
   }
 
   void _select(MapRestaurant restaurant) {
-    setState(() => _selected = restaurant);
+    setState(() {
+      _selected = restaurant;
+      _searching = false;
+    });
     _controller.text = restaurant.name;
+    _focusNode.unfocus();
+  }
+
+  void _closeSearch() {
+    setState(() => _searching = false);
+    _controller.text = _selected?.name ?? '';
     _focusNode.unfocus();
   }
 
@@ -77,37 +88,45 @@ class _RestaurantMapSearchViewState extends State<RestaurantMapSearchView> {
   Widget build(BuildContext context) {
     final selected = _selected;
 
-    return Stack(
-      children: [
-        Positioned.fill(
-          child: _searching
-              ? _ResultList(results: _results, onTap: _select)
-              : RestaurantMapView(
-            restaurants: widget.restaurants,
-            selectedId: selected?.id,
-            onRestaurantTap: _select,
-            onMapTap: _clearSelection,
-            onMyLocationTap: widget.onMyLocationTap,
-            sheet: selected == null
-                ? null
-                : widget.previewBuilder(context, selected),
+    return PopScope(
+      canPop: !_searching,
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop) _closeSearch();
+      },
+      child: Stack(
+        children: [
+          Positioned.fill(
+            child: RestaurantMapView(
+              restaurants: widget.restaurants,
+              selectedId: selected?.id,
+              onRestaurantTap: _select,
+              onMapTap: _clearSelection,
+              onMyLocationTap: widget.onMyLocationTap,
+              sheet: selected == null
+                  ? null
+                  : widget.previewBuilder(context, selected),
+            ),
           ),
-        ),
-        Positioned(
-          top: 12,
-          left: 24,
-          right: 24,
-          child: BitokSearchField(
-            controller: _controller,
-            focusNode: _focusNode,
-            hintText: 'Search restaurants',
-            variant: _searching
-                ? BitokTextFieldVariant.grey
-                : BitokTextFieldVariant.white,
-            onChanged: (_) => setState(() {}),
+          if (_searching)
+            Positioned.fill(
+              child: _ResultList(results: _results, onTap: _select),
+            ),
+          Positioned(
+            top: 12,
+            left: 24,
+            right: 24,
+            child: BitokSearchField(
+              controller: _controller,
+              focusNode: _focusNode,
+              hintText: 'Search restaurants',
+              variant: _searching
+                  ? BitokTextFieldVariant.grey
+                  : BitokTextFieldVariant.white,
+              onChanged: (_) => setState(() {}),
+            ),
           ),
-        ),
-      ],
+        ],
+      ),
     );
   }
 }
