@@ -1,12 +1,13 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'package:kakao_map_sdk/kakao_map_sdk.dart';
 
 import '../../../../core/design_system/bitok_colors.dart';
+import '../../../../core/design_system/bitok_text_styles.dart';
 import '../../../../core/services/location_service.dart';
 import '../models/map_restaurant.dart';
 import 'marker_image_factory.dart';
-
 
 class RestaurantMapView extends StatefulWidget {
   const RestaurantMapView({
@@ -25,7 +26,6 @@ class RestaurantMapView extends StatefulWidget {
   final VoidCallback? onMapTap;
   final VoidCallback? onMyLocationTap;
 
-
   final Widget? sheet;
 
   @override
@@ -34,10 +34,14 @@ class RestaurantMapView extends StatefulWidget {
 
 class _RestaurantMapViewState extends State<RestaurantMapView> {
   static const _fallbackPosition = LatLng(37.5636, 126.9850);
-  late final Future<({double lat, double lng})?> _startLocation =
-  LocationService.current();
+  static const _poiTapGuard = Duration(milliseconds: 400);
 
-  Poi? _myLocationPoi;
+  late final LatLng _initialPosition;
+
+  ({double lat, double lng})? _startLocation;
+  bool _startApplied = false;
+
+  Future<Poi>? _myLocationPoiFuture;
 
   KakaoMapController? _controller;
 
@@ -45,15 +49,40 @@ class _RestaurantMapViewState extends State<RestaurantMapView> {
 
   final Map<String, _MapMarker> _markers = {};
 
+  int _markerGeneration = 0;
 
   DateTime _lastPoiTap = DateTime.fromMillisecondsSinceEpoch(0);
+
+  @override
+  void initState() {
+    super.initState();
+    final cached = LocationService.cached;
+    _initialPosition = cached == null
+        ? _fallbackPosition
+        : LatLng(cached.lat, cached.lng);
+    LocationService.current().then((location) {
+      if (!mounted) return;
+      _startLocation = location;
+      _applyStartLocation();
+    });
+  }
+
+  void _log(String message, Object error) {
+    if (kDebugMode) debugPrint('$message: $error');
+  }
 
   double _idleButtonBottom(BuildContext context) {
     final inset = MediaQuery.paddingOf(context).bottom;
     return (inset < 34 ? 34 : inset) + 69;
   }
 
-  Future<void> _addMarkers(KakaoMapController controller) async {
+  Future<void> _addMarkers(
+      KakaoMapController controller,
+      int generation,
+      ) async {
+    bool isStale() =>
+        !mounted || _controller != controller || generation != _markerGeneration;
+
     for (final r in widget.restaurants) {
       try {
         final normal = PoiStyle(
@@ -65,20 +94,47 @@ class _RestaurantMapViewState extends State<RestaurantMapView> {
             selected: true,
           ),
         );
+        if (isStale()) return;
         final poi = await controller.labelLayer.addPoi(
           LatLng(r.lat, r.lng),
           style: normal,
         );
+        if (isStale()) {
+          await poi.remove();
+          return;
+        }
         _poiRestaurants[poi.id.toString()] = r;
         _markers[r.id] = _MapMarker(poi, normal, selected);
-      } catch (_) {
+      } catch (e) {
+        _log('addPoi failed', e);
       }
     }
+    if (isStale()) return;
     await _syncSelection();
   }
 
+  Future<void> _reloadMarkers() async {
+    final controller = _controller;
+    if (controller == null) return;
+    final generation = ++_markerGeneration;
+    final old = _markers.values.toList();
+    _markers.clear();
+    _poiRestaurants.clear();
+    for (final marker in old) {
+      try {
+        await marker.poi.remove();
+      } catch (e) {
+        _log('removePoi failed', e);
+      }
+    }
+    if (!mounted || _controller != controller || generation != _markerGeneration) {
+      return;
+    }
+    await _addMarkers(controller, generation);
+  }
+
   Future<void> _syncSelection() async {
-    for (final entry in _markers.entries) {
+    for (final entry in _markers.entries.toList()) {
       final marker = entry.value;
       final shouldSelect = entry.key == widget.selectedId;
       if (marker.selected == shouldSelect) continue;
@@ -87,7 +143,8 @@ class _RestaurantMapViewState extends State<RestaurantMapView> {
         await marker.poi.changeStyles(
           shouldSelect ? marker.selectedStyle : marker.normalStyle,
         );
-      } catch (_) {
+      } catch (e) {
+        _log('changeStyles failed', e);
       }
     }
   }
@@ -109,25 +166,39 @@ class _RestaurantMapViewState extends State<RestaurantMapView> {
   void _onMapReady(KakaoMapController controller) {
     _controller = controller;
     _moveToSelected();
-    _addMarkers(controller);
+    _addMarkers(controller, ++_markerGeneration);
     _showMyLocation(LocationService.cached);
+    _applyStartLocation();
   }
+
+  void _applyStartLocation() {
+    final location = _startLocation;
+    if (location == null || _controller == null || _startApplied) return;
+    _startApplied = true;
+    if (widget.selectedId == null) _moveTo(location);
+    _showMyLocation(location);
+  }
+
   Future<void> _showMyLocation(({double lat, double lng})? location) async {
     final controller = _controller;
     if (location == null || controller == null) return;
     final position = LatLng(location.lat, location.lng);
     try {
-      final existing = _myLocationPoi;
+      final existing = _myLocationPoiFuture;
       if (existing != null) {
-        await existing.move(position);
+        final poi = await existing;
+        await poi.move(position);
       } else {
-        final icon = MarkerImageFactory.myLocation();
-        _myLocationPoi = await controller.labelLayer.addPoi(
+        final future = controller.labelLayer.addPoi(
           position,
-          style: PoiStyle(icon: icon),
+          style: PoiStyle(icon: MarkerImageFactory.myLocation()),
         );
+        _myLocationPoiFuture = future;
+        await future;
       }
-    } catch (_) {
+    } catch (e) {
+      _myLocationPoiFuture = null;
+      _log('showMyLocation failed', e);
     }
   }
 
@@ -139,7 +210,6 @@ class _RestaurantMapViewState extends State<RestaurantMapView> {
       animation: const CameraAnimation(300),
     );
   }
-
 
   Future<void> _goToMyLocation() async {
     widget.onMyLocationTap?.call();
@@ -153,21 +223,83 @@ class _RestaurantMapViewState extends State<RestaurantMapView> {
     if (_locating) return;
     _locating = true;
     try {
-      final location = await LocationService.current(forceRefresh: true);
+      final result = await LocationService.locate(forceRefresh: true);
       if (!mounted) return;
-      if (location == null) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('Turn on location to see where you are.'),
-          ),
-        );
-        return;
+      final location = result.location;
+      if (location != null) {
+        _moveTo(location);
+        _showMyLocation(location);
       }
-      _moveTo(location);
-      _showMyLocation(location);
+      final issue = result.issue;
+      if (issue != null) _showLocationIssue(issue);
     } finally {
       _locating = false;
     }
+  }
+
+  void _showLocationIssue(LocationIssue issue) {
+    final String message;
+    String? actionLabel;
+    VoidCallback? onAction;
+
+    switch (issue) {
+      case LocationIssue.serviceDisabled:
+        message = 'Location services are turned off.';
+        actionLabel = 'Turn on';
+        onAction = LocationService.openLocationSettings;
+      case LocationIssue.denied:
+        message = 'Allow location access to see where you are.';
+        actionLabel = 'Retry';
+        onAction = _goToMyLocation;
+      case LocationIssue.deniedForever:
+        message = 'Location access is turned off for this app.';
+        actionLabel = 'Settings';
+        onAction = LocationService.openAppSettings;
+      case LocationIssue.unavailable:
+        message = 'Could not find your location.';
+    }
+
+    final messenger = ScaffoldMessenger.of(context);
+    final action = onAction;
+    messenger
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        SnackBar(
+          padding: const EdgeInsets.fromLTRB(24, 16, 16, 16),
+          content: Row(
+            children: [
+              Expanded(
+                child: Text(
+                  message,
+                  style: BitokTextStyles.body1.copyWith(
+                    color: BitokColors.white,
+                    fontSize: 16,
+                  ),
+                ),
+              ),
+              if (actionLabel != null && action != null)
+                TextButton(
+                  onPressed: () {
+                    messenger.hideCurrentSnackBar();
+                    action();
+                  },
+                  style: TextButton.styleFrom(
+                    foregroundColor: BitokColors.primary,
+                    padding: const EdgeInsets.symmetric(
+                      horizontal: 16,
+                      vertical: 12,
+                    ),
+                    textStyle: BitokTextStyles.body1.copyWith(
+                      fontSize: 16,
+                      fontWeight: FontWeight.w700,
+                    ),
+                  ),
+                  child: Text(actionLabel),
+                ),
+            ],
+          ),
+        ),
+      );
   }
 
   void _onPoiClick(LabelController labelController, Poi poi) {
@@ -178,13 +310,16 @@ class _RestaurantMapViewState extends State<RestaurantMapView> {
   }
 
   void _onMapClick(KPoint point, LatLng latLng) {
-    if (DateTime.now().difference(_lastPoiTap).inMilliseconds < 400) return;
+    if (DateTime.now().difference(_lastPoiTap) < _poiTapGuard) return;
     widget.onMapTap?.call();
   }
 
   @override
   void didUpdateWidget(covariant RestaurantMapView oldWidget) {
     super.didUpdateWidget(oldWidget);
+    if (!listEquals(widget.restaurants, oldWidget.restaurants)) {
+      _reloadMarkers();
+    }
     if (widget.selectedId != oldWidget.selectedId) {
       _moveToSelected();
       _syncSelection();
@@ -198,26 +333,15 @@ class _RestaurantMapViewState extends State<RestaurantMapView> {
     return Stack(
       children: [
         Positioned.fill(
-          child: FutureBuilder<({double lat, double lng})?>(
-            future: _startLocation,
-            builder: (context, snapshot) {
-              if (snapshot.connectionState != ConnectionState.done) {
-                return const ColoredBox(color: BitokColors.grey3);
-              }
-              final start = snapshot.data;
-              return KakaoMap(
-                option: KakaoMapOption(
-                  position: start == null
-                      ? _fallbackPosition
-                      : LatLng(start.lat, start.lng),
-                  zoomLevel: 16,
-                  mapType: MapType.normal,
-                ),
-                onMapReady: _onMapReady,
-                onMapClick: _onMapClick,
-                onPoiClick: _onPoiClick,
-              );
-            },
+          child: KakaoMap(
+            option: KakaoMapOption(
+              position: _initialPosition,
+              zoomLevel: 16,
+              mapType: MapType.normal,
+            ),
+            onMapReady: _onMapReady,
+            onMapClick: _onMapClick,
+            onPoiClick: _onPoiClick,
           ),
         ),
         Positioned(
@@ -255,7 +379,6 @@ class _MapMarker {
   final PoiStyle selectedStyle;
   bool selected = false;
 }
-
 
 class _CurrentLocationButton extends StatelessWidget {
   const _CurrentLocationButton({this.onTap});
