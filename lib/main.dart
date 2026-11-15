@@ -1,4 +1,3 @@
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:kakao_map_sdk/kakao_map_sdk.dart';
@@ -13,8 +12,12 @@ const _kakaoNativeKey = String.fromEnvironment('KAKAO_NATIVE_KEY');
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
+  assert(
+  _kakaoNativeKey.isNotEmpty,
+  'dart_defines.json에 KAKAO_NATIVE_KEY를 설정하세요. '
+      '(실행 설정의 Additional run args: --dart-define-from-file=dart_defines.json)',
+  );
   await KakaoMapSdk.instance.initialize(_kakaoNativeKey);
-  if (kDebugMode) await KakaoMapSdk.instance.hashKey();
   final sharedPreferences = await SharedPreferences.getInstance();
 
   runApp(
