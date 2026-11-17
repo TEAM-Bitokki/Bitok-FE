@@ -72,6 +72,8 @@ class RestaurantDetailScreen extends StatelessWidget {
               info,
               style: BitokTextStyles.body2.copyWith(color: BitokColors.grey0),
             ),
+            const SizedBox(height: 25),
+            const _RestaurantImage(),
             const SizedBox(height: 30),
             Row(
               children: [
@@ -116,6 +118,32 @@ class RestaurantDetailScreen extends StatelessWidget {
               const SizedBox(height: 8),
             ],
           ],
+        ),
+      ),
+    );
+  }
+}
+
+/// 식당 대표 이미지 자리입니다.
+/// TODO: API에서 식당 이미지 URL을 받으면 Image.network로 교체합니다.
+class _RestaurantImage extends StatelessWidget {
+  const _RestaurantImage();
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      height: 180,
+      alignment: Alignment.center,
+      decoration: BoxDecoration(
+        color: BitokColors.grey1,
+        borderRadius: BorderRadius.circular(18),
+      ),
+      child: Text(
+        'RESTAURANT',
+        style: BitokTextStyles.subTitle.copyWith(
+          fontWeight: FontWeight.w600,
+          height: 1.25,
+          color: BitokColors.grey0,
         ),
       ),
     );

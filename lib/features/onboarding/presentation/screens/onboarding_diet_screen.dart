@@ -15,8 +15,13 @@ import '../widgets/onboarding_step_scaffold.dart';
 /// 온보딩 2단계(이어서): 식단 선택 화면입니다.
 ///
 /// 하나만 고를 수 있고, Vegetarian을 고르면 달걀·유제품 섭취 여부를 추가로 묻습니다.
+///
+/// [onSave]를 넘기면 마이페이지의 수정 화면으로 쓰입니다.
+/// 진행 단계를 숨기고, 하단 버튼이 Save가 됩니다.
 class OnboardingDietScreen extends ConsumerWidget {
-  const OnboardingDietScreen({super.key});
+  const OnboardingDietScreen({super.key, this.onSave});
+
+  final VoidCallback? onSave;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
@@ -26,11 +31,12 @@ class OnboardingDietScreen extends ConsumerWidget {
 
     return OnboardingStepScaffold(
       headerTitle: l10n.onboardingDietHeader,
-      step: 2,
+      step: onSave == null ? 2 : null,
       title: l10n.onboardingDietTitle,
+      buttonLabel: onSave == null ? null : l10n.commonSave,
       onNext: state.diet == null
           ? null
-          : () => context.push(AppRoutes.onboardingReview),
+          : (onSave ?? () => context.push(AppRoutes.onboardingReview)),
       body: SingleChildScrollView(
         padding: const EdgeInsets.only(bottom: 20),
         child: Column(

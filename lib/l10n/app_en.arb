@@ -127,5 +127,9 @@
         "type": "int"
       }
     }
+  },
+  "commonSave": "Save",
+  "@commonSave": {
+    "description": "Bottom button label when editing the profile from My Page"
   }
 }

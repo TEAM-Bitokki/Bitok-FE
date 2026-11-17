@@ -54,8 +54,9 @@ class AppRoutes {
   static const String savedMenus = '/my/menus';
   static const String accountDeletion = '/my/delete-account';
 
-  static const String foodAllergies = '/onboarding/allergies';
-  static const String dietPreference = '/onboarding/diet';
+  // 마이페이지에서 알레르기·식단을 수정하는 화면입니다. (온보딩 화면을 Save 모드로 재사용)
+  static const String foodAllergies = '/my/dietary/allergies';
+  static const String dietPreference = '/my/dietary/diet';
 
   static const String restaurantDetail = '/restaurant';
   static const String restaurantSelect = '/restaurant/select';
@@ -116,7 +117,11 @@ final GoRouter appRouter = GoRouter(
                 onProfileTap: () => context.push(AppRoutes.myPage),
                 // 식당 선택 화면은 최상위 경로라 하단 탭 없이 열립니다.
                 onCheckMenuTap: () => context.push(AppRoutes.restaurantSelect),
-                // TODO: 메뉴 상세 화면이 만들어지면 onRecentCheckTap을 연결합니다.
+                // 메뉴 상세는 최상위 경로라 하단 탭 없이 열립니다.
+                onRecentCheckTap: (check) => context.push(
+                  AppRoutes.menuDetail,
+                  extra: _mockMenuDetail(check.englishName, check.status),
+                ),
               ),
             ),
           ],
@@ -179,6 +184,17 @@ final GoRouter appRouter = GoRouter(
         onEditDiet: () => context.push(AppRoutes.dietPreference),
       ),
     ),
+    // TODO: 저장 API 연결 후 Dietary Profile 요약을 갱신합니다.
+    GoRoute(
+      path: AppRoutes.foodAllergies,
+      builder: (context, state) =>
+          OnboardingAllergiesScreen(onSave: () => context.pop()),
+    ),
+    GoRoute(
+      path: AppRoutes.dietPreference,
+      builder: (context, state) =>
+          OnboardingDietScreen(onSave: () => context.pop()),
+    ),
     GoRoute(
       path: AppRoutes.savedRestaurants,
       builder: (context, state) => SavedRestaurantsScreen(
@@ -192,7 +208,10 @@ final GoRouter appRouter = GoRouter(
       builder: (context, state) => SavedMenusScreen(
         menus: _mockSavedMenus,
         onBack: () => context.pop(),
-        // TODO: 메뉴 상세 화면이 만들어지면 연결합니다.
+        onMenuTap: (menu) => context.push(
+          AppRoutes.menuDetail,
+          extra: _mockMenuDetail(menu.englishName, menu.status),
+        ),
       ),
     ),
     GoRoute(
@@ -228,6 +247,11 @@ final GoRouter appRouter = GoRouter(
                 .toggle(restaurant.id),
             onBack: () => context.pop(),
             onForYouTap: () => context.push(AppRoutes.personalizedMenus),
+            // 개인화 판정 없이 흔히 들어가는 재료만 보여줍니다.
+            onMenuTap: (menu) => context.push(
+              AppRoutes.menuDetail,
+              extra: _mockMenuDetail(menu.englishName, null),
+            ),
           ),
         );
       },
@@ -239,8 +263,10 @@ final GoRouter appRouter = GoRouter(
       builder: (context, state) => PersonalizedMenuListScreen(
         menus: _mockPersonalizedMenus,
         onBack: () => context.pop(),
-        onMenuTap: (menu) =>
-            context.push(AppRoutes.menuDetail, extra: _mockMenuDetail(menu)),
+        onMenuTap: (menu) => context.push(
+          AppRoutes.menuDetail,
+          extra: _mockMenuDetail(menu.englishName, menu.status),
+        ),
       ),
     ),
     // ---- 메뉴 상세 ----
@@ -345,7 +371,15 @@ final GoRouter appRouter = GoRouter(
           if (context.mounted) context.push(AppRoutes.scanSaved);
         },
         onFinish: () => context.go(AppRoutes.home),
-        // TODO: 메뉴 상세 화면이 만들어지면 연결합니다.
+        onViewDetails: (item) => context.push(
+          AppRoutes.menuDetail,
+          extra: _mockMenuDetail(
+            item.englishName,
+            ProviderScope.containerOf(
+              context,
+            ).read(scanFlowProvider).statusOf(item.id),
+          ),
+        ),
       ),
     ),
     GoRoute(
@@ -469,13 +503,16 @@ const List<CommonIngredient> _mockCommonIngredients = [
 ];
 
 /// TODO: 메뉴 상세 API 연결 시 제거합니다. 판정 결과에 맞춰 Avoid / Not Sure 카드만 바꿔 보여줍니다.
-MenuDetail _mockMenuDetail(PersonalizedMenu menu) => MenuDetail(
-  englishName: menu.englishName,
-  avoidIngredients: menu.status == BitokMenuStatus.avoid
-      ? const ['Shrimp']
-      : const [],
-  notSureIngredients: menu.status == BitokMenuStatus.safe
-      ? const []
-      : const ['Shrimp'],
-  commonIngredients: _mockCommonIngredients,
-);
+/// [status]가 null이면(개인화 판정 없음) 판정 카드 없이 재료만 보여줍니다.
+MenuDetail _mockMenuDetail(String englishName, BitokMenuStatus? status) =>
+    MenuDetail(
+      englishName: englishName,
+      avoidIngredients: status == BitokMenuStatus.avoid
+          ? const ['Shrimp']
+          : const [],
+      notSureIngredients:
+          status == BitokMenuStatus.avoid || status == BitokMenuStatus.notSure
+          ? const ['Shrimp']
+          : const [],
+      commonIngredients: _mockCommonIngredients,
+    );
