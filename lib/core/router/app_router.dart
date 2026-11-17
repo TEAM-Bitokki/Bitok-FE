@@ -6,6 +6,8 @@ import '../../features/auth/presentation/screens/login_screen.dart';
 import '../../features/explore/presentation/models/map_restaurant.dart';
 import '../../features/explore/presentation/providers/saved_restaurants_provider.dart';
 import '../../features/explore/presentation/screens/explore_screen.dart';
+import '../../features/explore/presentation/screens/menu_detail_screen.dart';
+import '../../features/explore/presentation/screens/personalized_menu_list_screen.dart';
 import '../../features/explore/presentation/screens/restaurant_detail_screen.dart';
 import '../../features/explore/presentation/screens/restaurant_select_screen.dart';
 import '../../features/home/presentation/screens/home_screen.dart';
@@ -57,6 +59,8 @@ class AppRoutes {
 
   static const String restaurantDetail = '/restaurant';
   static const String restaurantSelect = '/restaurant/select';
+  static const String personalizedMenus = '/restaurant/for-you';
+  static const String menuDetail = '/menu';
 
   // 메뉴 스캔 (REST-02 ~ REST-08)
   static const String scan = '/scan';
@@ -223,9 +227,30 @@ final GoRouter appRouter = GoRouter(
                 .read(savedRestaurantIdsProvider.notifier)
                 .toggle(restaurant.id),
             onBack: () => context.pop(),
+            onForYouTap: () => context.push(AppRoutes.personalizedMenus),
           ),
         );
       },
+    ),
+    // ---- 개인화 메뉴 리스트 (EXP-03) ----
+    // TODO: 식당 id로 개인화 메뉴 목록 API를 호출합니다.
+    GoRoute(
+      path: AppRoutes.personalizedMenus,
+      builder: (context, state) => PersonalizedMenuListScreen(
+        menus: _mockPersonalizedMenus,
+        onBack: () => context.pop(),
+        onMenuTap: (menu) =>
+            context.push(AppRoutes.menuDetail, extra: _mockMenuDetail(menu)),
+      ),
+    ),
+    // ---- 메뉴 상세 ----
+    // extra로 MenuDetail을 받습니다. 없으면 임시로 샘플 메뉴를 보여줍니다.
+    GoRoute(
+      path: AppRoutes.menuDetail,
+      builder: (context, state) => MenuDetailScreen(
+        menu: state.extra as MenuDetail? ?? _mockKimchiJjigaeDetail,
+        onBack: () => context.pop(),
+      ),
     ),
     // ---- 식당 선택 (REST-01) ----
     GoRoute(
@@ -410,3 +435,47 @@ const List<CheckedMenu> _mockCheckedMenus = [
   CheckedMenu(koreanName: '비빔밥', englishName: 'Bibimbap'),
   CheckedMenu(koreanName: '불고기', englishName: 'Bulgogi'),
 ];
+const List<PersonalizedMenu> _mockPersonalizedMenus = [
+  PersonalizedMenu(
+    koreanName: '김치찌개',
+    englishName: 'Kimchi Jjigae',
+    status: BitokMenuStatus.avoid,
+  ),
+  PersonalizedMenu(
+    koreanName: '비빔밥',
+    englishName: 'Bibimbap',
+    status: BitokMenuStatus.safe,
+  ),
+  PersonalizedMenu(
+    koreanName: '불고기',
+    englishName: 'Bulgogi',
+    status: BitokMenuStatus.notSure,
+  ),
+];
+const MenuDetail _mockKimchiJjigaeDetail = MenuDetail(
+  englishName: 'Kimchi Jjigae',
+  avoidIngredients: ['Shrimp'],
+  notSureIngredients: ['Shrimp'],
+  commonIngredients: _mockCommonIngredients,
+);
+const List<CommonIngredient> _mockCommonIngredients = [
+  CommonIngredient(category: 'Crustacean Shellfish', items: ['Salted shrimp']),
+  CommonIngredient(category: 'Fish', items: ['Anchovy sauce', 'Anchovy broth']),
+  CommonIngredient(category: 'Soybeans', items: ['Tofu', 'Soy sauce']),
+  CommonIngredient(
+    category: 'Wheat',
+    items: ['Some soy sauces and seasonings'],
+  ),
+];
+
+/// TODO: 메뉴 상세 API 연결 시 제거합니다. 판정 결과에 맞춰 Avoid / Not Sure 카드만 바꿔 보여줍니다.
+MenuDetail _mockMenuDetail(PersonalizedMenu menu) => MenuDetail(
+  englishName: menu.englishName,
+  avoidIngredients: menu.status == BitokMenuStatus.avoid
+      ? const ['Shrimp']
+      : const [],
+  notSureIngredients: menu.status == BitokMenuStatus.safe
+      ? const []
+      : const ['Shrimp'],
+  commonIngredients: _mockCommonIngredients,
+);
