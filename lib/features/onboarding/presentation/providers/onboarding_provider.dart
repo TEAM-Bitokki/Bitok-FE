@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../mypage/presentation/providers/dietary_profile_provider.dart';
 import 'onboarding_state.dart';
 
 // presentation/providers: 온보딩 단계별 입력을 모아두고, 마지막에 서버로 저장합니다.
@@ -35,10 +36,31 @@ class OnboardingNotifier extends Notifier<OnboardingState> {
     state = state.copyWith(eatsDairy: value);
   }
 
+  /// 마이페이지에서 수정 화면을 열 때 현재 프로필을 입력값으로 불러옵니다.
+  /// 수정 화면은 이 값을 고치다가 Save를 누를 때만 프로필에 반영합니다.
+  void loadProfile(DietaryProfile profile) {
+    state = state.copyWith(
+      allergies: profile.allergies,
+      diet: profile.diet,
+      eatsEggs: profile.eatsEggs,
+      eatsDairy: profile.eatsDairy,
+    );
+  }
+
   /// 입력한 프로필을 저장합니다.
   Future<void> submit() async {
     // TODO: 온보딩 저장 API가 준비되면 repository를 통해 state를 전송합니다.
     // 채식(vegetarian)이 아니면 eatsEggs/eatsDairy는 보내지 않습니다.
+    ref
+        .read(dietaryProfileProvider.notifier)
+        .replace(
+          DietaryProfile(
+            allergies: state.allergies,
+            diet: state.diet ?? DietType.noParticularDiet,
+            eatsEggs: state.eatsEggs,
+            eatsDairy: state.eatsDairy,
+          ),
+        );
   }
 
   /// 온보딩을 마치면 입력값을 비웁니다.

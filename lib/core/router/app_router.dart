@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../common/widgets/bitok_status_chip.dart';
+import '../../l10n/generated/app_localizations.dart';
 import '../../features/auth/presentation/screens/login_screen.dart';
 import '../../features/explore/presentation/models/map_restaurant.dart';
 import '../../features/explore/presentation/providers/saved_restaurants_provider.dart';
@@ -11,12 +12,15 @@ import '../../features/explore/presentation/screens/personalized_menu_list_scree
 import '../../features/explore/presentation/screens/restaurant_detail_screen.dart';
 import '../../features/explore/presentation/screens/restaurant_select_screen.dart';
 import '../../features/home/presentation/screens/home_screen.dart';
+import '../../features/mypage/presentation/providers/dietary_profile_provider.dart';
 import '../../features/mypage/presentation/screens/account_deletion_screen.dart';
 import '../../features/mypage/presentation/screens/dietary_profile_screen.dart';
 import '../../features/mypage/presentation/screens/edit_profile_screen.dart';
 import '../../features/mypage/presentation/screens/my_page_screen.dart';
 import '../../features/mypage/presentation/screens/saved_menus_screen.dart';
 import '../../features/mypage/presentation/screens/saved_restaurants_screen.dart';
+import '../../features/mypage/presentation/widgets/dietary_profile_summary.dart';
+import '../../features/onboarding/presentation/providers/onboarding_provider.dart';
 import '../../features/onboarding/presentation/screens/onboarding_allergies_screen.dart';
 import '../../features/onboarding/presentation/screens/onboarding_complete_screen.dart';
 import '../../features/onboarding/presentation/screens/onboarding_diet_screen.dart';
@@ -58,10 +62,17 @@ class AppRoutes {
   static const String foodAllergies = '/my/dietary/allergies';
   static const String dietPreference = '/my/dietary/diet';
 
-  static const String restaurantDetail = '/restaurant';
+  // 식당 상세는 '/restaurant/:id' 입니다. 이동할 때는 restaurantDetailOf(id)를 씁니다.
+  // '/restaurant/select'가 ':id'로 잡히지 않도록 식당 선택 라우트를 먼저 등록합니다.
   static const String restaurantSelect = '/restaurant/select';
-  static const String personalizedMenus = '/restaurant/for-you';
+  static const String restaurantDetail = '/restaurant/:id';
+  static const String personalizedMenus = '/restaurant/:id/for-you';
   static const String menuDetail = '/menu';
+
+  static String restaurantDetailOf(String id) =>
+      '/restaurant/${Uri.encodeComponent(id)}';
+  static String personalizedMenusOf(String id) =>
+      '${restaurantDetailOf(id)}/for-you';
 
   // 메뉴 스캔 (REST-02 ~ REST-08)
   static const String scan = '/scan';
@@ -138,10 +149,8 @@ final GoRouter appRouter = GoRouter(
                   onToggleSaved: (restaurant) => ref
                       .read(savedRestaurantIdsProvider.notifier)
                       .toggle(restaurant.id),
-                  onMenuResultsTap: (restaurant) => context.push(
-                    AppRoutes.restaurantDetail,
-                    extra: restaurant,
-                  ),
+                  onMenuResultsTap: (restaurant) =>
+                      context.push(AppRoutes.restaurantDetailOf(restaurant.id)),
                 ),
               ),
             ),
@@ -154,16 +163,21 @@ final GoRouter appRouter = GoRouter(
     // TODO: 아래 화면의 임시 데이터(_mock...)는 provider/API 연결 시 교체합니다.
     GoRoute(
       path: AppRoutes.myPage,
-      builder: (context, state) => MyPageScreen(
-        nickname: _mockNickname,
-        email: _mockEmail,
-        dietarySummary: _mockDietarySummary,
-        onBack: () => context.pop(),
-        onProfileTap: () => context.push(AppRoutes.editProfile),
-        onDietaryTap: () => context.push(AppRoutes.dietaryProfile),
-        onSavedRestaurantsTap: () => context.push(AppRoutes.savedRestaurants),
-        onSavedMenusTap: () => context.push(AppRoutes.savedMenus),
-        onDeleteAccountTap: () => context.push(AppRoutes.accountDeletion),
+      builder: (context, state) => Consumer(
+        builder: (context, ref, _) => MyPageScreen(
+          nickname: _mockNickname,
+          email: _mockEmail,
+          dietarySummary: myPageDietarySummaryOf(
+            AppLocalizations.of(context),
+            ref.watch(dietaryProfileProvider),
+          ),
+          onBack: () => context.pop(),
+          onProfileTap: () => context.push(AppRoutes.editProfile),
+          onDietaryTap: () => context.push(AppRoutes.dietaryProfile),
+          onSavedRestaurantsTap: () => context.push(AppRoutes.savedRestaurants),
+          onSavedMenusTap: () => context.push(AppRoutes.savedMenus),
+          onDeleteAccountTap: () => context.push(AppRoutes.accountDeletion),
+        ),
       ),
     ),
     GoRoute(
@@ -176,31 +190,68 @@ final GoRouter appRouter = GoRouter(
     ),
     GoRoute(
       path: AppRoutes.dietaryProfile,
-      builder: (context, state) => DietaryProfileScreen(
-        allergySummary: _mockAllergySummary,
-        dietSummary: _mockDietSummary,
-        onBack: () => context.pop(),
-        onEditAllergies: () => context.push(AppRoutes.foodAllergies),
-        onEditDiet: () => context.push(AppRoutes.dietPreference),
+      builder: (context, state) => Consumer(
+        builder: (context, ref, _) {
+          final l10n = AppLocalizations.of(context);
+          final profile = ref.watch(dietaryProfileProvider);
+
+          // 수정 화면은 현재 프로필을 불러온 입력값(onboardingProvider)을 고칩니다.
+          // Save를 눌러야 프로필에 반영되고, 뒤로 가면 고친 내용은 버려집니다.
+          void openEditor(String location) {
+            ref.read(onboardingProvider.notifier).loadProfile(profile);
+            context.push(location);
+          }
+
+          return DietaryProfileScreen(
+            allergySummary: allergySummaryOf(l10n, profile),
+            dietSummary: dietSummaryOfProfile(l10n, profile),
+            onBack: () => context.pop(),
+            onEditAllergies: () => openEditor(AppRoutes.foodAllergies),
+            onEditDiet: () => openEditor(AppRoutes.dietPreference),
+          );
+        },
       ),
     ),
-    // TODO: 저장 API 연결 후 Dietary Profile 요약을 갱신합니다.
     GoRoute(
       path: AppRoutes.foodAllergies,
-      builder: (context, state) =>
-          OnboardingAllergiesScreen(onSave: () => context.pop()),
+      builder: (context, state) => Consumer(
+        builder: (context, ref, _) => OnboardingAllergiesScreen(
+          onSave: () {
+            ref
+                .read(dietaryProfileProvider.notifier)
+                .saveAllergies(ref.read(onboardingProvider).allergies);
+            context.pop();
+          },
+        ),
+      ),
     ),
     GoRoute(
       path: AppRoutes.dietPreference,
-      builder: (context, state) =>
-          OnboardingDietScreen(onSave: () => context.pop()),
+      builder: (context, state) => Consumer(
+        builder: (context, ref, _) => OnboardingDietScreen(
+          onSave: () {
+            final draft = ref.read(onboardingProvider);
+            final diet = draft.diet;
+            if (diet == null) return;
+            ref
+                .read(dietaryProfileProvider.notifier)
+                .saveDiet(
+                  diet: diet,
+                  eatsEggs: draft.eatsEggs,
+                  eatsDairy: draft.eatsDairy,
+                );
+            context.pop();
+          },
+        ),
+      ),
     ),
     GoRoute(
       path: AppRoutes.savedRestaurants,
       builder: (context, state) => SavedRestaurantsScreen(
         restaurants: _mockSavedRestaurants,
         onBack: () => context.pop(),
-        onRestaurantTap: (_) => context.push(AppRoutes.restaurantDetail),
+        onRestaurantTap: (restaurant) =>
+            context.push(AppRoutes.restaurantDetailOf(restaurant.id)),
       ),
     ),
     GoRoute(
@@ -225,50 +276,6 @@ final GoRouter appRouter = GoRouter(
 
     // ---- 온보딩 (알레르기 / 식단) ----
 
-    // ---- 식당 상세 ----
-    // TODO: 식당 id를 받도록 '/restaurant/:id' 형태로 바꿉니다.
-    GoRoute(
-      path: AppRoutes.restaurantDetail,
-      builder: (context, state) {
-        // 식당 정보를 넘기지 않고 들어오면(예: 저장한 식당 목록) 임시로 샘플 식당을 보여줍니다.
-        final restaurant =
-            state.extra as MapRestaurant? ?? mapRestaurantSamples.last;
-        return Consumer(
-          builder: (context, ref, _) => RestaurantDetailScreen(
-            name: restaurant.name,
-            info: '${restaurant.category} · 350 m',
-            // TODO: distance_m 연결
-            menus: _mockCheckedMenus,
-            saved: ref
-                .watch(savedRestaurantIdsProvider)
-                .contains(restaurant.id),
-            onToggleSaved: () => ref
-                .read(savedRestaurantIdsProvider.notifier)
-                .toggle(restaurant.id),
-            onBack: () => context.pop(),
-            onForYouTap: () => context.push(AppRoutes.personalizedMenus),
-            // 개인화 판정 없이 흔히 들어가는 재료만 보여줍니다.
-            onMenuTap: (menu) => context.push(
-              AppRoutes.menuDetail,
-              extra: _mockMenuDetail(menu.englishName, null),
-            ),
-          ),
-        );
-      },
-    ),
-    // ---- 개인화 메뉴 리스트 (EXP-03) ----
-    // TODO: 식당 id로 개인화 메뉴 목록 API를 호출합니다.
-    GoRoute(
-      path: AppRoutes.personalizedMenus,
-      builder: (context, state) => PersonalizedMenuListScreen(
-        menus: _mockPersonalizedMenus,
-        onBack: () => context.pop(),
-        onMenuTap: (menu) => context.push(
-          AppRoutes.menuDetail,
-          extra: _mockMenuDetail(menu.englishName, menu.status),
-        ),
-      ),
-    ),
     // ---- 메뉴 상세 ----
     // extra로 MenuDetail을 받습니다. 없으면 임시로 샘플 메뉴를 보여줍니다.
     GoRoute(
@@ -298,6 +305,56 @@ final GoRouter appRouter = GoRouter(
             ),
           );
         },
+      ),
+    ),
+
+    // ---- 식당 상세 (EXP-02) ----
+    // 식당 선택('/restaurant/select') 뒤에 등록해야 'select'가 :id로 잡히지 않습니다.
+    // TODO: 식당 상세 API(id)로 교체합니다. 지금은 지도 샘플에서 id로 찾습니다.
+    GoRoute(
+      path: AppRoutes.restaurantDetail,
+      redirect: (context, state) =>
+          findMapRestaurant(state.pathParameters['id']!) == null
+          ? AppRoutes.explore
+          : null,
+      builder: (context, state) {
+        final restaurant = findMapRestaurant(state.pathParameters['id']!)!;
+        return Consumer(
+          builder: (context, ref, _) => RestaurantDetailScreen(
+            name: restaurant.name,
+            info: '${restaurant.category} · 350 m',
+            // TODO: distance_m 연결
+            imageUrl: restaurant.imageUrl,
+            menus: _mockCheckedMenus,
+            saved: ref
+                .watch(savedRestaurantIdsProvider)
+                .contains(restaurant.id),
+            onToggleSaved: () => ref
+                .read(savedRestaurantIdsProvider.notifier)
+                .toggle(restaurant.id),
+            onBack: () => context.pop(),
+            onForYouTap: () =>
+                context.push(AppRoutes.personalizedMenusOf(restaurant.id)),
+            // 개인화 판정 없이 흔히 들어가는 재료만 보여줍니다.
+            onMenuTap: (menu) => context.push(
+              AppRoutes.menuDetail,
+              extra: _mockMenuDetail(menu.englishName, null),
+            ),
+          ),
+        );
+      },
+    ),
+    // ---- 개인화 메뉴 리스트 (EXP-03) ----
+    // TODO: state.pathParameters['id']로 개인화 메뉴 목록 API를 호출합니다.
+    GoRoute(
+      path: AppRoutes.personalizedMenus,
+      builder: (context, state) => PersonalizedMenuListScreen(
+        menus: _mockPersonalizedMenus,
+        onBack: () => context.pop(),
+        onMenuTap: (menu) => context.push(
+          AppRoutes.menuDetail,
+          extra: _mockMenuDetail(menu.englishName, menu.status),
+        ),
       ),
     ),
 
@@ -396,9 +453,6 @@ final GoRouter appRouter = GoRouter(
 // ---- 임시 데이터 (서버/상태 연결 전까지만 사용) ----
 const String _mockNickname = 'Biiiiii';
 const String _mockEmail = 'bitok@kakao.com';
-const String _mockDietarySummary = '4 food allergies · Vegetarian';
-const String _mockAllergySummary = 'Shrimp · Anchovy · Walnut';
-const String _mockDietSummary = 'No particular diet';
 const List<String> _mockAllergens = [
   'Shrimp',
   'Prawn',
@@ -446,6 +500,7 @@ const List<RecentCheck> _mockRecentChecks = [
 ];
 const List<SavedRestaurant> _mockSavedRestaurants = [
   SavedRestaurant(
+    id: 'myeongdong-kyoja',
     name: 'Myeongdong Kyoja',
     category: 'Korean Restaurant',
     address: '29 Myeongdong 10-gil, Jung-gu',

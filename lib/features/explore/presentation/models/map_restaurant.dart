@@ -8,6 +8,7 @@ class MapRestaurant {
     required this.menuCount,
     required this.lat,
     required this.lng,
+    this.imageUrl,
   });
 
   final String id;
@@ -19,6 +20,18 @@ class MapRestaurant {
 
   final double lat;
   final double lng;
+
+  /// 식당 대표 이미지 URL입니다. 서버에서 받으며, 없으면 상세 화면에 자리 박스를 보여줍니다.
+  final String? imageUrl;
+}
+
+/// id로 식당을 찾습니다. 없으면 null입니다.
+/// TODO: 식당 상세 API 연동 시 서버 조회로 교체합니다.
+MapRestaurant? findMapRestaurant(String id) {
+  for (final restaurant in mapRestaurantSamples) {
+    if (restaurant.id == id) return restaurant;
+  }
+  return null;
 }
 
 const List<MapRestaurant> mapRestaurantSamples = [

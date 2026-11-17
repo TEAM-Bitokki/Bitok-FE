@@ -23,6 +23,7 @@ class RestaurantDetailScreen extends StatelessWidget {
     required this.name,
     required this.info,
     required this.menus,
+    this.imageUrl,
     this.saved = false,
     this.onBack,
     this.onToggleSaved,
@@ -33,6 +34,9 @@ class RestaurantDetailScreen extends StatelessWidget {
   final String name;
   final String info;
   final List<CheckedMenu> menus;
+
+  /// 서버에서 받은 식당 이미지 URL입니다. 없거나 불러오지 못하면 자리 박스를 보여줍니다.
+  final String? imageUrl;
   final bool saved;
 
   final VoidCallback? onBack;
@@ -73,7 +77,7 @@ class RestaurantDetailScreen extends StatelessWidget {
               style: BitokTextStyles.body2.copyWith(color: BitokColors.grey0),
             ),
             const SizedBox(height: 25),
-            const _RestaurantImage(),
+            _RestaurantImage(imageUrl: imageUrl),
             const SizedBox(height: 30),
             Row(
               children: [
@@ -124,19 +128,49 @@ class RestaurantDetailScreen extends StatelessWidget {
   }
 }
 
-/// 식당 대표 이미지 자리입니다.
-/// TODO: API에서 식당 이미지 URL을 받으면 Image.network로 교체합니다.
+/// 식당 대표 이미지입니다. 342 × 180, 모서리 18.
+///
+/// [imageUrl]이 없거나, 불러오는 중이거나, 실패하면 'RESTAURANT' 자리 박스를 보여줍니다.
 class _RestaurantImage extends StatelessWidget {
-  const _RestaurantImage();
+  const _RestaurantImage({this.imageUrl});
+
+  static const double height = 180;
+  static const double radius = 18;
+
+  final String? imageUrl;
+
+  @override
+  Widget build(BuildContext context) {
+    final url = imageUrl;
+    if (url == null || url.isEmpty) return const _RestaurantImagePlaceholder();
+
+    return ClipRRect(
+      borderRadius: BorderRadius.circular(radius),
+      child: Image.network(
+        url,
+        height: height,
+        width: double.infinity,
+        fit: BoxFit.cover,
+        loadingBuilder: (context, child, progress) =>
+            progress == null ? child : const _RestaurantImagePlaceholder(),
+        errorBuilder: (context, error, stackTrace) =>
+            const _RestaurantImagePlaceholder(),
+      ),
+    );
+  }
+}
+
+class _RestaurantImagePlaceholder extends StatelessWidget {
+  const _RestaurantImagePlaceholder();
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      height: 180,
+      height: _RestaurantImage.height,
       alignment: Alignment.center,
       decoration: BoxDecoration(
         color: BitokColors.grey1,
-        borderRadius: BorderRadius.circular(18),
+        borderRadius: BorderRadius.circular(_RestaurantImage.radius),
       ),
       child: Text(
         'RESTAURANT',
