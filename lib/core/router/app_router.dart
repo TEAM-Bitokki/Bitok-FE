@@ -3,8 +3,11 @@ import 'package:go_router/go_router.dart';
 
 import '../../common/widgets/bitok_status_chip.dart';
 import '../../features/auth/presentation/screens/login_screen.dart';
+import '../../features/explore/presentation/models/map_restaurant.dart';
+import '../../features/explore/presentation/providers/saved_restaurants_provider.dart';
 import '../../features/explore/presentation/screens/explore_screen.dart';
 import '../../features/explore/presentation/screens/restaurant_detail_screen.dart';
+import '../../features/explore/presentation/screens/restaurant_select_screen.dart';
 import '../../features/home/presentation/screens/home_screen.dart';
 import '../../features/mypage/presentation/screens/account_deletion_screen.dart';
 import '../../features/mypage/presentation/screens/dietary_profile_screen.dart';
@@ -53,6 +56,7 @@ class AppRoutes {
   static const String dietPreference = '/onboarding/diet';
 
   static const String restaurantDetail = '/restaurant';
+  static const String restaurantSelect = '/restaurant/select';
 
   // 메뉴 스캔 (REST-02 ~ REST-08)
   static const String scan = '/scan';
@@ -106,7 +110,8 @@ final GoRouter appRouter = GoRouter(
               builder: (context, state) => HomeScreen(
                 recentChecks: _mockRecentChecks,
                 onProfileTap: () => context.push(AppRoutes.myPage),
-                onCheckMenuTap: () => context.go(AppRoutes.explore),
+                // 식당 선택 화면은 최상위 경로라 하단 탭 없이 열립니다.
+                onCheckMenuTap: () => context.push(AppRoutes.restaurantSelect),
                 // TODO: 메뉴 상세 화면이 만들어지면 onRecentCheckTap을 연결합니다.
               ),
             ),
@@ -116,7 +121,20 @@ final GoRouter appRouter = GoRouter(
           routes: [
             GoRoute(
               path: AppRoutes.explore,
-              builder: (context, state) => const ExploreScreen(),
+              builder: (context, state) => Consumer(
+                builder: (context, ref, _) => ExploreScreen(
+                  restaurants: mapRestaurantSamples,
+                  savedIds: ref.watch(savedRestaurantIdsProvider),
+                  onProfileTap: () => context.push(AppRoutes.myPage),
+                  onToggleSaved: (restaurant) => ref
+                      .read(savedRestaurantIdsProvider.notifier)
+                      .toggle(restaurant.id),
+                  onMenuResultsTap: (restaurant) => context.push(
+                    AppRoutes.restaurantDetail,
+                    extra: restaurant,
+                  ),
+                ),
+              ),
             ),
           ],
         ),
@@ -188,24 +206,56 @@ final GoRouter appRouter = GoRouter(
     // TODO: 식당 id를 받도록 '/restaurant/:id' 형태로 바꿉니다.
     GoRoute(
       path: AppRoutes.restaurantDetail,
-      builder: (context, state) => RestaurantDetailScreen(
-        name: 'Myeongdong Kyoja',
-        info: 'Korean · 350 m',
-        menus: _mockCheckedMenus,
+      builder: (context, state) {
+        // 식당 정보를 넘기지 않고 들어오면(예: 저장한 식당 목록) 임시로 샘플 식당을 보여줍니다.
+        final restaurant =
+            state.extra as MapRestaurant? ?? mapRestaurantSamples.last;
+        return Consumer(
+          builder: (context, ref, _) => RestaurantDetailScreen(
+            name: restaurant.name,
+            info: '${restaurant.category} · 350 m',
+            // TODO: distance_m 연결
+            menus: _mockCheckedMenus,
+            saved: ref
+                .watch(savedRestaurantIdsProvider)
+                .contains(restaurant.id),
+            onToggleSaved: () => ref
+                .read(savedRestaurantIdsProvider.notifier)
+                .toggle(restaurant.id),
+            onBack: () => context.pop(),
+          ),
+        );
+      },
+    ),
+    // ---- 식당 선택 (REST-01) ----
+    GoRoute(
+      path: AppRoutes.restaurantSelect,
+      builder: (context, state) => RestaurantSelectScreen(
+        restaurants: mapRestaurantSamples,
         onBack: () => context.pop(),
+        onSelect: (restaurant) {
+          // 이전 스캔 결과가 남지 않도록 초기화한 뒤 선택한 식당으로 스캔을 시작합니다.
+          ProviderScope.containerOf(
+            context,
+          ).read(scanFlowProvider.notifier).reset();
+          context.push(
+            AppRoutes.scan,
+            extra: ScanRestaurant(
+              name: restaurant.name,
+              category: restaurant.category,
+              address: restaurant.address,
+            ),
+          );
+        },
       ),
     ),
 
     // ---- 메뉴 스캔 (네비게이션 바 없음) ----
-    // TODO: REST-02 진입점(식당 상세 등)을 만들면 아래 두 가지를 처리합니다.
-    //  - 식당 정보를 진입한 화면에서 넘겨받습니다.
-    //  - 이전 스캔 결과가 남지 않도록 이동 전에 상태를 초기화합니다.
-    //      ProviderScope.containerOf(context).read(scanFlowProvider.notifier).reset();
-    //      context.push(AppRoutes.scan);
+    // 진입점: 식당 선택(REST-01)의 Select. 식당 정보는 extra(ScanRestaurant)로 받습니다.
     GoRoute(
       path: AppRoutes.scan,
       builder: (context, state) => ScanScreen(
-        restaurant: _mockScanRestaurant,
+        restaurant: state.extra as ScanRestaurant? ?? _mockScanRestaurant,
         onBack: () => context.pop(),
         onImageSelected: (image) =>
             context.push(AppRoutes.scanPreview, extra: image.path),
