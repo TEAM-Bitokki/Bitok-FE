@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../mypage/presentation/providers/account_provider.dart';
 import '../../../mypage/presentation/providers/dietary_profile_provider.dart';
 import 'onboarding_state.dart';
 
@@ -51,6 +52,9 @@ class OnboardingNotifier extends Notifier<OnboardingState> {
   Future<void> submit() async {
     // TODO: 온보딩 저장 API가 준비되면 repository를 통해 state를 전송합니다.
     // 채식(vegetarian)이 아니면 eatsEggs/eatsDairy는 보내지 않습니다.
+    if (state.isNicknameValid) {
+      ref.read(accountProvider.notifier).saveNickname(state.nickname);
+    }
     ref
         .read(dietaryProfileProvider.notifier)
         .replace(

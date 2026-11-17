@@ -2,9 +2,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../common/widgets/bitok_status_chip.dart';
+import '../utils/date_formatter.dart';
 import '../../l10n/generated/app_localizations.dart';
 import '../../features/auth/presentation/screens/login_screen.dart';
 import '../../features/explore/presentation/models/map_restaurant.dart';
+import '../../features/explore/presentation/models/mock_menu_catalog.dart';
 import '../../features/explore/presentation/providers/saved_restaurants_provider.dart';
 import '../../features/explore/presentation/screens/explore_screen.dart';
 import '../../features/explore/presentation/screens/menu_detail_screen.dart';
@@ -12,7 +14,9 @@ import '../../features/explore/presentation/screens/personalized_menu_list_scree
 import '../../features/explore/presentation/screens/restaurant_detail_screen.dart';
 import '../../features/explore/presentation/screens/restaurant_select_screen.dart';
 import '../../features/home/presentation/screens/home_screen.dart';
+import '../../features/mypage/presentation/providers/account_provider.dart';
 import '../../features/mypage/presentation/providers/dietary_profile_provider.dart';
+import '../../features/mypage/presentation/providers/my_checks_provider.dart';
 import '../../features/mypage/presentation/screens/account_deletion_screen.dart';
 import '../../features/mypage/presentation/screens/dietary_profile_screen.dart';
 import '../../features/mypage/presentation/screens/edit_profile_screen.dart';
@@ -67,10 +71,11 @@ class AppRoutes {
   static const String restaurantSelect = '/restaurant/select';
   static const String restaurantDetail = '/restaurant/:id';
   static const String personalizedMenus = '/restaurant/:id/for-you';
-  static const String menuDetail = '/menu';
+  static const String menuDetail = '/menu/:id';
 
   static String restaurantDetailOf(String id) =>
       '/restaurant/${Uri.encodeComponent(id)}';
+  static String menuDetailOf(String id) => '/menu/${Uri.encodeComponent(id)}';
   static String personalizedMenusOf(String id) =>
       '${restaurantDetailOf(id)}/for-you';
 
@@ -123,15 +128,25 @@ final GoRouter appRouter = GoRouter(
           routes: [
             GoRoute(
               path: AppRoutes.home,
-              builder: (context, state) => HomeScreen(
-                recentChecks: _mockRecentChecks,
-                onProfileTap: () => context.push(AppRoutes.myPage),
-                // 식당 선택 화면은 최상위 경로라 하단 탭 없이 열립니다.
-                onCheckMenuTap: () => context.push(AppRoutes.restaurantSelect),
-                // 메뉴 상세는 최상위 경로라 하단 탭 없이 열립니다.
-                onRecentCheckTap: (check) => context.push(
-                  AppRoutes.menuDetail,
-                  extra: _mockMenuDetail(check.englishName, check.status),
+              builder: (context, state) => Consumer(
+                builder: (context, ref, _) => HomeScreen(
+                  recentChecks: [
+                    for (final check in ref.watch(myChecksProvider))
+                      RecentCheck(
+                        menuId: check.menuId,
+                        koreanName: check.koreanName,
+                        englishName: check.englishName,
+                        subtitle: _checkSubtitle(check),
+                        status: check.status,
+                      ),
+                  ],
+                  onProfileTap: () => context.push(AppRoutes.myPage),
+                  // 식당 선택 화면은 최상위 경로라 하단 탭 없이 열립니다.
+                  onCheckMenuTap: () =>
+                      context.push(AppRoutes.restaurantSelect),
+                  // 메뉴 상세는 최상위 경로라 하단 탭 없이 열립니다.
+                  onRecentCheckTap: (check) =>
+                      context.push(AppRoutes.menuDetailOf(check.menuId)),
                 ),
               ),
             ),
@@ -160,13 +175,12 @@ final GoRouter appRouter = GoRouter(
     ),
 
     // ---- 마이페이지 (네비게이션 바 없음) ----
-    // TODO: 아래 화면의 임시 데이터(_mock...)는 provider/API 연결 시 교체합니다.
     GoRoute(
       path: AppRoutes.myPage,
       builder: (context, state) => Consumer(
         builder: (context, ref, _) => MyPageScreen(
-          nickname: _mockNickname,
-          email: _mockEmail,
+          nickname: ref.watch(accountProvider).nickname,
+          email: ref.watch(accountProvider).email,
           dietarySummary: myPageDietarySummaryOf(
             AppLocalizations.of(context),
             ref.watch(dietaryProfileProvider),
@@ -182,10 +196,15 @@ final GoRouter appRouter = GoRouter(
     ),
     GoRoute(
       path: AppRoutes.editProfile,
-      builder: (context, state) => EditProfileScreen(
-        initialNickname: _mockNickname,
-        onBack: () => context.pop(),
-        onSave: (nickname) => context.pop(), // TODO: 닉네임 저장 API
+      builder: (context, state) => Consumer(
+        builder: (context, ref, _) => EditProfileScreen(
+          initialNickname: ref.read(accountProvider).nickname,
+          onBack: () => context.pop(),
+          onSave: (nickname) {
+            ref.read(accountProvider.notifier).saveNickname(nickname);
+            context.pop();
+          },
+        ),
       ),
     ),
     GoRoute(
@@ -247,21 +266,44 @@ final GoRouter appRouter = GoRouter(
     ),
     GoRoute(
       path: AppRoutes.savedRestaurants,
-      builder: (context, state) => SavedRestaurantsScreen(
-        restaurants: _mockSavedRestaurants,
-        onBack: () => context.pop(),
-        onRestaurantTap: (restaurant) =>
-            context.push(AppRoutes.restaurantDetailOf(restaurant.id)),
+      // 식당 상세·Explore의 북마크와 같은 상태(savedRestaurantIdsProvider)를 보여줍니다.
+      builder: (context, state) => Consumer(
+        builder: (context, ref, _) => SavedRestaurantsScreen(
+          restaurants: [
+            // TODO: 저장한 식당 목록 API로 교체합니다. 지금은 지도 샘플에서 id로 찾습니다.
+            for (final id in ref.watch(savedRestaurantIdsProvider))
+              if (findMapRestaurant(id) case final restaurant?)
+                SavedRestaurant(
+                  id: restaurant.id,
+                  name: restaurant.name,
+                  category: restaurant.category,
+                  address: restaurant.address,
+                ),
+          ],
+          onBack: () => context.pop(),
+          onRestaurantTap: (restaurant) =>
+              context.push(AppRoutes.restaurantDetailOf(restaurant.id)),
+        ),
       ),
     ),
     GoRoute(
       path: AppRoutes.savedMenus,
-      builder: (context, state) => SavedMenusScreen(
-        menus: _mockSavedMenus,
-        onBack: () => context.pop(),
-        onMenuTap: (menu) => context.push(
-          AppRoutes.menuDetail,
-          extra: _mockMenuDetail(menu.englishName, menu.status),
+      // 홈 Recent Checks와 같은 My Checks 목록을 보여줍니다.
+      builder: (context, state) => Consumer(
+        builder: (context, ref, _) => SavedMenusScreen(
+          menus: [
+            for (final check in ref.watch(myChecksProvider))
+              SavedMenu(
+                menuId: check.menuId,
+                koreanName: check.koreanName,
+                englishName: check.englishName,
+                subtitle: _checkSubtitle(check),
+                status: check.status,
+              ),
+          ],
+          onBack: () => context.pop(),
+          onMenuTap: (menu) =>
+              context.push(AppRoutes.menuDetailOf(menu.menuId)),
         ),
       ),
     ),
@@ -274,14 +316,12 @@ final GoRouter appRouter = GoRouter(
       ),
     ),
 
-    // ---- 온보딩 (알레르기 / 식단) ----
-
-    // ---- 메뉴 상세 ----
-    // extra로 MenuDetail을 받습니다. 없으면 임시로 샘플 메뉴를 보여줍니다.
+    // ---- 메뉴 상세 ('/menu/:id') ----
+    // TODO: 메뉴 상세 API(id)로 교체합니다. 지금은 임시 메뉴 목록에서 id로 찾습니다.
     GoRoute(
       path: AppRoutes.menuDetail,
       builder: (context, state) => MenuDetailScreen(
-        menu: state.extra as MenuDetail? ?? _mockKimchiJjigaeDetail,
+        menu: findMockMenuDetail(state.pathParameters['id']!),
         onBack: () => context.pop(),
       ),
     ),
@@ -293,17 +333,15 @@ final GoRouter appRouter = GoRouter(
         onBack: () => context.pop(),
         onSelect: (restaurant) {
           // 이전 스캔 결과가 남지 않도록 초기화한 뒤 선택한 식당으로 스캔을 시작합니다.
+          final scanRestaurant = ScanRestaurant(
+            name: restaurant.name,
+            category: restaurant.category,
+            address: restaurant.address,
+          );
           ProviderScope.containerOf(
             context,
-          ).read(scanFlowProvider.notifier).reset();
-          context.push(
-            AppRoutes.scan,
-            extra: ScanRestaurant(
-              name: restaurant.name,
-              category: restaurant.category,
-              address: restaurant.address,
-            ),
-          );
+          ).read(scanFlowProvider.notifier).start(scanRestaurant);
+          context.push(AppRoutes.scan, extra: scanRestaurant);
         },
       ),
     ),
@@ -335,11 +373,8 @@ final GoRouter appRouter = GoRouter(
             onBack: () => context.pop(),
             onForYouTap: () =>
                 context.push(AppRoutes.personalizedMenusOf(restaurant.id)),
-            // 개인화 판정 없이 흔히 들어가는 재료만 보여줍니다.
-            onMenuTap: (menu) => context.push(
-              AppRoutes.menuDetail,
-              extra: _mockMenuDetail(menu.englishName, null),
-            ),
+            onMenuTap: (menu) =>
+                context.push(AppRoutes.menuDetailOf(menu.menuId)),
           ),
         );
       },
@@ -351,10 +386,7 @@ final GoRouter appRouter = GoRouter(
       builder: (context, state) => PersonalizedMenuListScreen(
         menus: _mockPersonalizedMenus,
         onBack: () => context.pop(),
-        onMenuTap: (menu) => context.push(
-          AppRoutes.menuDetail,
-          extra: _mockMenuDetail(menu.englishName, menu.status),
-        ),
+        onMenuTap: (menu) => context.push(AppRoutes.menuDetailOf(menu.menuId)),
       ),
     ),
 
@@ -428,21 +460,20 @@ final GoRouter appRouter = GoRouter(
           if (context.mounted) context.push(AppRoutes.scanSaved);
         },
         onFinish: () => context.go(AppRoutes.home),
+        // TODO: 메뉴 분석 API가 메뉴 id를 주면 그 값을 씁니다.
         onViewDetails: (item) => context.push(
-          AppRoutes.menuDetail,
-          extra: _mockMenuDetail(
-            item.englishName,
-            ProviderScope.containerOf(
-              context,
-            ).read(scanFlowProvider).statusOf(item.id),
-          ),
+          AppRoutes.menuDetailOf(mockMenuIdOf(item.englishName)),
         ),
       ),
     ),
     GoRoute(
       path: AppRoutes.scanSaved,
       builder: (context, state) => ScanSavedScreen(
-        restaurant: _mockScanRestaurant,
+        restaurant:
+            ProviderScope.containerOf(
+              context,
+            ).read(scanFlowProvider).restaurant ??
+            _mockScanRestaurant,
         onBack: () => context.pop(),
         onDone: () => context.go(AppRoutes.home),
       ),
@@ -450,9 +481,13 @@ final GoRouter appRouter = GoRouter(
   ],
 );
 
+/// 홈 Recent Checks·Saved Menus 카드의 부제입니다. 예: 'Myeongdong Kyoja · Today'
+String _checkSubtitle(MenuCheck check) {
+  final day = check.checkedAt.toRelativeDayLabel();
+  return check.restaurantName.isEmpty ? day : '${check.restaurantName} · $day';
+}
+
 // ---- 임시 데이터 (서버/상태 연결 전까지만 사용) ----
-const String _mockNickname = 'Biiiiii';
-const String _mockEmail = 'bitok@kakao.com';
 const List<String> _mockAllergens = [
   'Shrimp',
   'Prawn',
@@ -460,114 +495,37 @@ const List<String> _mockAllergens = [
   'Anchovy',
   'Peanut',
 ];
-const List<RecentCheck> _mockRecentChecks = [
-  RecentCheck(
-    koreanName: '비빔밥',
-    englishName: 'Bibimbap',
-    subtitle: 'Myeongdong Kyoja · Today',
-    status: BitokMenuStatus.safe,
-  ),
-  RecentCheck(
-    koreanName: '김치찌개',
-    englishName: 'Kimchi Jjigae',
-    subtitle: 'Myeongdong Kyoja · Today',
-    status: BitokMenuStatus.avoid,
-  ),
-  RecentCheck(
-    koreanName: '불고기',
-    englishName: 'Bulgogi',
-    subtitle: 'Myeongdong Kyoja · Today',
-    status: BitokMenuStatus.notSure,
-  ),
-  RecentCheck(
-    koreanName: '비빔밥',
-    englishName: 'Bibimbap',
-    subtitle: 'Myeongdong Kyoja · Today',
-    status: BitokMenuStatus.safe,
-  ),
-  RecentCheck(
-    koreanName: '김치찌개',
-    englishName: 'Kimchi Jjigae',
-    subtitle: 'Myeongdong Kyoja · Today',
-    status: BitokMenuStatus.avoid,
-  ),
-  RecentCheck(
-    koreanName: '불고기',
-    englishName: 'Bulgogi',
-    subtitle: 'Myeongdong Kyoja · Today',
-    status: BitokMenuStatus.notSure,
-  ),
-];
-const List<SavedRestaurant> _mockSavedRestaurants = [
-  SavedRestaurant(
-    id: 'myeongdong-kyoja',
-    name: 'Myeongdong Kyoja',
-    category: 'Korean Restaurant',
-    address: '29 Myeongdong 10-gil, Jung-gu',
-  ),
-];
-const List<SavedMenu> _mockSavedMenus = [
-  SavedMenu(
-    koreanName: '비빔밥',
-    englishName: 'Bibimbap',
-    subtitle: 'Myeongdong Kyoja · Today',
-    status: BitokMenuStatus.safe,
-  ),
-];
 const ScanRestaurant _mockScanRestaurant = ScanRestaurant(
   name: 'Myeongdong Kyoja',
   category: 'Korean Restaurant',
   address: '29 Myeongdong 10-gil, Jung-gu',
 );
 const List<CheckedMenu> _mockCheckedMenus = [
-  CheckedMenu(koreanName: '김치찌개', englishName: 'Kimchi Jjigae'),
-  CheckedMenu(koreanName: '비빔밥', englishName: 'Bibimbap'),
-  CheckedMenu(koreanName: '불고기', englishName: 'Bulgogi'),
+  CheckedMenu(
+    menuId: 'kimchi-jjigae',
+    koreanName: '김치찌개',
+    englishName: 'Kimchi Jjigae',
+  ),
+  CheckedMenu(menuId: 'bibimbap', koreanName: '비빔밥', englishName: 'Bibimbap'),
+  CheckedMenu(menuId: 'bulgogi', koreanName: '불고기', englishName: 'Bulgogi'),
 ];
 const List<PersonalizedMenu> _mockPersonalizedMenus = [
   PersonalizedMenu(
+    menuId: 'kimchi-jjigae',
     koreanName: '김치찌개',
     englishName: 'Kimchi Jjigae',
     status: BitokMenuStatus.avoid,
   ),
   PersonalizedMenu(
+    menuId: 'bibimbap',
     koreanName: '비빔밥',
     englishName: 'Bibimbap',
     status: BitokMenuStatus.safe,
   ),
   PersonalizedMenu(
+    menuId: 'bulgogi',
     koreanName: '불고기',
     englishName: 'Bulgogi',
     status: BitokMenuStatus.notSure,
   ),
 ];
-const MenuDetail _mockKimchiJjigaeDetail = MenuDetail(
-  englishName: 'Kimchi Jjigae',
-  avoidIngredients: ['Shrimp'],
-  notSureIngredients: ['Shrimp'],
-  commonIngredients: _mockCommonIngredients,
-);
-const List<CommonIngredient> _mockCommonIngredients = [
-  CommonIngredient(category: 'Crustacean Shellfish', items: ['Salted shrimp']),
-  CommonIngredient(category: 'Fish', items: ['Anchovy sauce', 'Anchovy broth']),
-  CommonIngredient(category: 'Soybeans', items: ['Tofu', 'Soy sauce']),
-  CommonIngredient(
-    category: 'Wheat',
-    items: ['Some soy sauces and seasonings'],
-  ),
-];
-
-/// TODO: 메뉴 상세 API 연결 시 제거합니다. 판정 결과에 맞춰 Avoid / Not Sure 카드만 바꿔 보여줍니다.
-/// [status]가 null이면(개인화 판정 없음) 판정 카드 없이 재료만 보여줍니다.
-MenuDetail _mockMenuDetail(String englishName, BitokMenuStatus? status) =>
-    MenuDetail(
-      englishName: englishName,
-      avoidIngredients: status == BitokMenuStatus.avoid
-          ? const ['Shrimp']
-          : const [],
-      notSureIngredients:
-          status == BitokMenuStatus.avoid || status == BitokMenuStatus.notSure
-          ? const ['Shrimp']
-          : const [],
-      commonIngredients: _mockCommonIngredients,
-    );

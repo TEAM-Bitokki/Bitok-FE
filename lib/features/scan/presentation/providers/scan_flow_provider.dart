@@ -1,6 +1,9 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../explore/presentation/models/mock_menu_catalog.dart';
+import '../../../mypage/presentation/providers/my_checks_provider.dart';
 import '../../data/models/scan_menu_item.dart';
+import '../../data/models/scan_restaurant.dart';
 import '../../data/models/staff_question.dart';
 import 'scan_flow_state.dart';
 
@@ -14,6 +17,10 @@ class ScanFlowNotifier extends Notifier<ScanFlowState> {
   /// 이전 스캔 결과를 모두 지웁니다. 새 스캔 플로우를 시작할 때 호출합니다.
   void reset() => state = const ScanFlowState();
 
+  /// REST-01에서 고른 식당으로 새 스캔 플로우를 시작합니다. 이전 스캔 결과는 지웁니다.
+  void start(ScanRestaurant restaurant) =>
+      state = ScanFlowState(restaurant: restaurant);
+
   /// 메뉴판 이미지에서 메뉴를 인식합니다.
   ///
   /// 이미 인식한 이미지와 같으면 다시 인식하지 않아, REST-04에서 고친 목록이 유지됩니다.
@@ -25,6 +32,7 @@ class ScanFlowNotifier extends Notifier<ScanFlowState> {
     // TODO: OCR API를 연결하면 응답으로 메뉴 목록을 채웁니다.
     // 연동 전까지는 화면 확인을 위해 임시 데이터를 사용합니다.
     state = ScanFlowState(
+      restaurant: state.restaurant,
       imagePath: imagePath,
       items: [
         _newItem(koreanName: '김치찌개', englishName: 'Kimchi Jjigae'),
@@ -106,9 +114,28 @@ class ScanFlowNotifier extends Notifier<ScanFlowState> {
   }
 
   /// REST-07 결과를 My Checks에 저장합니다.
+  ///
+  /// 고른 메뉴마다 확인 결과가 한 건씩 저장되어 홈 Recent Checks와 Saved Menus에 나타납니다.
+  /// 이미 저장한 결과를 다시 저장하면(REST-08 → REST-07로 돌아온 경우) 중복으로 추가하지 않습니다.
   Future<void> save() async {
-    // TODO: 저장 API를 연결합니다. 연동 전까지는 저장 시각만 기록합니다.
-    state = state.copyWith(savedAt: DateTime.now());
+    if (state.savedAt != null) return;
+    // TODO: 저장 API를 연결합니다.
+    final checks = ref.read(myChecksProvider.notifier);
+    final now = DateTime.now();
+    checks.addAll([
+      for (final item in state.selectedItems)
+        MenuCheck(
+          id: checks.newId(),
+          // TODO: 메뉴 분석 API가 메뉴 id를 주면 그 값을 씁니다.
+          menuId: mockMenuIdOf(item.englishName),
+          koreanName: item.koreanName,
+          englishName: item.englishName,
+          restaurantName: state.restaurant?.name ?? '',
+          status: state.statusOf(item.id),
+          checkedAt: now,
+        ),
+    ]);
+    state = state.copyWith(savedAt: now);
   }
 
   ScanMenuItem _newItem({

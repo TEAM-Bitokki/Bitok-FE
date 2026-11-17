@@ -10,8 +10,14 @@ import '../../../../core/design_system/bitok_text_styles.dart';
 
 //API 미적용 작성
 class CheckedMenu {
-  const CheckedMenu({required this.koreanName, required this.englishName});
+  const CheckedMenu({
+    required this.menuId,
+    required this.koreanName,
+    required this.englishName,
+  });
 
+  /// 메뉴 상세('/menu/:id')로 이동할 때 쓰는 id입니다.
+  final String menuId;
   final String koreanName;
   final String englishName;
 }
@@ -214,9 +220,17 @@ Widget restaurantDetailPreview() => const MaterialApp(
     name: 'Myeongdong Kyoja',
     info: 'Korean · 350 m',
     menus: [
-      CheckedMenu(koreanName: '김치찌개', englishName: 'Kimchi Jjigae'),
-      CheckedMenu(koreanName: '비빔밥', englishName: 'Bibimbap'),
-      CheckedMenu(koreanName: '불고기', englishName: 'Bulgogi'),
+      CheckedMenu(
+        menuId: 'kimchi-jjigae',
+        koreanName: '김치찌개',
+        englishName: 'Kimchi Jjigae',
+      ),
+      CheckedMenu(
+        menuId: 'bibimbap',
+        koreanName: '비빔밥',
+        englishName: 'Bibimbap',
+      ),
+      CheckedMenu(menuId: 'bulgogi', koreanName: '불고기', englishName: 'Bulgogi'),
     ],
   ),
 );

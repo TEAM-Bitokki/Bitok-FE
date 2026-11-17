@@ -11,11 +11,14 @@ import '../../../../core/design_system/bitok_text_styles.dart';
 /// 사용자의 식단 프로필에 맞춰 판정된 메뉴 한 개입니다.
 class PersonalizedMenu {
   const PersonalizedMenu({
+    required this.menuId,
     required this.koreanName,
     required this.englishName,
     required this.status,
   });
 
+  /// 메뉴 상세('/menu/:id')로 이동할 때 쓰는 id입니다.
+  final String menuId;
   final String koreanName;
   final String englishName;
   final BitokMenuStatus status;
@@ -83,16 +86,19 @@ Widget personalizedMenuListPreview() => const MaterialApp(
   home: PersonalizedMenuListScreen(
     menus: [
       PersonalizedMenu(
+        menuId: 'kimchi-jjigae',
         koreanName: '김치찌개',
         englishName: 'Kimchi Jjigae',
         status: BitokMenuStatus.avoid,
       ),
       PersonalizedMenu(
+        menuId: 'bibimbap',
         koreanName: '비빔밥',
         englishName: 'Bibimbap',
         status: BitokMenuStatus.safe,
       ),
       PersonalizedMenu(
+        menuId: 'bulgogi',
         koreanName: '불고기',
         englishName: 'Bulgogi',
         status: BitokMenuStatus.notSure,

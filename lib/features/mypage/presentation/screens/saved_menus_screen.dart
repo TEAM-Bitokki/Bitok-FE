@@ -9,19 +9,21 @@ import '../../../../core/design_system/bitok_colors.dart';
 //API 미적용 작성
 class SavedMenu {
   const SavedMenu({
+    required this.menuId,
     required this.koreanName,
     required this.englishName,
     required this.subtitle,
     required this.status,
   });
 
+  /// 메뉴 상세('/menu/:id')로 이동할 때 쓰는 id입니다.
+  final String menuId;
   final String koreanName;
   final String englishName;
 
   final String subtitle;
   final BitokMenuStatus status;
 }
-
 
 class SavedMenusScreen extends StatelessWidget {
   const SavedMenusScreen({
@@ -71,18 +73,21 @@ Widget savedMenusPreview() => const MaterialApp(
   home: SavedMenusScreen(
     menus: [
       SavedMenu(
+        menuId: 'bibimbap',
         koreanName: '비빔밥',
         englishName: 'Bibimbap',
         subtitle: 'Myeongdong Kyoja · Today',
         status: BitokMenuStatus.safe,
       ),
       SavedMenu(
+        menuId: 'kimchi-jjigae',
         koreanName: '김치찌개',
         englishName: 'Kimchi Jjigae',
         subtitle: 'Myeongdong Kyoja · Today',
         status: BitokMenuStatus.avoid,
       ),
       SavedMenu(
+        menuId: 'bulgogi',
         koreanName: '불고기',
         englishName: 'Bulgogi',
         subtitle: 'Myeongdong Kyoja · Today',
