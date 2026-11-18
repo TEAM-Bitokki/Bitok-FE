@@ -1,0 +1,14 @@
+# json_serializable / freezed 공통 설정
+# - field_rename: snake → Dart의 camelCase 필드를 서버의 snake_case 키로 자동 매핑
+#   (예: hasProfile ↔ has_profile). 필드마다 @JsonKey(name: ...)를 달 필요가 없습니다.
+# - explicit_to_json: true → 중첩 객체도 toJson()이 Map으로 변환됩니다.
+#
+# 모델을 추가·수정한 뒤에는 생성 코드를 다시 만들어야 합니다:
+#   dart run build_runner build -d
+targets:
+  $default:
+    builders:
+      json_serializable:
+        options:
+          field_rename: snake
+          explicit_to_json: true
