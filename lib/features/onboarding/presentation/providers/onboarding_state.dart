@@ -2,8 +2,11 @@
 // 함께 쓰는 입력 상태를 정의합니다. 각 단계 화면은 별도 라우트이므로
 // onboarding_provider.dart가 이 상태를 단계 간에 유지합니다.
 
-/// 식단 선택지입니다. 선택 전에는 [OnboardingState.diet]가 null입니다.
-enum DietType { noParticularDiet, vegan, vegetarian, pescatarian }
+import '../../../../core/models/diet_type.dart';
+
+// 이 파일을 import하던 곳이 그대로 DietType을 쓸 수 있도록 다시 내보냅니다.
+// 식단 선택 전에는 [OnboardingState.diet]가 null입니다.
+export '../../../../core/models/diet_type.dart';
 
 class OnboardingState {
   const OnboardingState({

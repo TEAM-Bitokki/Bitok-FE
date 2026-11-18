@@ -21,5 +21,9 @@ jobs:
       - name: Install dependencies
         run: flutter pub get
 
+      # *.g.dart / *.freezed.dart는 gitignore 대상이라 CI에서 직접 생성합니다.
+      - name: Generate code (build_runner)
+        run: dart run build_runner build -d
+
       - name: Build APK (debug)
         run: flutter build apk --debug

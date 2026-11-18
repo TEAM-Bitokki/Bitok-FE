@@ -31,5 +31,6 @@
   "dietDairy": "유제품",
   "onboardingStepLabel": "STEP {step} / {total}",
   "commonSave": "저장",
-  "myPageAllergyCount": "{count, plural, =0{알레르기 없음} other{알레르기 {count}개}}"
+  "myPageAllergyCount": "{count, plural, =0{알레르기 없음} other{알레르기 {count}개}}",
+  "errorTryAgain": "문제가 발생했어요. 다시 시도해 주세요."
 }

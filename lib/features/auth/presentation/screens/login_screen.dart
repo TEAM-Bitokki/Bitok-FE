@@ -8,6 +8,7 @@ import '../../../../core/design_system/bitok_colors.dart';
 import '../../../../core/router/app_router.dart';
 import '../../../../l10n/generated/app_localizations.dart';
 import '../providers/login_provider.dart';
+import '../providers/login_state.dart';
 import '../widgets/login_header.dart';
 
 // presentation/screens: 화면은 UI 조립 역할만 담당하도록 얇게 유지합니다.
@@ -15,16 +16,23 @@ import '../widgets/login_header.dart';
 class LoginScreen extends ConsumerWidget {
   const LoginScreen({super.key});
 
-  Future<void> _onGetStarted(BuildContext context, WidgetRef ref) async {
-    // TODO: 로그인 플로우가 준비되면 로그인 성공 후에 아래 분기를 실행합니다.
-    final isFirstLogin = await ref.read(loginProvider.notifier).isFirstLogin();
-    if (!context.mounted) return;
-    context.go(isFirstLogin ? AppRoutes.onboardingNickname : AppRoutes.home);
-  }
-
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final l10n = AppLocalizations.of(context);
+    final isLoading = ref.watch(loginProvider) is LoginLoading;
+
+    ref.listen(loginProvider, (_, next) {
+      switch (next) {
+        case LoginSuccess(:final me):
+          context.go(me.hasProfile ? AppRoutes.home : AppRoutes.onboardingNickname);
+        case LoginFailure():
+          ScaffoldMessenger.of(context)
+            ..hideCurrentSnackBar()
+            ..showSnackBar(SnackBar(content: Text(l10n.errorTryAgain)));
+        case LoginInitial() || LoginLoading():
+          break;
+      }
+    });
 
     return Scaffold(
       backgroundColor: BitokColors.white,
@@ -40,7 +48,9 @@ class LoginScreen extends ConsumerWidget {
               BitokButton(
                 label: l10n.getStarted,
                 variant: BitokButtonVariant.login,
-                onPressed: () => _onGetStarted(context, ref),
+                onPressed: isLoading
+                    ? null
+                    : () => ref.read(loginProvider.notifier).start(),
               ),
             ],
           ),

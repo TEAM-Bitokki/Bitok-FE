@@ -140,5 +140,9 @@
         "type": "int"
       }
     }
+  },
+  "errorTryAgain": "Something went wrong. Please try again.",
+  "@errorTryAgain": {
+    "description": "Generic message shown when a request fails"
   }
 }
