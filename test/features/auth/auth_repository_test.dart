@@ -6,7 +6,7 @@ import 'package:bitok/core/network/device_token_storage.dart';
 import 'package:bitok/core/network/error_code.dart';
 import 'package:bitok/features/auth/data/datasources/auth_remote_data_source.dart';
 import 'package:bitok/features/auth/data/repositories/auth_repository.dart';
-import 'package:bitok/features/onboarding/presentation/providers/onboarding_state.dart';
+import 'package:bitok/core/models/diet_type.dart';
 import 'package:dio/dio.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -77,9 +77,13 @@ void main() {
     expect(me.hasProfile, isFalse);
     expect(me.dietType, DietType.noParticularDiet);
 
-    final signUp = adapter.requests.last;
-    expect(signUp.path, '/api/auth/sign-up');
+    expect(adapter.requests.map((r) => '${r.method} ${r.path}'), [
+      'GET /api/auth/me',
+      'POST /api/auth/sign-up',
+    ]);
+    final [me0, signUp] = adapter.requests;
     expect(signUp.headers.containsKey('deviceToken'), isFalse);
+    expect(signUp.data, {'device_token': me0.headers['deviceToken']});
     expect(signUp.data, {'device_token': storage.token});
   });
 
@@ -88,6 +92,26 @@ void main() {
       'GET /api/auth/me': (200, {..._me, 'diet_type': 'keto'}),
     });
     expect((await repo(adapter).signInOrSignUp()).dietType, isNull);
+  });
+
+  test('malformed 200 body -> ApiException(invalidResponse), no sign-up', () async {
+    final adapter = _FakeAdapter({
+      'GET /api/auth/me': (200, {'user_id': 1}), // has_profile 누락
+    });
+    await expectLater(repo(adapter).signInOrSignUp(),
+        throwsA(isA<ApiException>().having((e) => e.code, 'code', ErrorCode.invalidResponse)));
+    expect(adapter.requests, hasLength(1));
+  });
+
+  test('non-string error code/message falls back safely', () async {
+    final adapter = _FakeAdapter({
+      'GET /api/auth/me': (500, {'error': {'code': 123, 'message': null}}),
+    });
+    await expectLater(repo(adapter).signInOrSignUp(),
+        throwsA(isA<ApiException>()
+            .having((e) => e.code, 'code', ErrorCode.unknown)
+            .having((e) => e.message, 'message', '')
+            .having((e) => e.statusCode, 'status', 500)));
   });
 
   test('other errors are rethrown without sign-up', () async {

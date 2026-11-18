@@ -18,11 +18,7 @@ Future<void> main() async {
   'dart_defines.json에 KAKAO_NATIVE_KEY를 설정하세요. '
       '(실행 설정의 Additional run args: --dart-define-from-file=dart_defines.json)',
   );
-  assert(
-  AppConfig.apiBaseUrl.isNotEmpty,
-  'dart_defines.json에 API_BASE_URL을 설정하세요. '
-      '(실행 설정의 Additional run args: --dart-define-from-file=dart_defines.json)',
-  );
+  AppConfig.validate();
   await KakaoMapSdk.instance.initialize(_kakaoNativeKey);
   final sharedPreferences = await SharedPreferences.getInstance();
 

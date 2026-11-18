@@ -20,6 +20,7 @@ enum ErrorCode {
 
   // ── 앱에서 붙이는 코드 (서버 응답을 못 받은 경우) ──
   network('NETWORK'),
+  invalidResponse('INVALID_RESPONSE'), // 성공 응답이지만 형식이 모델과 다름
   timeout('TIMEOUT'),
   cancelled('CANCELLED'),
   unknown('UNKNOWN');

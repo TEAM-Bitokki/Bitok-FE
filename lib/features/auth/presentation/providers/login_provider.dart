@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/network/api_exception.dart';
+import '../../../../core/network/error_code.dart';
 import '../../data/repositories/auth_repository.dart';
 import 'login_state.dart';
 
@@ -21,6 +22,11 @@ class LoginNotifier extends Notifier<LoginState> {
       state = LoginSuccess(me);
     } on ApiException catch (e) {
       state = LoginFailure(e);
+    } catch (e) {
+      // 예상 못 한 오류여도 로딩에 멈추지 않고 다시 시도할 수 있게 합니다.
+      state = LoginFailure(
+        ApiException(code: ErrorCode.unknown, message: e.toString()),
+      );
     }
   }
 }

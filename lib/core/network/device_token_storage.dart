@@ -6,7 +6,11 @@ import '../providers/shared_preferences_provider.dart';
 
 // 서버 계정을 식별하는 deviceToken(UUID v4)을 만들고 보관합니다.
 // 처음 호출할 때 생성해서 저장하고, 이후에는 같은 값을 돌려줍니다.
-// 앱을 지우면 값이 사라지므로 다시 가입(POST /api/auth/sign-up)해야 합니다.
+//
+// SharedPreferences는 Android Auto Backup / iOS 백업 대상이라, 재설치·기기 이전 후
+// 백업이 복원되면 같은 토큰(= 같은 계정)으로 이어집니다. 백업이 없으면 새 토큰이
+// 만들어지고, 처음 요청에서 401 → 자동 가입됩니다.
+// 복원을 막아야 한다면 AndroidManifest의 allowBackup / dataExtractionRules로 제외하세요.
 class DeviceTokenStorage {
   DeviceTokenStorage(this._prefs);
 

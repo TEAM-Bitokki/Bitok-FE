@@ -9,24 +9,25 @@ import '../models/sign_up_request.dart';
 // 직접 참조하지 않습니다.
 //
 // 메서드 하나 = API 하나. ApiClient가 헤더·에러 변환을 처리하므로
-// 여기서는 경로와 모델 변환만 씁니다.
+// 여기서는 경로와 모델 변환(ApiClient.decode)만 씁니다.
 class AuthRemoteDataSource {
   AuthRemoteDataSource(this._api);
 
   final ApiClient _api;
 
   /// 이 요청만 deviceToken 헤더 없이 보냅니다. 토큰은 body에 담습니다.
-  Future<MeResponse> signUp(SignUpRequest request) async => MeResponse.fromJson(
+  Future<MeResponse> signUp(SignUpRequest request) async => ApiClient.decode(
     await _api.post(
       '/api/auth/sign-up',
       data: request.toJson(),
       options: ApiClient.noAuth,
     ),
+    MeResponse.fromJson,
   );
 
   /// 등록되지 않은 토큰이면 ApiException(ErrorCode.unauthorized)을 던집니다.
   Future<MeResponse> getMe() async =>
-      MeResponse.fromJson(await _api.get('/api/auth/me'));
+      ApiClient.decode(await _api.get('/api/auth/me'), MeResponse.fromJson);
 }
 
 final authRemoteDataSourceProvider = Provider<AuthRemoteDataSource>((ref) {

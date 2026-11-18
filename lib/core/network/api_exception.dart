@@ -39,10 +39,12 @@ class ApiException implements Exception {
 
     if (body is Map && body['error'] is Map) {
       final error = body['error'] as Map;
+      final code = error['code'];
+      final message = error['message'];
       final detail = error['detail'];
       return ApiException(
-        code: ErrorCode.fromValue(error['code'] as String?),
-        message: error['message'] as String? ?? '',
+        code: ErrorCode.fromValue(code is String ? code : null),
+        message: message is String ? message : '',
         detail: detail is Map ? Map<String, dynamic>.from(detail) : null,
         statusCode: statusCode,
       );

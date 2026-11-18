@@ -14,9 +14,9 @@ List<T> _parseItems<T>(Map<String, dynamic> json, JsonItemParser<T> parseItem) =
 /// ingredients/search, restaurants/{id}/menus/for-you
 ///
 /// ```dart
-/// final res = ListResponse.fromJson(
+/// final res = ApiClient.decode(
 ///   await _api.get('/api/restaurants/search', query: {'q': q}),
-///   RestaurantBrief.fromJson,
+///   (json) => ListResponse.fromJson(json, RestaurantBrief.fromJson),
 /// );
 /// ```
 class ListResponse<T> {

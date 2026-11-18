@@ -34,11 +34,14 @@ void main() {
     expect(res.page.nextCursor, 'eyJpZCI6MTIzfQ==');
   });
 
-  test('PagedResponse last page has null cursor', () {
+  test('PagedResponse last page keeps items and has null cursor', () {
     final res = PagedResponse.fromJson({
-      'items': [],
+      'items': [
+        {'id': 9},
+      ],
       'page': {'next_cursor': null, 'has_more': false},
     }, _Item.fromJson);
+    expect(res.items.single.id, 9);
     expect(res.page.hasMore, isFalse);
     expect(res.page.nextCursor, isNull);
   });

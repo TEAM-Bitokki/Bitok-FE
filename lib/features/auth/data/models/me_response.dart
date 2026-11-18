@@ -1,7 +1,6 @@
 import 'package:json_annotation/json_annotation.dart';
 
-import '../../../onboarding/presentation/providers/onboarding_state.dart'
-    show DietType;
+import '../../../../core/models/diet_type.dart';
 
 part 'me_response.g.dart';
 
