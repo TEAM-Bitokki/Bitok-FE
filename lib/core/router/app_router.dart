@@ -75,7 +75,12 @@ class AppRoutes {
 
   static String restaurantDetailOf(String id) =>
       '/restaurant/${Uri.encodeComponent(id)}';
-  static String menuDetailOf(String id) => '/menu/${Uri.encodeComponent(id)}';
+
+  /// [status]를 주면 메뉴 상세가 임시 카탈로그 대신 그 판정(저장한 확인 결과)을 보여줍니다.
+  static String menuDetailOf(String id, {BitokMenuStatus? status}) => Uri(
+    path: '/menu/${Uri.encodeComponent(id)}',
+    queryParameters: status == null ? null : {'status': status.name},
+  ).toString();
   static String personalizedMenusOf(String id) =>
       '${restaurantDetailOf(id)}/for-you';
 
@@ -145,8 +150,9 @@ final GoRouter appRouter = GoRouter(
                   onCheckMenuTap: () =>
                       context.push(AppRoutes.restaurantSelect),
                   // 메뉴 상세는 최상위 경로라 하단 탭 없이 열립니다.
-                  onRecentCheckTap: (check) =>
-                      context.push(AppRoutes.menuDetailOf(check.menuId)),
+                  onRecentCheckTap: (check) => context.push(
+                    AppRoutes.menuDetailOf(check.menuId, status: check.status),
+                  ),
                 ),
               ),
             ),
@@ -302,8 +308,9 @@ final GoRouter appRouter = GoRouter(
               ),
           ],
           onBack: () => context.pop(),
-          onMenuTap: (menu) =>
-              context.push(AppRoutes.menuDetailOf(menu.menuId)),
+          onMenuTap: (menu) => context.push(
+            AppRoutes.menuDetailOf(menu.menuId, status: menu.status),
+          ),
         ),
       ),
     ),
@@ -321,7 +328,11 @@ final GoRouter appRouter = GoRouter(
     GoRoute(
       path: AppRoutes.menuDetail,
       builder: (context, state) => MenuDetailScreen(
-        menu: findMockMenuDetail(state.pathParameters['id']!),
+        menu: findMockMenuDetail(
+          state.pathParameters['id']!,
+          status: BitokMenuStatus.values
+              .asNameMap()[state.uri.queryParameters['status']],
+        ),
         onBack: () => context.pop(),
       ),
     ),
@@ -462,7 +473,13 @@ final GoRouter appRouter = GoRouter(
         onFinish: () => context.go(AppRoutes.home),
         // TODO: 메뉴 분석 API가 메뉴 id를 주면 그 값을 씁니다.
         onViewDetails: (item) => context.push(
-          AppRoutes.menuDetailOf(mockMenuIdOf(item.englishName)),
+          AppRoutes.menuDetailOf(
+            mockMenuIdOf(item.englishName),
+            // 직원 답변으로 정한 판정을 상세에도 그대로 보여줍니다.
+            status: ProviderScope.containerOf(
+              context,
+            ).read(scanFlowProvider).statusOf(item.id),
+          ),
         ),
       ),
     ),

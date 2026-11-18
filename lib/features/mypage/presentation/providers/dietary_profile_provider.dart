@@ -43,7 +43,7 @@ class DietaryProfileNotifier extends Notifier<DietaryProfile> {
 
   /// 온보딩을 마치면 입력한 프로필 전체를 반영합니다.
   void replace(DietaryProfile profile) {
-    state = profile;
+    state = profile.copyWith(allergies: List.unmodifiable(profile.allergies));
   }
 
   // TODO: 알레르기 수정 API를 연결합니다.

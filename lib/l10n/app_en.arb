@@ -131,5 +131,14 @@
   "commonSave": "Save",
   "@commonSave": {
     "description": "Bottom button label when editing the profile from My Page"
+  },
+  "myPageAllergyCount": "{count, plural, =0{No food allergies} =1{1 food allergy} other{{count} food allergies}}",
+  "@myPageAllergyCount": {
+    "description": "Allergy count in the My Page dietary summary",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
   }
 }

@@ -30,5 +30,6 @@
   "dietEggs": "달걀",
   "dietDairy": "유제품",
   "onboardingStepLabel": "STEP {step} / {total}",
-  "commonSave": "저장"
+  "commonSave": "저장",
+  "myPageAllergyCount": "{count, plural, =0{알레르기 없음} other{알레르기 {count}개}}"
 }

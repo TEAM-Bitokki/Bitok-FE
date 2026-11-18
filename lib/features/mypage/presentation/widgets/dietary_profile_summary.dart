@@ -20,11 +20,6 @@ String dietSummaryOfProfile(AppLocalizations l10n, DietaryProfile profile) {
 
 /// 마이페이지 카드의 한 줄 요약입니다. 예: '3 food allergies · Vegetarian'
 String myPageDietarySummaryOf(AppLocalizations l10n, DietaryProfile profile) {
-  final count = profile.allergies.length;
-  final allergies = switch (count) {
-    0 => 'No food allergies',
-    1 => '1 food allergy',
-    _ => '$count food allergies',
-  };
+  final allergies = l10n.myPageAllergyCount(profile.allergies.length);
   return '$allergies · ${dietLabel(l10n, profile.diet)}';
 }

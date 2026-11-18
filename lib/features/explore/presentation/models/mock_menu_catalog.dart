@@ -6,21 +6,24 @@ import '../screens/menu_detail_screen.dart';
 /// 영문 메뉴 이름으로 임시 메뉴 id를 만듭니다. 예: 'Kimchi Jjigae' → 'kimchi-jjigae'
 ///
 /// 스캔한 메뉴처럼 아직 서버 id가 없는 메뉴에 씁니다.
+/// 영문자·숫자가 없는 이름(예: '짜장면')은 메뉴끼리 id가 겹치지 않도록 이름을 그대로 씁니다.
 String mockMenuIdOf(String englishName) {
-  final slug = englishName
-      .trim()
+  final name = englishName.trim();
+  final slug = name
       .toLowerCase()
       .replaceAll(RegExp(r'[^a-z0-9]+'), '-')
       .replaceAll(RegExp(r'^-+|-+$'), '');
-  return slug.isEmpty ? 'menu' : slug;
+  if (slug.isNotEmpty) return slug;
+  return name.isEmpty ? 'menu' : name;
 }
 
 /// 메뉴 id로 상세 정보를 찾습니다.
 ///
 /// 목록에 없는 메뉴(직접 추가한 메뉴 등)는 id에서 이름을 만들고 판정 카드 없이 보여줍니다.
-MenuDetail findMockMenuDetail(String menuId) {
+/// [status]를 주면(저장한 확인 결과) 임시 카탈로그의 고정 판정보다 우선합니다.
+MenuDetail findMockMenuDetail(String menuId, {BitokMenuStatus? status}) {
   final entry = _catalog[menuId];
-  final status = entry?.$2;
+  status ??= entry?.$2;
   return MenuDetail(
     englishName: entry?.$1 ?? _titleCase(menuId),
     avoidIngredients: status == BitokMenuStatus.avoid
