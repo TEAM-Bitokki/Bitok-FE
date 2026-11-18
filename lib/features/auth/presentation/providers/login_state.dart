@@ -1,4 +1,5 @@
-import '../../data/models/user_model.dart';
+import '../../../../core/network/api_exception.dart';
+import '../../data/models/me_response.dart';
 
 // presentation/providers: 화면의 상태(State)를 정의합니다.
 // login_provider.dart가 이 상태를 만들어내고, login_screen.dart가 watch해서
@@ -16,13 +17,14 @@ class LoginLoading extends LoginState {
 }
 
 class LoginSuccess extends LoginState {
-  const LoginSuccess(this.user);
+  const LoginSuccess(this.me);
 
-  final UserModel user;
+  final MeResponse me;
 }
 
 class LoginFailure extends LoginState {
-  const LoginFailure(this.message);
+  const LoginFailure(this.error);
 
-  final String message;
+  /// 화면 분기는 error.code(ErrorCode)로 합니다.
+  final ApiException error;
 }

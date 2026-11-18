@@ -2,8 +2,17 @@
 // 함께 쓰는 입력 상태를 정의합니다. 각 단계 화면은 별도 라우트이므로
 // onboarding_provider.dart가 이 상태를 단계 간에 유지합니다.
 
+import 'package:json_annotation/json_annotation.dart';
+
 /// 식단 선택지입니다. 선택 전에는 [OnboardingState.diet]가 null입니다.
-enum DietType { noParticularDiet, vegan, vegetarian, pescatarian }
+/// 서버 값(diet_type)과 같은 enum을 씁니다: none / vegan / vegetarian / pescatarian
+enum DietType {
+  @JsonValue('none')
+  noParticularDiet,
+  vegan,
+  vegetarian,
+  pescatarian,
+}
 
 class OnboardingState {
   const OnboardingState({

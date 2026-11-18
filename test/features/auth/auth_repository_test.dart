@@ -1,0 +1,99 @@
+import 'dart:convert';
+
+import 'package:bitok/core/network/api_client.dart';
+import 'package:bitok/core/network/api_exception.dart';
+import 'package:bitok/core/network/device_token_storage.dart';
+import 'package:bitok/core/network/error_code.dart';
+import 'package:bitok/features/auth/data/datasources/auth_remote_data_source.dart';
+import 'package:bitok/features/auth/data/repositories/auth_repository.dart';
+import 'package:bitok/features/onboarding/presentation/providers/onboarding_state.dart';
+import 'package:dio/dio.dart';
+import 'package:flutter_test/flutter_test.dart';
+import 'package:shared_preferences/shared_preferences.dart';
+
+/// 실제 서버 대신 경로별로 정해둔 응답을 돌려주는 어댑터.
+class _FakeAdapter implements HttpClientAdapter {
+  _FakeAdapter(this.routes);
+
+  final Map<String, (int, Object)> routes;
+  final requests = <RequestOptions>[];
+
+  @override
+  Future<ResponseBody> fetch(RequestOptions options, Stream<List<int>>? _, Future<void>? _) async {
+    requests.add(options);
+    final (status, body) = routes['${options.method} ${options.path}'] ?? (404, _error('NOT_FOUND'));
+    return ResponseBody.fromString(jsonEncode(body), status, headers: {
+      Headers.contentTypeHeader: [Headers.jsonContentType],
+    });
+  }
+
+  @override
+  void close({bool force = false}) {}
+}
+
+Map<String, Object?> _error(String code) => {
+  'error': {'code': code, 'message': code, 'detail': null},
+};
+
+const _me = {
+  'user_id': 1,
+  'nickname': null,
+  'has_profile': false,
+  'diet_type': 'none',
+  'allergen_count': 0,
+};
+
+void main() {
+  late DeviceTokenStorage storage;
+
+  setUp(() async {
+    SharedPreferences.setMockInitialValues({});
+    storage = DeviceTokenStorage(await SharedPreferences.getInstance());
+  });
+
+  AuthRepository repo(_FakeAdapter adapter) {
+    final api = ApiClient(deviceTokenStorage: storage, dio: Dio()..httpClientAdapter = adapter);
+    return AuthRepository(AuthRemoteDataSource(api), storage);
+  }
+
+  test('registered device: returns me without sign-up', () async {
+    final adapter = _FakeAdapter({
+      'GET /api/auth/me': (200, {..._me, 'has_profile': true, 'diet_type': 'vegan'}),
+    });
+    final me = await repo(adapter).signInOrSignUp();
+    expect(me.hasProfile, isTrue);
+    expect(me.dietType, DietType.vegan);
+    expect(adapter.requests.map((r) => r.path), ['/api/auth/me']);
+    expect(adapter.requests.single.headers['deviceToken'], storage.token);
+  });
+
+  test('unregistered device: 401 -> sign-up with token in body, no header', () async {
+    final adapter = _FakeAdapter({
+      'GET /api/auth/me': (401, _error('UNAUTHORIZED')),
+      'POST /api/auth/sign-up': (200, _me),
+    });
+    final me = await repo(adapter).signInOrSignUp();
+    expect(me.userId, 1);
+    expect(me.hasProfile, isFalse);
+    expect(me.dietType, DietType.noParticularDiet);
+
+    final signUp = adapter.requests.last;
+    expect(signUp.path, '/api/auth/sign-up');
+    expect(signUp.headers.containsKey('deviceToken'), isFalse);
+    expect(signUp.data, {'device_token': storage.token});
+  });
+
+  test('unknown diet_type does not crash', () async {
+    final adapter = _FakeAdapter({
+      'GET /api/auth/me': (200, {..._me, 'diet_type': 'keto'}),
+    });
+    expect((await repo(adapter).signInOrSignUp()).dietType, isNull);
+  });
+
+  test('other errors are rethrown without sign-up', () async {
+    final adapter = _FakeAdapter({'GET /api/auth/me': (502, _error('MAP_UNAVAILABLE'))});
+    await expectLater(repo(adapter).signInOrSignUp(),
+        throwsA(isA<ApiException>().having((e) => e.code, 'code', ErrorCode.mapUnavailable)));
+    expect(adapter.requests, hasLength(1));
+  });
+}
