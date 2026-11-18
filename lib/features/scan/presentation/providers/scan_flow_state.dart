@@ -44,6 +44,13 @@ class ScanFlowState {
   ///
   /// 직원 답변이 '들어가요'면 Avoid, '모르겠어요'면 Not Sure, '안 들어가요'면 Safe입니다.
   /// 아직 답하지 않은 메뉴는 Not Sure로 표시합니다.
+  /// 메뉴에 대해 직원에게 확인한 재료의 영문 이름입니다. 질문하지 않은 메뉴는 비어 있습니다.
+  List<String> checkedIngredientsOf(String itemId) => [
+    for (final question in questions)
+      if (question.itemId == itemId)
+        for (final ingredient in question.ingredients) ingredient.englishName,
+  ];
+
   BitokMenuStatus statusOf(String itemId) {
     return switch (answers[itemId]) {
       StaffAnswer.contains => BitokMenuStatus.avoid,

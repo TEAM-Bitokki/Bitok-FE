@@ -76,10 +76,17 @@ class AppRoutes {
   static String restaurantDetailOf(String id) =>
       '/restaurant/${Uri.encodeComponent(id)}';
 
-  /// [status]를 주면 메뉴 상세가 임시 카탈로그 대신 그 판정(저장한 확인 결과)을 보여줍니다.
-  static String menuDetailOf(String id, {BitokMenuStatus? status}) => Uri(
+  /// [status]를 주면 메뉴 상세가 임시 카탈로그 대신 그 판정(저장한 확인 결과)과
+  /// 직원에게 확인한 재료([checkedIngredients])를 보여줍니다.
+  static String menuDetailOf(
+    String id, {
+    BitokMenuStatus? status,
+    List<String> checkedIngredients = const [],
+  }) => Uri(
     path: '/menu/${Uri.encodeComponent(id)}',
-    queryParameters: status == null ? null : {'status': status.name},
+    queryParameters: status == null
+        ? null
+        : {'status': status.name, 'ingredient': checkedIngredients},
   ).toString();
   static String personalizedMenusOf(String id) =>
       '${restaurantDetailOf(id)}/for-you';
@@ -143,6 +150,7 @@ final GoRouter appRouter = GoRouter(
                         englishName: check.englishName,
                         subtitle: _checkSubtitle(check),
                         status: check.status,
+                        checkedIngredients: check.checkedIngredients,
                       ),
                   ],
                   onProfileTap: () => context.push(AppRoutes.myPage),
@@ -151,7 +159,11 @@ final GoRouter appRouter = GoRouter(
                       context.push(AppRoutes.restaurantSelect),
                   // 메뉴 상세는 최상위 경로라 하단 탭 없이 열립니다.
                   onRecentCheckTap: (check) => context.push(
-                    AppRoutes.menuDetailOf(check.menuId, status: check.status),
+                    AppRoutes.menuDetailOf(
+                      check.menuId,
+                      status: check.status,
+                      checkedIngredients: check.checkedIngredients,
+                    ),
                   ),
                 ),
               ),
@@ -305,11 +317,16 @@ final GoRouter appRouter = GoRouter(
                 englishName: check.englishName,
                 subtitle: _checkSubtitle(check),
                 status: check.status,
+                checkedIngredients: check.checkedIngredients,
               ),
           ],
           onBack: () => context.pop(),
           onMenuTap: (menu) => context.push(
-            AppRoutes.menuDetailOf(menu.menuId, status: menu.status),
+            AppRoutes.menuDetailOf(
+              menu.menuId,
+              status: menu.status,
+              checkedIngredients: menu.checkedIngredients,
+            ),
           ),
         ),
       ),
@@ -332,6 +349,8 @@ final GoRouter appRouter = GoRouter(
           state.pathParameters['id']!,
           status: BitokMenuStatus.values
               .asNameMap()[state.uri.queryParameters['status']],
+          checkedIngredients:
+              state.uri.queryParametersAll['ingredient'] ?? const [],
         ),
         onBack: () => context.pop(),
       ),
@@ -472,15 +491,19 @@ final GoRouter appRouter = GoRouter(
         },
         onFinish: () => context.go(AppRoutes.home),
         // TODO: 메뉴 분석 API가 메뉴 id를 주면 그 값을 씁니다.
-        onViewDetails: (item) => context.push(
-          AppRoutes.menuDetailOf(
-            mockMenuIdOf(item.englishName),
-            // 직원 답변으로 정한 판정을 상세에도 그대로 보여줍니다.
-            status: ProviderScope.containerOf(
-              context,
-            ).read(scanFlowProvider).statusOf(item.id),
-          ),
-        ),
+        onViewDetails: (item) {
+          // 직원 답변으로 정한 판정과 확인한 재료를 상세에도 그대로 보여줍니다.
+          final scan = ProviderScope.containerOf(
+            context,
+          ).read(scanFlowProvider);
+          context.push(
+            AppRoutes.menuDetailOf(
+              mockMenuIdOf(item.englishName),
+              status: scan.statusOf(item.id),
+              checkedIngredients: scan.checkedIngredientsOf(item.id),
+            ),
+          );
+        },
       ),
     ),
     GoRoute(

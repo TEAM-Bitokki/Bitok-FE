@@ -133,6 +133,7 @@ class ScanFlowNotifier extends Notifier<ScanFlowState> {
           restaurantName: state.restaurant?.name ?? '',
           status: state.statusOf(item.id),
           checkedAt: now,
+          checkedIngredients: state.checkedIngredientsOf(item.id),
         ),
     ]);
     state = state.copyWith(savedAt: now);

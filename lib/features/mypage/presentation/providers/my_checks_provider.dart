@@ -14,6 +14,7 @@ class MenuCheck {
     required this.restaurantName,
     required this.status,
     required this.checkedAt,
+    this.checkedIngredients = const [],
   });
 
   /// 확인 결과 한 건의 id입니다.
@@ -28,6 +29,10 @@ class MenuCheck {
   final String restaurantName;
   final BitokMenuStatus status;
   final DateTime checkedAt;
+
+  /// 직원에게 확인한 재료의 영문 이름입니다. 예: ['shrimp', 'anchovy']
+  /// 메뉴 상세의 판정 카드에 표시합니다.
+  final List<String> checkedIngredients;
 }
 
 /// 저장한 메뉴 확인 결과 목록입니다. 최근에 저장한 것이 앞에 옵니다.
@@ -39,15 +44,20 @@ class MyChecksNotifier extends Notifier<List<MenuCheck>> {
   List<MenuCheck> build() {
     final today = DateTime.now();
     return [
-      _mock('bibimbap', '비빔밥', 'Bibimbap', BitokMenuStatus.safe, today),
+      _mock('bibimbap', '비빔밥', 'Bibimbap', BitokMenuStatus.safe, today, [
+        'shrimp',
+      ]),
       _mock(
         'kimchi-jjigae',
         '김치찌개',
         'Kimchi Jjigae',
         BitokMenuStatus.avoid,
         today,
+        ['shrimp', 'anchovy'],
       ),
-      _mock('bulgogi', '불고기', 'Bulgogi', BitokMenuStatus.notSure, today),
+      _mock('bulgogi', '불고기', 'Bulgogi', BitokMenuStatus.notSure, today, [
+        'meat',
+      ]),
     ];
   }
 
@@ -66,6 +76,7 @@ class MyChecksNotifier extends Notifier<List<MenuCheck>> {
     String englishName,
     BitokMenuStatus status,
     DateTime checkedAt,
+    List<String> checkedIngredients,
   ) {
     return MenuCheck(
       id: newId(),
@@ -75,6 +86,7 @@ class MyChecksNotifier extends Notifier<List<MenuCheck>> {
       restaurantName: 'Myeongdong Kyoja',
       status: status,
       checkedAt: checkedAt,
+      checkedIngredients: checkedIngredients,
     );
   }
 }

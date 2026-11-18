@@ -14,6 +14,7 @@ class SavedMenu {
     required this.englishName,
     required this.subtitle,
     required this.status,
+    this.checkedIngredients = const [],
   });
 
   /// 메뉴 상세('/menu/:id')로 이동할 때 쓰는 id입니다.
@@ -23,6 +24,9 @@ class SavedMenu {
 
   final String subtitle;
   final BitokMenuStatus status;
+
+  /// 직원에게 확인한 재료입니다. 메뉴 상세의 판정 카드에 넘깁니다.
+  final List<String> checkedIngredients;
 }
 
 class SavedMenusScreen extends StatelessWidget {
