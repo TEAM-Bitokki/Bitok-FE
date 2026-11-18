@@ -15,8 +15,13 @@ import '../widgets/onboarding_step_scaffold.dart';
 ///
 /// 검색어로 알레르기 목록을 거르고, 여러 개를 고를 수 있습니다.
 /// 고른 항목은 하단 버튼 위에 가로로 스크롤되는 칩으로 표시됩니다.
+///
+/// [onSave]를 넘기면 마이페이지의 수정 화면으로 쓰입니다.
+/// 진행 단계와 Skip을 숨기고, 하단 버튼이 Save가 됩니다.
 class OnboardingAllergiesScreen extends ConsumerStatefulWidget {
-  const OnboardingAllergiesScreen({super.key});
+  const OnboardingAllergiesScreen({super.key, this.onSave});
+
+  final VoidCallback? onSave;
 
   @override
   ConsumerState<OnboardingAllergiesScreen> createState() =>
@@ -53,13 +58,22 @@ class _OnboardingAllergiesScreenState
     );
     final notifier = ref.read(onboardingProvider.notifier);
     final results = _results;
+    final onSave = widget.onSave;
+    final editing = onSave != null;
 
     return OnboardingStepScaffold(
       headerTitle: l10n.onboardingAllergiesHeader,
-      step: 2,
+      step: editing ? null : 2,
       title: l10n.onboardingAllergiesTitle,
-      onSkip: _onSkip,
-      onNext: selected.isEmpty ? null : _goToDiet,
+      onSkip: editing ? null : _onSkip,
+      buttonLabel: editing ? l10n.commonSave : null,
+      // 수정할 때는 알레르기를 모두 지우고 저장할 수도 있습니다.
+      onNext: editing
+          ? () {
+              FocusScope.of(context).unfocus();
+              onSave();
+            }
+          : (selected.isEmpty ? null : _goToDiet),
       bottomAccessory: selected.isEmpty
           ? null
           : _SelectedAllergyChips(

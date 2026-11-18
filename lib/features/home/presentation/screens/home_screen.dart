@@ -13,17 +13,24 @@ import '../widgets/home_check_menu_card.dart';
 //API 미적용 작성
 class RecentCheck {
   const RecentCheck({
+    required this.menuId,
     required this.koreanName,
     required this.englishName,
     required this.subtitle,
     required this.status,
+    this.checkedIngredients = const [],
   });
 
+  /// 메뉴 상세('/menu/:id')로 이동할 때 쓰는 id입니다.
+  final String menuId;
   final String koreanName;
   final String englishName;
 
   final String subtitle;
   final BitokMenuStatus status;
+
+  /// 직원에게 확인한 재료입니다. 메뉴 상세의 판정 카드에 넘깁니다.
+  final List<String> checkedIngredients;
 }
 
 class HomeScreen extends StatelessWidget {
@@ -150,18 +157,21 @@ Widget homePreview() => const MaterialApp(
   home: HomeScreen(
     recentChecks: [
       RecentCheck(
+        menuId: 'bibimbap',
         koreanName: '비빔밥',
         englishName: 'Bibimbap',
         subtitle: 'Myeongdong Kyoja · Today',
         status: BitokMenuStatus.safe,
       ),
       RecentCheck(
+        menuId: 'bibimbap',
         koreanName: '비빔밥',
         englishName: 'Bibimbap',
         subtitle: 'Myeongdong Kyoja · Today',
         status: BitokMenuStatus.safe,
       ),
       RecentCheck(
+        menuId: 'bibimbap',
         koreanName: '비빔밥',
         englishName: 'Bibimbap',
         subtitle: 'Myeongdong Kyoja · Today',

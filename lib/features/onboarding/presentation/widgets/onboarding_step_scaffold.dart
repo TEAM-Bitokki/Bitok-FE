@@ -17,7 +17,7 @@ class OnboardingStepScaffold extends StatelessWidget {
   const OnboardingStepScaffold({
     super.key,
     required this.headerTitle,
-    required this.step,
+    this.step,
     required this.title,
     required this.body,
     required this.onNext,
@@ -35,7 +35,8 @@ class OnboardingStepScaffold extends StatelessWidget {
   final String headerTitle;
 
   /// 현재 단계입니다. 1부터 시작합니다.
-  final int step;
+  /// null이면 진행 막대와 STEP 라벨을 숨깁니다. (마이페이지에서 프로필을 수정할 때)
+  final int? step;
 
   final String title;
 
@@ -79,18 +80,20 @@ class OnboardingStepScaffold extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
-                    const SizedBox(height: 10),
-                    OnboardingProgressBar(
-                      currentStep: step,
-                      totalSteps: totalSteps,
-                    ),
-                    const SizedBox(height: 5),
-                    Text(
-                      l10n.onboardingStepLabel(step, totalSteps),
-                      style: BitokTextStyles.body3.copyWith(
-                        color: BitokColors.grey0,
+                    if (step case final step?) ...[
+                      const SizedBox(height: 10),
+                      OnboardingProgressBar(
+                        currentStep: step,
+                        totalSteps: totalSteps,
                       ),
-                    ),
+                      const SizedBox(height: 5),
+                      Text(
+                        l10n.onboardingStepLabel(step, totalSteps),
+                        style: BitokTextStyles.body3.copyWith(
+                          color: BitokColors.grey0,
+                        ),
+                      ),
+                    ],
                     const SizedBox(height: 12),
                     Text(
                       title,

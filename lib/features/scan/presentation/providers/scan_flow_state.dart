@@ -1,10 +1,12 @@
 import '../../../../common/widgets/bitok_status_chip.dart';
 import '../../data/models/scan_menu_item.dart';
+import '../../data/models/scan_restaurant.dart';
 import '../../data/models/staff_question.dart';
 
 /// 메뉴 스캔 플로우(REST-02 ~ REST-08) 동안 화면끼리 공유하는 상태입니다.
 class ScanFlowState {
   const ScanFlowState({
+    this.restaurant,
     this.imagePath,
     this.items = const [],
     this.selectedIds = const {},
@@ -12,6 +14,9 @@ class ScanFlowState {
     this.answers = const {},
     this.savedAt,
   });
+
+  /// REST-01에서 고른 식당입니다. 저장한 확인 결과에 식당 이름으로 남습니다.
+  final ScanRestaurant? restaurant;
 
   /// 스캔한 메뉴판 이미지 경로입니다.
   final String? imagePath;
@@ -39,6 +44,13 @@ class ScanFlowState {
   ///
   /// 직원 답변이 '들어가요'면 Avoid, '모르겠어요'면 Not Sure, '안 들어가요'면 Safe입니다.
   /// 아직 답하지 않은 메뉴는 Not Sure로 표시합니다.
+  /// 메뉴에 대해 직원에게 확인한 재료의 영문 이름입니다. 질문하지 않은 메뉴는 비어 있습니다.
+  List<String> checkedIngredientsOf(String itemId) => [
+    for (final question in questions)
+      if (question.itemId == itemId)
+        for (final ingredient in question.ingredients) ingredient.englishName,
+  ];
+
   BitokMenuStatus statusOf(String itemId) {
     return switch (answers[itemId]) {
       StaffAnswer.contains => BitokMenuStatus.avoid,
@@ -58,6 +70,7 @@ class ScanFlowState {
       : '${items.length} menu items recognized';
 
   ScanFlowState copyWith({
+    ScanRestaurant? restaurant,
     String? imagePath,
     List<ScanMenuItem>? items,
     Set<String>? selectedIds,
@@ -66,6 +79,7 @@ class ScanFlowState {
     DateTime? savedAt,
   }) {
     return ScanFlowState(
+      restaurant: restaurant ?? this.restaurant,
       imagePath: imagePath ?? this.imagePath,
       items: items ?? this.items,
       selectedIds: selectedIds ?? this.selectedIds,

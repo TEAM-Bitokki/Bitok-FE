@@ -8,11 +8,14 @@ import '../../../../core/design_system/bitok_colors.dart';
 //API 미적용 작성
 class SavedRestaurant {
   const SavedRestaurant({
+    required this.id,
     required this.name,
     required this.category,
     required this.address,
   });
 
+  /// 식당 상세('/restaurant/:id')로 이동할 때 쓰는 id입니다.
+  final String id;
   final String name;
   final String category;
   final String address;
@@ -66,16 +69,19 @@ Widget savedRestaurantsPreview() => const MaterialApp(
   home: SavedRestaurantsScreen(
     restaurants: [
       SavedRestaurant(
+        id: 'myeongdong-kyoja',
         name: 'Myeongdong Kyoja',
         category: 'Korean Restaurant',
         address: '29 Myeongdong 10-gil, Jung-gu',
       ),
       SavedRestaurant(
+        id: 'myeongdong-kyoja',
         name: 'Myeongdong Kyoja',
         category: 'Korean Restaurant',
         address: '29 Myeongdong 10-gil, Jung-gu',
       ),
       SavedRestaurant(
+        id: 'myeongdong-kyoja',
         name: 'Myeongdong Kyoja',
         category: 'Korean Restaurant',
         address: '29 Myeongdong 10-gil, Jung-gu',
