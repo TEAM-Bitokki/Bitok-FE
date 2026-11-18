@@ -3,6 +3,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:kakao_map_sdk/kakao_map_sdk.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+import 'core/config/app_config.dart';
 import 'core/design_system/bitok_colors.dart';
 import 'core/providers/shared_preferences_provider.dart';
 import 'core/router/app_router.dart';
@@ -15,6 +16,11 @@ Future<void> main() async {
   assert(
   _kakaoNativeKey.isNotEmpty,
   'dart_defines.json에 KAKAO_NATIVE_KEY를 설정하세요. '
+      '(실행 설정의 Additional run args: --dart-define-from-file=dart_defines.json)',
+  );
+  assert(
+  AppConfig.apiBaseUrl.isNotEmpty,
+  'dart_defines.json에 API_BASE_URL을 설정하세요. '
       '(실행 설정의 Additional run args: --dart-define-from-file=dart_defines.json)',
   );
   await KakaoMapSdk.instance.initialize(_kakaoNativeKey);
