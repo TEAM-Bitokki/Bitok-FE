@@ -10,6 +10,9 @@ class FakeAdapter implements HttpClientAdapter {
   final Map<String, (int, Object?)> routes;
   final requests = <RequestOptions>[];
 
+  /// 키에 해당하는 요청은 이 Future가 끝날 때까지 응답을 미룹니다. 요청이 겹치는 경우를 테스트할 때 씁니다.
+  final gates = <String, Future<void>>{};
+
   @override
   Future<ResponseBody> fetch(
     RequestOptions options,
@@ -17,9 +20,9 @@ class FakeAdapter implements HttpClientAdapter {
     Future<void>? _,
   ) async {
     requests.add(options);
-    final (status, body) =
-        routes['${options.method} ${options.path}'] ??
-        (404, fakeError('NOT_FOUND'));
+    final key = '${options.method} ${options.path}';
+    await gates[key];
+    final (status, body) = routes[key] ?? (404, fakeError('NOT_FOUND'));
     return ResponseBody.fromString(
       body == null ? '' : jsonEncode(body),
       status,

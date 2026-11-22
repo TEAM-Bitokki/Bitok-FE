@@ -14,7 +14,6 @@ import '../../../../core/design_system/bitok_text_styles.dart';
 import '../../../../core/models/allergen_item.dart';
 import '../../../../core/router/app_router.dart';
 import '../../../../l10n/generated/app_localizations.dart';
-import '../../../mypage/data/models/ingredient_item.dart';
 import '../providers/allergen_search_provider.dart';
 import '../providers/onboarding_provider.dart';
 import '../widgets/onboarding_step_scaffold.dart';
@@ -48,7 +47,7 @@ class _OnboardingAllergiesScreenState
   Timer? _debounceTimer;
 
   /// 다음 검색어 결과를 받는 동안 보여줄 직전 결과입니다. 목록이 깜빡이지 않게 합니다.
-  List<IngredientItem>? _lastResults;
+  List<AllergenItem>? _lastResults;
 
   @override
   void dispose() {
@@ -100,7 +99,8 @@ class _OnboardingAllergiesScreenState
           ? null
           : _SelectedAllergyChips(
               allergies: selected,
-              onDelete: notifier.toggleAllergy,
+              // 저장하는 동안은 고칠 수 없게 합니다. 저장 시작 시점의 목록만 저장되기 때문입니다.
+              onDelete: saving ? null : notifier.toggleAllergy,
             ),
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.stretch,
@@ -122,11 +122,13 @@ class _OnboardingAllergiesScreenState
                 itemCount: results.length,
                 separatorBuilder: (_, _) => const SizedBox(height: 8),
                 itemBuilder: (context, index) {
-                  final allergy = results[index].toAllergen();
+                  final allergy = results[index];
                   return BitokSelectionTile(
                     label: allergy.label,
                     selected: selected.contains(allergy),
-                    onTap: () => notifier.toggleAllergy(allergy),
+                    onTap: saving
+                        ? null
+                        : () => notifier.toggleAllergy(allergy),
                   );
                 },
               ),
@@ -174,10 +176,13 @@ class _SelectedAllergyChips extends StatelessWidget {
   });
 
   final List<AllergenItem> allergies;
-  final ValueChanged<AllergenItem> onDelete;
+
+  /// null이면 칩을 삭제할 수 없습니다.
+  final ValueChanged<AllergenItem>? onDelete;
 
   @override
   Widget build(BuildContext context) {
+    final onDelete = this.onDelete;
     return SizedBox(
       height: BitokDeletableChip.height,
       child: ListView.separated(
@@ -191,7 +196,7 @@ class _SelectedAllergyChips extends StatelessWidget {
           final allergy = allergies[index];
           return BitokDeletableChip(
             label: allergy.label,
-            onDelete: () => onDelete(allergy),
+            onDelete: onDelete == null ? null : () => onDelete(allergy),
           );
         },
       ),

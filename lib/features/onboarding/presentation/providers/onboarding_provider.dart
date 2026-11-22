@@ -56,17 +56,19 @@ class OnboardingNotifier extends Notifier<OnboardingState> {
   /// 두 요청 모두 같은 값을 다시 보내도 결과가 같으므로, 실패하면 처음부터 다시 호출하면 됩니다.
   /// diet_options 변환(채식이 아니면 보내지 않음)은 ProfileRepository가 맡습니다.
   Future<void> submit() async {
-    if (state.isNicknameValid) {
-      await ref.read(accountProvider.notifier).saveNickname(state.nickname);
+    // 저장을 기다리는 동안 입력이 바뀌어도, 제출한 시점의 값만 저장합니다.
+    final draft = state;
+    if (draft.isNicknameValid) {
+      await ref.read(accountProvider.notifier).saveNickname(draft.nickname);
     }
     await ref
         .read(profileRepositoryProvider)
         .saveProfile(
           DietaryProfile(
-            allergies: state.allergies,
-            diet: state.diet ?? DietType.noParticularDiet,
-            eatsEggs: state.eatsEggs,
-            eatsDairy: state.eatsDairy,
+            allergies: draft.allergies,
+            diet: draft.diet ?? DietType.noParticularDiet,
+            eatsEggs: draft.eatsEggs,
+            eatsDairy: draft.eatsDairy,
           ),
         );
     // 이미 불러온 프로필이 있으면 저장된 값으로 다시 불러옵니다. (아직 안 불러왔으면 아무 일도 없습니다)

@@ -59,7 +59,8 @@ class _OnboardingDietScreenState extends ConsumerState<OnboardingDietScreen>
               BitokSelectionTile(
                 label: dietLabel(l10n, diet),
                 selected: state.diet == diet,
-                onTap: () => notifier.selectDiet(diet),
+                // 저장하는 동안은 고칠 수 없게 합니다. 저장 시작 시점의 값만 저장되기 때문입니다.
+                onTap: saving ? null : () => notifier.selectDiet(diet),
               ),
               if (diet == DietType.vegetarian &&
                   state.diet == DietType.vegetarian)
@@ -72,12 +73,16 @@ class _OnboardingDietScreenState extends ConsumerState<OnboardingDietScreen>
                       OnboardingCheckOption(
                         label: l10n.onboardingDietEatsEggs,
                         checked: state.eatsEggs,
-                        onChanged: notifier.setEatsEggs,
+                        onChanged: (value) {
+                          if (!saving) notifier.setEatsEggs(value);
+                        },
                       ),
                       OnboardingCheckOption(
                         label: l10n.onboardingDietEatsDairy,
                         checked: state.eatsDairy,
-                        onChanged: notifier.setEatsDairy,
+                        onChanged: (value) {
+                          if (!saving) notifier.setEatsDairy(value);
+                        },
                       ),
                     ],
                   ),

@@ -35,15 +35,30 @@ class DietaryProfileNotifier extends AsyncNotifier<DietaryProfile> {
         current.copyWith(diet: diet, eatsEggs: eatsEggs, eatsDairy: eatsDairy),
   );
 
+  /// 진행 중인 저장입니다. 다음 저장은 이 저장이 끝난 뒤에 시작합니다.
+  Future<void> _lastSave = Future.value();
+
   // 서버는 프로필을 통째로 덮어쓰므로, 지금 값에 바뀐 부분만 합쳐 전체를 보냅니다.
+  // 저장이 겹치면 나중 요청이 앞선 변경을 되돌릴 수 있어서, 한 번에 하나씩 차례로 보냅니다.
+  // 각 저장은 앞선 저장이 끝난 뒤의 최신 프로필을 기준으로 합니다.
   // 실패하면 상태를 바꾸지 않고 ApiException을 던집니다. 화면이 안내를 맡습니다.
-  Future<void> _save(
+  Future<void> _save(DietaryProfile Function(DietaryProfile current) update) {
+    final save = _lastSave.then((_) => _saveNow(update));
+    // 앞선 저장이 실패해도 다음 저장은 진행합니다.
+    _lastSave = save.catchError((_) {});
+    return save;
+  }
+
+  Future<void> _saveNow(
     DietaryProfile Function(DietaryProfile current) update,
   ) async {
+    final userId = ref.read(accountProvider)?.userId;
     final current = await future;
     final saved = await ref
         .read(profileRepositoryProvider)
         .saveProfile(update(current));
+    // 기다리는 동안 계정이 바뀌었으면(탈퇴 등) 이전 계정의 응답을 반영하지 않습니다.
+    if (!ref.mounted || ref.read(accountProvider)?.userId != userId) return;
     state = AsyncData(saved);
   }
 }

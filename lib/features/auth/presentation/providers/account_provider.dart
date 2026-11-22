@@ -27,9 +27,12 @@ class AccountNotifier extends Notifier<Account?> {
 
   /// 닉네임을 서버에 저장하고, 응답으로 계정 정보를 갱신합니다.
   ///
+  /// 응답을 기다리는 동안 탈퇴했거나 계정이 바뀌었으면 응답을 반영하지 않습니다.
+  /// (탈퇴한 계정이 다시 로그인 상태로 돌아오지 않도록)
   /// 실패하면 상태를 바꾸지 않고 ApiException을 던집니다.
   Future<void> saveNickname(String nickname) async {
     final me = await ref.read(authRepositoryProvider).updateNickname(nickname);
+    if (state?.userId != me.userId) return;
     state = Account.fromMe(me);
   }
 

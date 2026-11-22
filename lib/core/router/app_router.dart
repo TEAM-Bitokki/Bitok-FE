@@ -357,17 +357,21 @@ final GoRouter appRouter = GoRouter(
         builder: (context, ref, _) => AccountDeletionScreen(
           onBack: () => context.pop(),
           onDelete: (deleteSavedMenus) async {
-            await ref
+            // 요청 중에 뒤로 가서 이 화면(ref, context)이 사라져도 정리와 이동을 마치도록,
+            // 앱 수명의 container와 router를 요청 전에 잡아 둡니다.
+            final container = ProviderScope.containerOf(context);
+            final router = GoRouter.of(context);
+            await container
                 .read(accountProvider.notifier)
                 .deleteAccount(deleteSavedMenus: deleteSavedMenus);
             // 탈퇴한 계정의 화면 상태를 비웁니다. 식단 프로필은 계정이 바뀌면 스스로 다시 불러옵니다.
-            ref
+            container
               ..invalidate(loginProvider)
               ..invalidate(onboardingProvider)
               ..invalidate(myChecksProvider)
               ..invalidate(savedRestaurantIdsProvider)
               ..invalidate(scanFlowProvider);
-            if (context.mounted) context.go(AppRoutes.login);
+            router.go(AppRoutes.login);
           },
         ),
       ),

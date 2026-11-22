@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:bitok/core/models/allergen_item.dart';
 import 'package:bitok/core/models/diet_type.dart';
 import 'package:bitok/core/network/api_client.dart';
@@ -147,5 +149,25 @@ void main() {
     final profile = await c.read(dietaryProfileProvider.future);
     expect(profile.allergies, [_egg]);
     expect(profile.eatsDairy, isTrue);
+  });
+
+  test('input changed while saving is not sent', () async {
+    final adapter = FakeAdapter({
+      'GET /api/auth/me': (200, _me),
+      'PATCH /api/users/me': (200, {..._me, 'nickname': 'Hyunjin'}),
+      'PUT /api/profiles/me': (200, _savedProfile),
+    });
+    final c = await filledIn(adapter);
+    final gate = Completer<void>();
+    adapter.gates['PATCH /api/users/me'] = gate.future;
+    final notifier = c.read(onboardingProvider.notifier);
+
+    final submit = notifier.submit();
+    await pumpEventQueue();
+    notifier.selectDiet(DietType.vegan); // 닉네임 저장을 기다리는 동안 식단을 바꿈
+    gate.complete();
+    await submit;
+
+    expect((adapter.requests.last.data as Map)['diet_type'], 'vegetarian');
   });
 }

@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:bitok/core/network/api_client.dart';
 import 'package:bitok/core/providers/shared_preferences_provider.dart';
 import 'package:bitok/core/network/api_exception.dart';
@@ -134,4 +136,29 @@ void main() {
     );
     expect(c.read(accountProvider)!.userId, 1);
   });
+
+  test(
+    'nickname response after account deletion does not log back in',
+    () async {
+      final adapter = FakeAdapter({
+        'GET /api/auth/me': (200, _me),
+        'PATCH /api/users/me': (200, {..._me, 'nickname': 'Late'}),
+        'DELETE /api/users/me': (204, null),
+      });
+      final c = container(adapter);
+      await c.read(loginProvider.notifier).start();
+      final gate = Completer<void>();
+      adapter.gates['PATCH /api/users/me'] = gate.future;
+
+      final save = c.read(accountProvider.notifier).saveNickname('Late');
+      await pumpEventQueue();
+      await c
+          .read(accountProvider.notifier)
+          .deleteAccount(deleteSavedMenus: false);
+      gate.complete();
+      await save;
+
+      expect(c.read(accountProvider), isNull);
+    },
+  );
 }

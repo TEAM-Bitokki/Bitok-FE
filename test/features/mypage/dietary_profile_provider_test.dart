@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:bitok/core/models/allergen_item.dart';
 import 'package:bitok/core/models/diet_type.dart';
 import 'package:bitok/core/network/api_client.dart';
@@ -173,6 +175,103 @@ void main() {
     await c
         .read(accountProvider.notifier)
         .deleteAccount(deleteSavedMenus: false);
+
+    expect((await c.read(dietaryProfileProvider.future)).allergies, isEmpty);
+  });
+
+  test('overlapping saves run one at a time on the latest profile', () async {
+    final adapter = FakeAdapter({
+      'GET /api/auth/me': (200, _me),
+      'GET /api/profiles/me': (200, _profile),
+      'PUT /api/profiles/me': (
+        200,
+        {
+          ..._profile,
+          'allergens': [
+            {'ingredient_id': 7, 'name_ko': '계란', 'name_en': 'Egg'},
+          ],
+        },
+      ),
+    });
+    final c = await loggedIn(adapter);
+    await c.read(dietaryProfileProvider.future);
+    final gate = Completer<void>();
+    adapter.gates['PUT /api/profiles/me'] = gate.future;
+    final notifier = c.read(dietaryProfileProvider.notifier);
+
+    final allergies = notifier.saveAllergies([_egg]);
+    final diet = notifier.saveDiet(
+      diet: DietType.vegan,
+      eatsEggs: false,
+      eatsDairy: false,
+    );
+    await pumpEventQueue();
+    // 첫 저장이 끝나기 전에는 두 번째 PUT을 보내지 않습니다.
+    expect(adapter.requests.where((r) => r.method == 'PUT'), hasLength(1));
+
+    adapter.routes['PUT /api/profiles/me'] = (
+      200,
+      {
+        'allergens': [
+          {'ingredient_id': 7, 'name_ko': '계란', 'name_en': 'Egg'},
+        ],
+        'diet_type': 'vegan',
+      },
+    );
+    gate.complete();
+    await Future.wait([allergies, diet]);
+
+    final puts = adapter.requests.where((r) => r.method == 'PUT').toList();
+    expect(puts, hasLength(2));
+    // 두 번째 저장은 첫 저장 결과(계란)를 기준으로 식단만 바꿉니다.
+    expect(puts.last.data, {
+      'allergen_ingredient_ids': [7],
+      'diet_type': 'vegan',
+      'diet_options': <String>[],
+    });
+  });
+
+  test('a failed save does not block the next one', () async {
+    final adapter = FakeAdapter({
+      'GET /api/auth/me': (200, _me),
+      'GET /api/profiles/me': (200, _profile),
+      'PUT /api/profiles/me': (500, fakeError('UNKNOWN')),
+    });
+    final c = await loggedIn(adapter);
+    await c.read(dietaryProfileProvider.future);
+    final notifier = c.read(dietaryProfileProvider.notifier);
+
+    await expectLater(
+      notifier.saveAllergies([_egg]),
+      throwsA(isA<ApiException>()),
+    );
+    adapter.routes['PUT /api/profiles/me'] = (200, _profile);
+    await notifier.saveAllergies([_egg]);
+
+    expect(adapter.requests.where((r) => r.method == 'PUT'), hasLength(2));
+  });
+
+  test('save response after account deletion is ignored', () async {
+    final adapter = FakeAdapter({
+      'GET /api/auth/me': (200, _me),
+      'GET /api/profiles/me': (200, _profile),
+      'PUT /api/profiles/me': (200, _profile),
+      'DELETE /api/users/me': (204, null),
+    });
+    final c = await loggedIn(adapter);
+    final sub = c.listen(dietaryProfileProvider, (_, _) {});
+    addTearDown(sub.close);
+    await c.read(dietaryProfileProvider.future);
+    final gate = Completer<void>();
+    adapter.gates['PUT /api/profiles/me'] = gate.future;
+
+    final save = c.read(dietaryProfileProvider.notifier).saveAllergies([_egg]);
+    await pumpEventQueue();
+    await c
+        .read(accountProvider.notifier)
+        .deleteAccount(deleteSavedMenus: false);
+    gate.complete();
+    await save;
 
     expect((await c.read(dietaryProfileProvider.future)).allergies, isEmpty);
   });
