@@ -4,6 +4,7 @@ import 'package:bitok/core/network/api_client.dart';
 import 'package:bitok/core/network/api_exception.dart';
 import 'package:bitok/core/network/device_token_storage.dart';
 import 'package:bitok/core/providers/shared_preferences_provider.dart';
+import 'package:bitok/features/auth/presentation/providers/account_provider.dart';
 import 'package:bitok/features/auth/presentation/providers/login_provider.dart';
 import 'package:bitok/features/mypage/presentation/providers/dietary_profile_provider.dart';
 import 'package:dio/dio.dart';
@@ -156,5 +157,23 @@ void main() {
       c.read(dietaryProfileProvider).value!.allergies.single.nameEn,
       'Shrimp',
     );
+  });
+
+  test('after account deletion the old profile is not shown', () async {
+    final adapter = FakeAdapter({
+      'GET /api/auth/me': (200, _me),
+      'GET /api/profiles/me': (200, _profile),
+      'DELETE /api/users/me': (204, null),
+    });
+    final c = await loggedIn(adapter);
+    final sub = c.listen(dietaryProfileProvider, (_, _) {});
+    addTearDown(sub.close);
+    expect((await c.read(dietaryProfileProvider.future)).allergies, isNotEmpty);
+
+    await c
+        .read(accountProvider.notifier)
+        .deleteAccount(deleteSavedMenus: false);
+
+    expect((await c.read(dietaryProfileProvider.future)).allergies, isEmpty);
   });
 }

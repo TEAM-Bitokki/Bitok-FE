@@ -5,27 +5,36 @@ import '../../../../common/widgets/bitok_button.dart';
 import '../../../../common/widgets/bitok_checkbox_row.dart';
 import '../../../../common/widgets/bitok_header.dart';
 import '../../../../common/widgets/bitok_modal.dart';
+import '../../../../common/widgets/saving_state_mixin.dart';
 import '../../../../core/design_system/bitok_colors.dart';
 import '../../../../core/design_system/bitok_text_styles.dart';
 
-//API 미적용 작성
+/// 회원 탈퇴 화면입니다.
+///
+/// 필수 동의 → 확인 다이얼로그 → [onDelete] 순서로 진행합니다.
+/// [onDelete]가 끝날 때까지 버튼을 비활성화하고, 실패하면 다시 시도하라고 안내합니다.
 class AccountDeletionScreen extends StatefulWidget {
   const AccountDeletionScreen({super.key, this.onBack, this.onDelete});
 
   final VoidCallback? onBack;
-  final ValueChanged<bool>? onDelete;
+
+  /// 인자는 '저장한 메뉴도 삭제' 선택 여부입니다.
+  final Future<void> Function(bool deleteSavedMenus)? onDelete;
 
   @override
   State<AccountDeletionScreen> createState() => _AccountDeletionScreenState();
 }
 
-class _AccountDeletionScreenState extends State<AccountDeletionScreen> {
+class _AccountDeletionScreenState extends State<AccountDeletionScreen>
+    with SavingStateMixin {
   bool _agreed = false;
   bool _deleteSavedMenus = false;
 
   Future<void> _confirmDelete() async {
+    final onDelete = widget.onDelete;
     final confirmed = await BitokConfirmDialog.showDeleteAccount(context);
-    if (confirmed == true) widget.onDelete?.call(_deleteSavedMenus);
+    if (confirmed != true || onDelete == null || !mounted) return;
+    await runSaving(() => onDelete(_deleteSavedMenus));
   }
 
   @override
@@ -77,7 +86,7 @@ class _AccountDeletionScreenState extends State<AccountDeletionScreen> {
               BitokButton(
                 label: 'Delete Account',
                 variant: BitokButtonVariant.delete,
-                onPressed: _agreed ? _confirmDelete : null,
+                onPressed: _agreed && !saving ? _confirmDelete : null,
               ),
             ],
           ),

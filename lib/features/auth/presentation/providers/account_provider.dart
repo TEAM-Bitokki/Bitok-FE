@@ -32,6 +32,18 @@ class AccountNotifier extends Notifier<Account?> {
     final me = await ref.read(authRepositoryProvider).updateNickname(nickname);
     state = Account.fromMe(me);
   }
+
+  /// 회원 탈퇴 후 로그아웃 상태(null)가 됩니다. 이 기기의 deviceToken도 지워지므로,
+  /// 다음 로그인은 새 계정으로 가입합니다.
+  ///
+  /// 실패하면 상태와 토큰을 그대로 두고 ApiException을 던집니다.
+  /// 계정에 딸린 다른 화면 상태는 호출한 쪽(라우터)이 비웁니다.
+  Future<void> deleteAccount({required bool deleteSavedMenus}) async {
+    await ref
+        .read(authRepositoryProvider)
+        .deleteAccount(deleteSavedMenus: deleteSavedMenus);
+    state = null;
+  }
 }
 
 final accountProvider = NotifierProvider<AccountNotifier, Account?>(

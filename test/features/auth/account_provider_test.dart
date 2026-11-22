@@ -85,4 +85,53 @@ void main() {
     );
     expect(c.read(accountProvider)!.nickname, 'Old');
   });
+
+  test(
+    'deleteAccount: logs out, and next login signs up with a new token',
+    () async {
+      final adapter = FakeAdapter({
+        'GET /api/auth/me': (200, {..._me, 'nickname': 'Old'}),
+        'DELETE /api/users/me': (204, null),
+      });
+      final c = container(adapter);
+      await c.read(loginProvider.notifier).start();
+      final oldToken = adapter.requests.single.headers['deviceToken'];
+
+      await c
+          .read(accountProvider.notifier)
+          .deleteAccount(deleteSavedMenus: true);
+
+      expect(c.read(accountProvider), isNull);
+      expect(adapter.requests.last.data, {
+        'agree': true,
+        'delete_saved_menus': true,
+      });
+
+      // 서버에서 계정이 사라졌으므로 새 토큰은 401 → 가입으로 이어집니다.
+      adapter.routes['GET /api/auth/me'] = (401, fakeError('UNAUTHORIZED'));
+      adapter.routes['POST /api/auth/sign-up'] = (200, {..._me, 'user_id': 2});
+      await c.read(loginProvider.notifier).start();
+
+      final signUp = adapter.requests.last;
+      expect(signUp.path, '/api/auth/sign-up');
+      expect((signUp.data as Map)['device_token'], isNot(oldToken));
+      expect(c.read(accountProvider)!.userId, 2);
+    },
+  );
+
+  test('deleteAccount failure keeps the account and throws', () async {
+    final c = container(
+      FakeAdapter({
+        'GET /api/auth/me': (200, _me),
+        'DELETE /api/users/me': (500, fakeError('UNKNOWN')),
+      }),
+    );
+    await c.read(loginProvider.notifier).start();
+
+    await expectLater(
+      c.read(accountProvider.notifier).deleteAccount(deleteSavedMenus: false),
+      throwsA(isA<ApiException>()),
+    );
+    expect(c.read(accountProvider)!.userId, 1);
+  });
 }

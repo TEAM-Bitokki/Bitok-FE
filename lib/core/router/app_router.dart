@@ -5,6 +5,7 @@ import '../../common/widgets/bitok_status_chip.dart';
 import '../utils/date_formatter.dart';
 import '../../l10n/generated/app_localizations.dart';
 import '../../features/auth/presentation/providers/account_provider.dart';
+import '../../features/auth/presentation/providers/login_provider.dart';
 import '../../features/auth/presentation/screens/login_screen.dart';
 import '../../features/explore/presentation/models/map_restaurant.dart';
 import '../../features/explore/presentation/models/mock_menu_catalog.dart';
@@ -352,10 +353,23 @@ final GoRouter appRouter = GoRouter(
     ),
     GoRoute(
       path: AppRoutes.accountDeletion,
-      builder: (context, state) => AccountDeletionScreen(
-        onBack: () => context.pop(),
-        // TODO: 탈퇴 API 연결 후 로그인 화면으로 이동합니다.
-        onDelete: (deleteSavedMenus) => context.go(AppRoutes.home),
+      builder: (context, state) => Consumer(
+        builder: (context, ref, _) => AccountDeletionScreen(
+          onBack: () => context.pop(),
+          onDelete: (deleteSavedMenus) async {
+            await ref
+                .read(accountProvider.notifier)
+                .deleteAccount(deleteSavedMenus: deleteSavedMenus);
+            // 탈퇴한 계정의 화면 상태를 비웁니다. 식단 프로필은 계정이 바뀌면 스스로 다시 불러옵니다.
+            ref
+              ..invalidate(loginProvider)
+              ..invalidate(onboardingProvider)
+              ..invalidate(myChecksProvider)
+              ..invalidate(savedRestaurantIdsProvider)
+              ..invalidate(scanFlowProvider);
+            if (context.mounted) context.go(AppRoutes.login);
+          },
+        ),
       ),
     ),
 
