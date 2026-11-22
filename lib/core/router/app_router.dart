@@ -4,6 +4,7 @@ import 'package:go_router/go_router.dart';
 import '../../common/widgets/bitok_status_chip.dart';
 import '../utils/date_formatter.dart';
 import '../../l10n/generated/app_localizations.dart';
+import '../../features/auth/presentation/providers/account_provider.dart';
 import '../../features/auth/presentation/screens/login_screen.dart';
 import '../../features/explore/presentation/models/map_restaurant.dart';
 import '../../features/explore/presentation/models/mock_menu_catalog.dart';
@@ -14,7 +15,6 @@ import '../../features/explore/presentation/screens/personalized_menu_list_scree
 import '../../features/explore/presentation/screens/restaurant_detail_screen.dart';
 import '../../features/explore/presentation/screens/restaurant_select_screen.dart';
 import '../../features/home/presentation/screens/home_screen.dart';
-import '../../features/mypage/presentation/providers/account_provider.dart';
 import '../../features/mypage/presentation/providers/dietary_profile_provider.dart';
 import '../../features/mypage/presentation/providers/my_checks_provider.dart';
 import '../../features/mypage/presentation/screens/account_deletion_screen.dart';

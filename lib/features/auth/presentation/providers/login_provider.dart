@@ -2,8 +2,8 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/network/api_exception.dart';
 import '../../../../core/network/error_code.dart';
-import '../../../mypage/presentation/providers/account_provider.dart';
 import '../../data/repositories/auth_repository.dart';
+import 'account_provider.dart';
 import 'login_state.dart';
 
 // presentation/providers: Riverpod Notifier로 화면의 비즈니스 로직(이벤트 처리)을

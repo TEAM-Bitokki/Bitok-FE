@@ -1,6 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../mypage/presentation/providers/account_provider.dart';
+import '../../../auth/presentation/providers/account_provider.dart';
 import '../../../mypage/presentation/providers/dietary_profile_provider.dart';
 import 'onboarding_state.dart';
 

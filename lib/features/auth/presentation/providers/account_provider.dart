@@ -1,7 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../auth/data/models/me_response.dart';
-import '../../../auth/data/repositories/auth_repository.dart';
+import '../../data/models/me_response.dart';
+import '../../data/repositories/auth_repository.dart';
 
 /// 로그인한 사용자의 계정 정보입니다. 마이페이지와 프로필 수정 화면이 보여줍니다.
 class Account {
