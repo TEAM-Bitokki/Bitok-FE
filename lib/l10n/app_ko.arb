@@ -32,5 +32,7 @@
   "onboardingStepLabel": "STEP {step} / {total}",
   "commonSave": "저장",
   "myPageAllergyCount": "{count, plural, =0{알레르기 없음} other{알레르기 {count}개}}",
-  "errorTryAgain": "문제가 발생했어요. 다시 시도해 주세요."
+  "errorTryAgain": "문제가 발생했어요. 다시 시도해 주세요.",
+  "errorLoadFailed": "불러오지 못했어요. 다시 시도해 주세요.",
+  "commonRetry": "다시 시도"
 }

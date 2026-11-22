@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import '../../../../common/widgets/bitok_deletable_chip.dart';
 import '../../../../common/widgets/bitok_search_field.dart';
 import '../../../../common/widgets/bitok_selection_tile.dart';
+import '../../../../common/widgets/saving_state_mixin.dart';
 import '../../../../core/models/allergen_item.dart';
 import '../../../../core/router/app_router.dart';
 import '../../../../l10n/generated/app_localizations.dart';
@@ -19,10 +20,11 @@ import '../widgets/onboarding_step_scaffold.dart';
 ///
 /// [onSave]를 넘기면 마이페이지의 수정 화면으로 쓰입니다.
 /// 진행 단계와 Skip을 숨기고, 하단 버튼이 Save가 됩니다.
+/// 저장하는 동안 버튼이 비활성화되고, 실패하면 다시 시도하라고 안내합니다.
 class OnboardingAllergiesScreen extends ConsumerStatefulWidget {
   const OnboardingAllergiesScreen({super.key, this.onSave});
 
-  final VoidCallback? onSave;
+  final Future<void> Function()? onSave;
 
   @override
   ConsumerState<OnboardingAllergiesScreen> createState() =>
@@ -30,7 +32,8 @@ class OnboardingAllergiesScreen extends ConsumerStatefulWidget {
 }
 
 class _OnboardingAllergiesScreenState
-    extends ConsumerState<OnboardingAllergiesScreen> {
+    extends ConsumerState<OnboardingAllergiesScreen>
+    with SavingStateMixin {
   String _query = '';
 
   List<AllergenItem> get _results {
@@ -74,10 +77,7 @@ class _OnboardingAllergiesScreenState
       buttonLabel: editing ? l10n.commonSave : null,
       // 수정할 때는 알레르기를 모두 지우고 저장할 수도 있습니다.
       onNext: editing
-          ? () {
-              FocusScope.of(context).unfocus();
-              onSave();
-            }
+          ? (saving ? null : () => runSaving(onSave))
           : (selected.isEmpty ? null : _goToDiet),
       bottomAccessory: selected.isEmpty
           ? null

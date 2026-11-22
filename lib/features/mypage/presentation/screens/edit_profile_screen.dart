@@ -4,9 +4,9 @@ import 'package:flutter/widget_previews.dart';
 import '../../../../common/widgets/bitok_button.dart';
 import '../../../../common/widgets/bitok_header.dart';
 import '../../../../common/widgets/bitok_text_field.dart';
+import '../../../../common/widgets/saving_state_mixin.dart';
 import '../../../../core/design_system/bitok_colors.dart';
 import '../../../../core/design_system/bitok_text_styles.dart';
-import '../../../../l10n/generated/app_localizations.dart';
 
 /// 닉네임 수정 화면입니다.
 ///
@@ -27,9 +27,9 @@ class EditProfileScreen extends StatefulWidget {
   State<EditProfileScreen> createState() => _EditProfileScreenState();
 }
 
-class _EditProfileScreenState extends State<EditProfileScreen> {
+class _EditProfileScreenState extends State<EditProfileScreen>
+    with SavingStateMixin {
   late final TextEditingController _controller;
-  bool _saving = false;
 
   @override
   void initState() {
@@ -44,26 +44,12 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     super.dispose();
   }
 
-  bool get _canSave => !_saving && _controller.text.trim().isNotEmpty;
+  bool get _canSave => !saving && _controller.text.trim().isNotEmpty;
 
   Future<void> _save() async {
     final onSave = widget.onSave;
     if (onSave == null) return;
-    FocusScope.of(context).unfocus();
-    setState(() => _saving = true);
-    try {
-      await onSave(_controller.text.trim());
-    } catch (_) {
-      if (mounted) {
-        ScaffoldMessenger.of(context)
-          ..hideCurrentSnackBar()
-          ..showSnackBar(
-            SnackBar(content: Text(AppLocalizations.of(context).errorTryAgain)),
-          );
-      }
-    } finally {
-      if (mounted) setState(() => _saving = false);
-    }
+    await runSaving(() => onSave(_controller.text.trim()));
   }
 
   @override
@@ -100,7 +86,5 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 @Preview(group: 'Screens', name: 'Edit Profile', size: Size(390, 844))
 Widget editProfilePreview() => const MaterialApp(
   debugShowCheckedModeBanner: false,
-  localizationsDelegates: AppLocalizations.localizationsDelegates,
-  supportedLocales: AppLocalizations.supportedLocales,
   home: EditProfileScreen(initialNickname: 'Biiiiii'),
 );

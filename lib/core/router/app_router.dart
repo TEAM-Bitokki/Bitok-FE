@@ -198,10 +198,16 @@ final GoRouter appRouter = GoRouter(
       builder: (context, state) => Consumer(
         builder: (context, ref, _) => MyPageScreen(
           nickname: ref.watch(accountProvider)?.nickname ?? '',
-          dietarySummary: myPageDietarySummaryOf(
-            AppLocalizations.of(context),
-            ref.watch(dietaryProfileProvider),
-          ),
+          // 불러오는 동안은 비워 두고, 실패하면 안내 문구를 보여줍니다.
+          // 카드를 눌러 Dietary Profile 화면에서 다시 시도할 수 있습니다.
+          dietarySummary: switch (ref.watch(dietaryProfileProvider)) {
+            AsyncData(:final value) => myPageDietarySummaryOf(
+              AppLocalizations.of(context),
+              value,
+            ),
+            AsyncError() => AppLocalizations.of(context).errorLoadFailed,
+            _ => '',
+          },
           onBack: () => context.pop(),
           onProfileTap: () => context.push(AppRoutes.editProfile),
           onDietaryTap: () => context.push(AppRoutes.dietaryProfile),
@@ -229,7 +235,21 @@ final GoRouter appRouter = GoRouter(
       builder: (context, state) => Consumer(
         builder: (context, ref, _) {
           final l10n = AppLocalizations.of(context);
-          final profile = ref.watch(dietaryProfileProvider);
+          final async = ref.watch(dietaryProfileProvider);
+          // 저장 후 다시 그릴 때도 이전 값을 보여주도록 value를 씁니다.
+          final profile = async.value;
+
+          if (profile == null) {
+            return DietaryProfileScreen(
+              allergySummary: '',
+              dietSummary: '',
+              onBack: () => context.pop(),
+              isLoading: !async.hasError,
+              onRetry: async.hasError
+                  ? () => ref.invalidate(dietaryProfileProvider)
+                  : null,
+            );
+          }
 
           // 수정 화면은 현재 프로필을 불러온 입력값(onboardingProvider)을 고칩니다.
           // Save를 눌러야 프로필에 반영되고, 뒤로 가면 고친 내용은 버려집니다.
@@ -252,11 +272,11 @@ final GoRouter appRouter = GoRouter(
       path: AppRoutes.foodAllergies,
       builder: (context, state) => Consumer(
         builder: (context, ref, _) => OnboardingAllergiesScreen(
-          onSave: () {
-            ref
+          onSave: () async {
+            await ref
                 .read(dietaryProfileProvider.notifier)
                 .saveAllergies(ref.read(onboardingProvider).allergies);
-            context.pop();
+            if (context.mounted) context.pop();
           },
         ),
       ),
@@ -265,18 +285,18 @@ final GoRouter appRouter = GoRouter(
       path: AppRoutes.dietPreference,
       builder: (context, state) => Consumer(
         builder: (context, ref, _) => OnboardingDietScreen(
-          onSave: () {
+          onSave: () async {
             final draft = ref.read(onboardingProvider);
             final diet = draft.diet;
             if (diet == null) return;
-            ref
+            await ref
                 .read(dietaryProfileProvider.notifier)
                 .saveDiet(
                   diet: diet,
                   eatsEggs: draft.eatsEggs,
                   eatsDairy: draft.eatsDairy,
                 );
-            context.pop();
+            if (context.mounted) context.pop();
           },
         ),
       ),
