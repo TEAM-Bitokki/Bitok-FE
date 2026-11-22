@@ -6,8 +6,11 @@ import '../../../../common/widgets/bitok_header.dart';
 import '../../../../common/widgets/bitok_text_field.dart';
 import '../../../../core/design_system/bitok_colors.dart';
 import '../../../../core/design_system/bitok_text_styles.dart';
+import '../../../../l10n/generated/app_localizations.dart';
 
-//API 미적용 작성
+/// 닉네임 수정 화면입니다.
+///
+/// [onSave]가 끝날 때까지 Save 버튼을 비활성화하고, 실패하면 다시 시도하라고 안내합니다.
 class EditProfileScreen extends StatefulWidget {
   const EditProfileScreen({
     super.key,
@@ -18,7 +21,7 @@ class EditProfileScreen extends StatefulWidget {
 
   final String initialNickname;
   final VoidCallback? onBack;
-  final ValueChanged<String>? onSave;
+  final Future<void> Function(String nickname)? onSave;
 
   @override
   State<EditProfileScreen> createState() => _EditProfileScreenState();
@@ -26,6 +29,7 @@ class EditProfileScreen extends StatefulWidget {
 
 class _EditProfileScreenState extends State<EditProfileScreen> {
   late final TextEditingController _controller;
+  bool _saving = false;
 
   @override
   void initState() {
@@ -40,7 +44,27 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
     super.dispose();
   }
 
-  bool get _canSave => _controller.text.trim().isNotEmpty;
+  bool get _canSave => !_saving && _controller.text.trim().isNotEmpty;
+
+  Future<void> _save() async {
+    final onSave = widget.onSave;
+    if (onSave == null) return;
+    FocusScope.of(context).unfocus();
+    setState(() => _saving = true);
+    try {
+      await onSave(_controller.text.trim());
+    } catch (_) {
+      if (mounted) {
+        ScaffoldMessenger.of(context)
+          ..hideCurrentSnackBar()
+          ..showSnackBar(
+            SnackBar(content: Text(AppLocalizations.of(context).errorTryAgain)),
+          );
+      }
+    } finally {
+      if (mounted) setState(() => _saving = false);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -64,12 +88,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
               const SizedBox(height: 5),
               BitokTextField(controller: _controller),
               const Spacer(),
-              BitokButton(
-                label: 'Save',
-                onPressed: _canSave
-                    ? () => widget.onSave?.call(_controller.text.trim())
-                    : null,
-              ),
+              BitokButton(label: 'Save', onPressed: _canSave ? _save : null),
             ],
           ),
         ),
@@ -81,5 +100,7 @@ class _EditProfileScreenState extends State<EditProfileScreen> {
 @Preview(group: 'Screens', name: 'Edit Profile', size: Size(390, 844))
 Widget editProfilePreview() => const MaterialApp(
   debugShowCheckedModeBanner: false,
+  localizationsDelegates: AppLocalizations.localizationsDelegates,
+  supportedLocales: AppLocalizations.supportedLocales,
   home: EditProfileScreen(initialNickname: 'Biiiiii'),
 );

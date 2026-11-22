@@ -197,7 +197,7 @@ final GoRouter appRouter = GoRouter(
       path: AppRoutes.myPage,
       builder: (context, state) => Consumer(
         builder: (context, ref, _) => MyPageScreen(
-          nickname: ref.watch(accountProvider).nickname,
+          nickname: ref.watch(accountProvider)?.nickname ?? '',
           dietarySummary: myPageDietarySummaryOf(
             AppLocalizations.of(context),
             ref.watch(dietaryProfileProvider),
@@ -215,11 +215,11 @@ final GoRouter appRouter = GoRouter(
       path: AppRoutes.editProfile,
       builder: (context, state) => Consumer(
         builder: (context, ref, _) => EditProfileScreen(
-          initialNickname: ref.read(accountProvider).nickname,
+          initialNickname: ref.read(accountProvider)?.nickname ?? '',
           onBack: () => context.pop(),
-          onSave: (nickname) {
-            ref.read(accountProvider.notifier).saveNickname(nickname);
-            context.pop();
+          onSave: (nickname) async {
+            await ref.read(accountProvider.notifier).saveNickname(nickname);
+            if (context.mounted) context.pop();
           },
         ),
       ),

@@ -52,8 +52,9 @@ class OnboardingNotifier extends Notifier<OnboardingState> {
   Future<void> submit() async {
     // TODO: 온보딩 저장 API가 준비되면 repository를 통해 state를 전송합니다.
     // 채식(vegetarian)이 아니면 eatsEggs/eatsDairy는 보내지 않습니다.
+    // 닉네임 저장에 실패하면 ApiException을 던지고, 프로필도 저장하지 않습니다.
     if (state.isNicknameValid) {
-      ref.read(accountProvider.notifier).saveNickname(state.nickname);
+      await ref.read(accountProvider.notifier).saveNickname(state.nickname);
     }
     ref
         .read(dietaryProfileProvider.notifier)

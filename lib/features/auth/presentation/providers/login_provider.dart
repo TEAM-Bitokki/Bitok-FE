@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/network/api_exception.dart';
 import '../../../../core/network/error_code.dart';
+import '../../../mypage/presentation/providers/account_provider.dart';
 import '../../data/repositories/auth_repository.dart';
 import 'login_state.dart';
 
@@ -19,6 +20,7 @@ class LoginNotifier extends Notifier<LoginState> {
     state = const LoginLoading();
     try {
       final me = await ref.read(authRepositoryProvider).signInOrSignUp();
+      ref.read(accountProvider.notifier).setFromMe(me);
       state = LoginSuccess(me);
     } on ApiException catch (e) {
       state = LoginFailure(e);
@@ -31,4 +33,6 @@ class LoginNotifier extends Notifier<LoginState> {
   }
 }
 
-final loginProvider = NotifierProvider<LoginNotifier, LoginState>(LoginNotifier.new);
+final loginProvider = NotifierProvider<LoginNotifier, LoginState>(
+  LoginNotifier.new,
+);

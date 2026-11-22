@@ -28,6 +28,15 @@ class _OnboardingReviewScreenState
     try {
       await ref.read(onboardingProvider.notifier).submit();
       if (mounted) context.go(AppRoutes.onboardingComplete);
+    } catch (_) {
+      // 실패 원인과 상관없이 다시 시도할 수 있도록 안내만 합니다.
+      if (mounted) {
+        ScaffoldMessenger.of(context)
+          ..hideCurrentSnackBar()
+          ..showSnackBar(
+            SnackBar(content: Text(AppLocalizations.of(context).errorTryAgain)),
+          );
+      }
     } finally {
       if (mounted) setState(() => _submitting = false);
     }
