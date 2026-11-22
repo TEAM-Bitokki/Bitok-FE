@@ -7,6 +7,8 @@ import '../../../../common/widgets/bitok_text_field.dart';
 import '../../../../common/widgets/saving_state_mixin.dart';
 import '../../../../core/design_system/bitok_colors.dart';
 import '../../../../core/design_system/bitok_text_styles.dart';
+import '../../../../l10n/generated/app_localizations.dart';
+import '../../../auth/data/models/nickname_request.dart';
 
 /// 닉네임 수정 화면입니다.
 ///
@@ -49,7 +51,16 @@ class _EditProfileScreenState extends State<EditProfileScreen>
   Future<void> _save() async {
     final onSave = widget.onSave;
     if (onSave == null) return;
-    await runSaving(() => onSave(_controller.text.trim()));
+    final nickname = _controller.text.trim();
+    // 서버까지 보내지 않고 바로 안내합니다. (서버도 같은 기준으로 422를 돌려줍니다)
+    if (NicknameRequest.isTooLong(nickname)) {
+      showMessageSnackBar(
+        context,
+        AppLocalizations.of(context).nicknameTooLong(NicknameRequest.maxLength),
+      );
+      return;
+    }
+    await runSaving(() => onSave(nickname));
   }
 
   @override

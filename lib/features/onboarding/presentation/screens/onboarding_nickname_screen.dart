@@ -4,8 +4,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../common/widgets/bitok_text_field.dart';
+import '../../../../common/widgets/saving_state_mixin.dart';
 import '../../../../core/router/app_router.dart';
 import '../../../../l10n/generated/app_localizations.dart';
+import '../../../auth/data/models/nickname_request.dart';
 import '../providers/onboarding_provider.dart';
 import '../widgets/onboarding_step_scaffold.dart';
 
@@ -32,6 +34,14 @@ class _OnboardingNicknameScreenState
 
   void _onNext() {
     FocusScope.of(context).unfocus();
+    // 닉네임은 온보딩 마지막에 저장하므로, 여기서 미리 걸러 다음 단계로 넘어가지 않게 합니다.
+    if (NicknameRequest.isTooLong(_controller.text)) {
+      showMessageSnackBar(
+        context,
+        AppLocalizations.of(context).nicknameTooLong(NicknameRequest.maxLength),
+      );
+      return;
+    }
     context.push(AppRoutes.onboardingAllergies);
   }
 

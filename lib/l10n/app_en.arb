@@ -152,5 +152,14 @@
   "commonRetry": "Retry",
   "@commonRetry": {
     "description": "Button that retries a failed request"
+  },
+  "nicknameTooLong": "Nickname must be {max} characters or less",
+  "@nicknameTooLong": {
+    "description": "Shown when the nickname is longer than the server limit",
+    "placeholders": {
+      "max": {
+        "type": "int"
+      }
+    }
   }
 }
