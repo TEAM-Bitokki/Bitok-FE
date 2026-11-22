@@ -21,14 +21,6 @@ class DietaryProfileNotifier extends AsyncNotifier<DietaryProfile> {
     return profile ?? const DietaryProfile();
   }
 
-  /// 온보딩을 마치면 입력한 프로필 전체를 반영합니다.
-  // TODO: 6단계에서 온보딩 제출을 서버 저장(saveProfile)으로 바꿉니다.
-  void replace(DietaryProfile profile) {
-    state = AsyncData(
-      profile.copyWith(allergies: List.unmodifiable(profile.allergies)),
-    );
-  }
-
   /// 알레르기만 바꿔 저장합니다. 식단은 지금 값을 그대로 보냅니다.
   Future<void> saveAllergies(List<AllergenItem> allergies) =>
       _save((current) => current.copyWith(allergies: allergies));
