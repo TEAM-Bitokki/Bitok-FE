@@ -1,39 +1,10 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../onboarding/presentation/providers/onboarding_state.dart';
+import '../../data/models/dietary_profile.dart';
 
-/// 사용자의 식단 프로필(알레르기·식단)입니다.
-///
-/// 마이페이지와 Dietary Profile 화면의 요약이 이 값을 보여줍니다.
-class DietaryProfile {
-  const DietaryProfile({
-    this.allergies = const [],
-    this.diet = DietType.noParticularDiet,
-    this.eatsEggs = false,
-    this.eatsDairy = false,
-  });
-
-  final List<AllergenItem> allergies;
-  final DietType diet;
-
-  /// [DietType.vegetarian]일 때만 의미가 있는 세부 옵션입니다.
-  final bool eatsEggs;
-  final bool eatsDairy;
-
-  DietaryProfile copyWith({
-    List<AllergenItem>? allergies,
-    DietType? diet,
-    bool? eatsEggs,
-    bool? eatsDairy,
-  }) {
-    return DietaryProfile(
-      allergies: allergies ?? this.allergies,
-      diet: diet ?? this.diet,
-      eatsEggs: eatsEggs ?? this.eatsEggs,
-      eatsDairy: eatsDairy ?? this.eatsDairy,
-    );
-  }
-}
+// 이 파일을 import하던 곳이 그대로 DietaryProfile을 쓸 수 있도록 다시 내보냅니다.
+export '../../data/models/dietary_profile.dart';
 
 class DietaryProfileNotifier extends Notifier<DietaryProfile> {
   // TODO: 프로필 조회 API가 준비되면 서버 값으로 초기화합니다.

@@ -96,4 +96,33 @@ void main() {
         throwsA(isA<ApiException>().having((e) => e.code, 'code', ErrorCode.mapUnavailable)));
     expect(adapter.requests, hasLength(1));
   });
+
+  test('updateNickname trims and sends PATCH', () async {
+    final adapter = FakeAdapter({
+      'PATCH /api/users/me': (200, {..._me, 'nickname': 'Hyunjin'}),
+    });
+    final me = await repo(adapter).updateNickname('  Hyunjin ');
+    expect(me.nickname, 'Hyunjin');
+    expect(adapter.requests.single.data, {'nickname': 'Hyunjin'});
+  });
+
+  test('deleteAccount: clears token so next start signs up again', () async {
+    final adapter = FakeAdapter({'DELETE /api/users/me': (204, null)});
+    final oldToken = storage.token;
+
+    await repo(adapter).deleteAccount(deleteSavedMenus: false);
+
+    expect(adapter.requests.single.data, {'agree': true, 'delete_saved_menus': false});
+    expect(adapter.requests.single.headers['deviceToken'], oldToken);
+    expect(storage.token, isNot(oldToken));
+  });
+
+  test('deleteAccount failure keeps the token', () async {
+    final adapter = FakeAdapter({'DELETE /api/users/me': (401, fakeError('UNAUTHORIZED'))});
+    final oldToken = storage.token;
+
+    await expectLater(repo(adapter).deleteAccount(deleteSavedMenus: true),
+        throwsA(isA<ApiException>().having((e) => e.code, 'code', ErrorCode.unauthorized)));
+    expect(storage.token, oldToken);
+  });
 }
