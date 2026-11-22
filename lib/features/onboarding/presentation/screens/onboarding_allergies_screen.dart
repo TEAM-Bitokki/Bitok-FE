@@ -6,6 +6,7 @@ import 'package:go_router/go_router.dart';
 import '../../../../common/widgets/bitok_deletable_chip.dart';
 import '../../../../common/widgets/bitok_search_field.dart';
 import '../../../../common/widgets/bitok_selection_tile.dart';
+import '../../../../core/models/allergen_item.dart';
 import '../../../../core/router/app_router.dart';
 import '../../../../l10n/generated/app_localizations.dart';
 import '../providers/onboarding_provider.dart';
@@ -32,11 +33,15 @@ class _OnboardingAllergiesScreenState
     extends ConsumerState<OnboardingAllergiesScreen> {
   String _query = '';
 
-  List<String> get _results {
+  List<AllergenItem> get _results {
     final query = _query.trim().toLowerCase();
     if (query.isEmpty) return onboardingAllergyCatalog;
     return onboardingAllergyCatalog
-        .where((allergy) => allergy.toLowerCase().contains(query))
+        .where(
+          (allergy) =>
+              allergy.nameEn.toLowerCase().contains(query) ||
+              allergy.nameKo.contains(query),
+        )
         .toList();
   }
 
@@ -97,7 +102,7 @@ class _OnboardingAllergiesScreenState
               itemBuilder: (context, index) {
                 final allergy = results[index];
                 return BitokSelectionTile(
-                  label: allergy,
+                  label: allergy.label,
                   selected: selected.contains(allergy),
                   onTap: () => notifier.toggleAllergy(allergy),
                 );
@@ -119,8 +124,8 @@ class _SelectedAllergyChips extends StatelessWidget {
     required this.onDelete,
   });
 
-  final List<String> allergies;
-  final ValueChanged<String> onDelete;
+  final List<AllergenItem> allergies;
+  final ValueChanged<AllergenItem> onDelete;
 
   @override
   Widget build(BuildContext context) {
@@ -136,7 +141,7 @@ class _SelectedAllergyChips extends StatelessWidget {
         itemBuilder: (context, index) {
           final allergy = allergies[index];
           return BitokDeletableChip(
-            label: allergy,
+            label: allergy.label,
             onDelete: () => onDelete(allergy),
           );
         },

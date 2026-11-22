@@ -52,7 +52,7 @@ class _OnboardingReviewScreenState
               title: l10n.onboardingReviewAllergiesTitle,
               description: state.allergies.isEmpty
                   ? l10n.onboardingReviewNone
-                  : state.allergies.join(' · '),
+                  : state.allergies.map((a) => a.label).join(' · '),
             ),
             BitokProfileCard(
               title: l10n.onboardingReviewDietTitle,

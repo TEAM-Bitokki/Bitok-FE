@@ -14,7 +14,7 @@ class OnboardingNotifier extends Notifier<OnboardingState> {
     state = state.copyWith(nickname: nickname);
   }
 
-  void toggleAllergy(String allergy) {
+  void toggleAllergy(AllergenItem allergy) {
     final allergies = state.allergies.contains(allergy)
         ? state.allergies.where((a) => a != allergy).toList()
         : [...state.allergies, allergy];
@@ -79,31 +79,32 @@ final onboardingProvider =
     );
 
 /// 알레르기 검색 대상 목록입니다.
-// TODO: 알레르기 목록 API가 준비되면 서버 응답으로 교체합니다.
-const List<String> onboardingAllergyCatalog = [
-  'Shrimp',
-  'Prawn',
-  'Crab',
-  'Lobster',
-  'Squid',
-  'Clam',
-  'Oyster',
-  'Mussel',
-  'Abalone',
-  'Anchovy',
-  'Mackerel',
-  'Egg',
-  'Milk',
-  'Wheat',
-  'Buckwheat',
-  'Soybean',
-  'Peanut',
-  'Walnut',
-  'Pine nut',
-  'Sesame',
-  'Peach',
-  'Tomato',
-  'Pork',
-  'Beef',
-  'Chicken',
+// TODO: 알레르기 검색 API(GET /api/ingredients/search)를 연결하면 삭제합니다.
+// ingredientId는 화면 확인용 임시 값이라 서버 성분 id와 다릅니다.
+const List<AllergenItem> onboardingAllergyCatalog = [
+  AllergenItem(ingredientId: 1, nameKo: '새우', nameEn: 'Shrimp'),
+  AllergenItem(ingredientId: 2, nameKo: '대하', nameEn: 'Prawn'),
+  AllergenItem(ingredientId: 3, nameKo: '게', nameEn: 'Crab'),
+  AllergenItem(ingredientId: 4, nameKo: '랍스터', nameEn: 'Lobster'),
+  AllergenItem(ingredientId: 5, nameKo: '오징어', nameEn: 'Squid'),
+  AllergenItem(ingredientId: 6, nameKo: '조개', nameEn: 'Clam'),
+  AllergenItem(ingredientId: 7, nameKo: '굴', nameEn: 'Oyster'),
+  AllergenItem(ingredientId: 8, nameKo: '홍합', nameEn: 'Mussel'),
+  AllergenItem(ingredientId: 9, nameKo: '전복', nameEn: 'Abalone'),
+  AllergenItem(ingredientId: 10, nameKo: '멸치', nameEn: 'Anchovy'),
+  AllergenItem(ingredientId: 11, nameKo: '고등어', nameEn: 'Mackerel'),
+  AllergenItem(ingredientId: 12, nameKo: '계란', nameEn: 'Egg'),
+  AllergenItem(ingredientId: 13, nameKo: '우유', nameEn: 'Milk'),
+  AllergenItem(ingredientId: 14, nameKo: '밀', nameEn: 'Wheat'),
+  AllergenItem(ingredientId: 15, nameKo: '메밀', nameEn: 'Buckwheat'),
+  AllergenItem(ingredientId: 16, nameKo: '대두', nameEn: 'Soybean'),
+  AllergenItem(ingredientId: 17, nameKo: '땅콩', nameEn: 'Peanut'),
+  AllergenItem(ingredientId: 18, nameKo: '호두', nameEn: 'Walnut'),
+  AllergenItem(ingredientId: 19, nameKo: '잣', nameEn: 'Pine nut'),
+  AllergenItem(ingredientId: 20, nameKo: '참깨', nameEn: 'Sesame'),
+  AllergenItem(ingredientId: 21, nameKo: '복숭아', nameEn: 'Peach'),
+  AllergenItem(ingredientId: 22, nameKo: '토마토', nameEn: 'Tomato'),
+  AllergenItem(ingredientId: 23, nameKo: '돼지고기', nameEn: 'Pork'),
+  AllergenItem(ingredientId: 24, nameKo: '소고기', nameEn: 'Beef'),
+  AllergenItem(ingredientId: 25, nameKo: '닭고기', nameEn: 'Chicken'),
 ];

@@ -198,7 +198,6 @@ final GoRouter appRouter = GoRouter(
       builder: (context, state) => Consumer(
         builder: (context, ref, _) => MyPageScreen(
           nickname: ref.watch(accountProvider).nickname,
-          email: ref.watch(accountProvider).email,
           dietarySummary: myPageDietarySummaryOf(
             AppLocalizations.of(context),
             ref.watch(dietaryProfileProvider),

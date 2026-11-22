@@ -13,7 +13,7 @@ class DietaryProfile {
     this.eatsDairy = false,
   });
 
-  final List<String> allergies;
+  final List<AllergenItem> allergies;
   final DietType diet;
 
   /// [DietType.vegetarian]일 때만 의미가 있는 세부 옵션입니다.
@@ -21,7 +21,7 @@ class DietaryProfile {
   final bool eatsDairy;
 
   DietaryProfile copyWith({
-    List<String>? allergies,
+    List<AllergenItem>? allergies,
     DietType? diet,
     bool? eatsEggs,
     bool? eatsDairy,
@@ -38,8 +38,13 @@ class DietaryProfile {
 class DietaryProfileNotifier extends Notifier<DietaryProfile> {
   // TODO: 프로필 조회 API가 준비되면 서버 값으로 초기화합니다.
   @override
-  DietaryProfile build() =>
-      const DietaryProfile(allergies: ['Shrimp', 'Anchovy', 'Walnut']);
+  DietaryProfile build() => const DietaryProfile(
+    allergies: [
+      AllergenItem(ingredientId: 1, nameKo: '새우', nameEn: 'Shrimp'),
+      AllergenItem(ingredientId: 10, nameKo: '멸치', nameEn: 'Anchovy'),
+      AllergenItem(ingredientId: 18, nameKo: '호두', nameEn: 'Walnut'),
+    ],
+  );
 
   /// 온보딩을 마치면 입력한 프로필 전체를 반영합니다.
   void replace(DietaryProfile profile) {
@@ -47,7 +52,7 @@ class DietaryProfileNotifier extends Notifier<DietaryProfile> {
   }
 
   // TODO: 알레르기 수정 API를 연결합니다.
-  void saveAllergies(List<String> allergies) {
+  void saveAllergies(List<AllergenItem> allergies) {
     state = state.copyWith(allergies: List.unmodifiable(allergies));
   }
 
