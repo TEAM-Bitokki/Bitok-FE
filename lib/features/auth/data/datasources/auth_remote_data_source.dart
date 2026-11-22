@@ -1,7 +1,9 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/network/api_client.dart';
+import '../models/delete_account_request.dart';
 import '../models/me_response.dart';
+import '../models/nickname_request.dart';
 import '../models/sign_up_request.dart';
 
 // data/datasources: 서버 API, 로컬 DB 등 외부 데이터 소스와 직접 통신하는 계층입니다.
@@ -28,6 +30,18 @@ class AuthRemoteDataSource {
   /// 등록되지 않은 토큰이면 ApiException(ErrorCode.unauthorized)을 던집니다.
   Future<MeResponse> getMe() async =>
       ApiClient.decode(await _api.get('/api/auth/me'), MeResponse.fromJson);
+
+  /// 바뀐 계정 정보를 돌려줍니다.
+  Future<MeResponse> updateNickname(NicknameRequest request) async =>
+      ApiClient.decode(
+        await _api.patch('/api/users/me', data: request.toJson()),
+        MeResponse.fromJson,
+      );
+
+  /// 성공하면 204(body 없음)입니다. 이후 이 deviceToken은 401이 됩니다.
+  Future<void> deleteAccount(DeleteAccountRequest request) async {
+    await _api.delete('/api/users/me', data: request.toJson());
+  }
 }
 
 final authRemoteDataSourceProvider = Provider<AuthRemoteDataSource>((ref) {

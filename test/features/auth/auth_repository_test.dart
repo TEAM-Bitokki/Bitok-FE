@@ -1,5 +1,3 @@
-import 'dart:convert';
-
 import 'package:bitok/core/network/api_client.dart';
 import 'package:bitok/core/network/api_exception.dart';
 import 'package:bitok/core/network/device_token_storage.dart';
@@ -11,29 +9,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter_test/flutter_test.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
-/// 실제 서버 대신 경로별로 정해둔 응답을 돌려주는 어댑터.
-class _FakeAdapter implements HttpClientAdapter {
-  _FakeAdapter(this.routes);
-
-  final Map<String, (int, Object)> routes;
-  final requests = <RequestOptions>[];
-
-  @override
-  Future<ResponseBody> fetch(RequestOptions options, Stream<List<int>>? _, Future<void>? _) async {
-    requests.add(options);
-    final (status, body) = routes['${options.method} ${options.path}'] ?? (404, _error('NOT_FOUND'));
-    return ResponseBody.fromString(jsonEncode(body), status, headers: {
-      Headers.contentTypeHeader: [Headers.jsonContentType],
-    });
-  }
-
-  @override
-  void close({bool force = false}) {}
-}
-
-Map<String, Object?> _error(String code) => {
-  'error': {'code': code, 'message': code, 'detail': null},
-};
+import '../../helpers/fake_adapter.dart';
 
 const _me = {
   'user_id': 1,
@@ -51,13 +27,13 @@ void main() {
     storage = DeviceTokenStorage(await SharedPreferences.getInstance());
   });
 
-  AuthRepository repo(_FakeAdapter adapter) {
+  AuthRepository repo(FakeAdapter adapter) {
     final api = ApiClient(deviceTokenStorage: storage, dio: Dio()..httpClientAdapter = adapter);
     return AuthRepository(AuthRemoteDataSource(api), storage);
   }
 
   test('registered device: returns me without sign-up', () async {
-    final adapter = _FakeAdapter({
+    final adapter = FakeAdapter({
       'GET /api/auth/me': (200, {..._me, 'has_profile': true, 'diet_type': 'vegan'}),
     });
     final me = await repo(adapter).signInOrSignUp();
@@ -68,8 +44,8 @@ void main() {
   });
 
   test('unregistered device: 401 -> sign-up with token in body, no header', () async {
-    final adapter = _FakeAdapter({
-      'GET /api/auth/me': (401, _error('UNAUTHORIZED')),
+    final adapter = FakeAdapter({
+      'GET /api/auth/me': (401, fakeError('UNAUTHORIZED')),
       'POST /api/auth/sign-up': (200, _me),
     });
     final me = await repo(adapter).signInOrSignUp();
@@ -88,14 +64,14 @@ void main() {
   });
 
   test('unknown diet_type does not crash', () async {
-    final adapter = _FakeAdapter({
+    final adapter = FakeAdapter({
       'GET /api/auth/me': (200, {..._me, 'diet_type': 'keto'}),
     });
     expect((await repo(adapter).signInOrSignUp()).dietType, isNull);
   });
 
   test('malformed 200 body -> ApiException(invalidResponse), no sign-up', () async {
-    final adapter = _FakeAdapter({
+    final adapter = FakeAdapter({
       'GET /api/auth/me': (200, {'user_id': 1}), // has_profile 누락
     });
     await expectLater(repo(adapter).signInOrSignUp(),
@@ -104,7 +80,7 @@ void main() {
   });
 
   test('non-string error code/message falls back safely', () async {
-    final adapter = _FakeAdapter({
+    final adapter = FakeAdapter({
       'GET /api/auth/me': (500, {'error': {'code': 123, 'message': null}}),
     });
     await expectLater(repo(adapter).signInOrSignUp(),
@@ -115,7 +91,7 @@ void main() {
   });
 
   test('other errors are rethrown without sign-up', () async {
-    final adapter = _FakeAdapter({'GET /api/auth/me': (502, _error('MAP_UNAVAILABLE'))});
+    final adapter = FakeAdapter({'GET /api/auth/me': (502, fakeError('MAP_UNAVAILABLE'))});
     await expectLater(repo(adapter).signInOrSignUp(),
         throwsA(isA<ApiException>().having((e) => e.code, 'code', ErrorCode.mapUnavailable)));
     expect(adapter.requests, hasLength(1));
