@@ -7,6 +7,7 @@ import '../../../../common/widgets/bitok_menu_card.dart';
 import '../../../../core/design_system/bitok_colors.dart';
 import '../../../../core/design_system/bitok_icons.dart';
 import '../../../../core/design_system/bitok_text_styles.dart';
+import '../../../../l10n/generated/app_localizations.dart';
 
 class CheckedMenu {
   const CheckedMenu({
@@ -22,7 +23,7 @@ class CheckedMenu {
 }
 
 /// 저장(북마크) 상태는 바깥에서 받습니다. ([saved], [onToggleSaved])
-class RestaurantDetailScreen extends StatelessWidget {
+class RestaurantDetailScreen extends StatefulWidget {
   const RestaurantDetailScreen({
     super.key,
     required this.name,
@@ -30,11 +31,13 @@ class RestaurantDetailScreen extends StatelessWidget {
     required this.menus,
     this.saved = false,
     this.loadingMore = false,
+    this.loadMoreFailed = false,
     this.onBack,
     this.onToggleSaved,
     this.onForYouTap,
     this.onMenuTap,
     this.onLoadMore,
+    this.onRetryLoadMore,
   });
 
   final String name;
@@ -42,102 +45,159 @@ class RestaurantDetailScreen extends StatelessWidget {
   final List<CheckedMenu> menus;
   final bool saved;
   final bool loadingMore;
+  final bool loadMoreFailed;
 
   final VoidCallback? onBack;
   final VoidCallback? onToggleSaved;
   final VoidCallback? onForYouTap;
   final ValueChanged<CheckedMenu>? onMenuTap;
 
-  /// 목록 끝에 가까워지면 호출됩니다. (다음 페이지 불러오기)
+  /// 목록 끝에 가깝거나 화면에 다 들어갈 때 호출됩니다. (다음 페이지 불러오기)
   final VoidCallback? onLoadMore;
+
+  /// 다음 페이지 요청이 실패했을 때 다시 시도 버튼에서 호출됩니다.
+  final VoidCallback? onRetryLoadMore;
+
+  @override
+  State<RestaurantDetailScreen> createState() => _RestaurantDetailScreenState();
+}
+
+class _RestaurantDetailScreenState extends State<RestaurantDetailScreen> {
+  static const _loadMoreThreshold = 300.0;
+
+  final _scrollController = ScrollController();
+
+  @override
+  void initState() {
+    super.initState();
+    _scrollController.addListener(_checkLoadMore);
+  }
+
+  @override
+  void dispose() {
+    _scrollController.dispose();
+    super.dispose();
+  }
+
+  void _checkLoadMore() {
+    if (!_scrollController.hasClients) return;
+    if (_scrollController.position.extentAfter < _loadMoreThreshold) {
+      widget.onLoadMore?.call();
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) _checkLoadMore();
+    });
+
     return Scaffold(
       backgroundColor: BitokColors.white,
       appBar: BitokHeader.sub(
         title: 'Restaurant Detail',
-        onBack: onBack ?? () => Navigator.maybePop(context),
+        onBack: widget.onBack ?? () => Navigator.maybePop(context),
       ),
       body: SafeArea(
         top: false,
-        child: NotificationListener<ScrollNotification>(
-          onNotification: (notification) {
-            if (notification.metrics.extentAfter < 300) onLoadMore?.call();
-            return false;
-          },
-          child: ListView(
-            padding: const EdgeInsets.fromLTRB(24, 12, 24, 24),
-            children: [
-              Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Expanded(
-                    child: Text(
-                      name,
-                      style: BitokTextStyles.title.copyWith(
-                        color: BitokColors.text,
-                      ),
+        child: ListView(
+          controller: _scrollController,
+          padding: const EdgeInsets.fromLTRB(24, 12, 24, 24),
+          children: [
+            Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Expanded(
+                  child: Text(
+                    widget.name,
+                    style: BitokTextStyles.title.copyWith(
+                      color: BitokColors.text,
                     ),
                   ),
-                  _BookmarkButton(saved: saved, onTap: onToggleSaved),
-                ],
-              ),
-              const SizedBox(height: 3),
-              Text(
-                info,
-                style: BitokTextStyles.body2.copyWith(color: BitokColors.grey0),
-              ),
-              const SizedBox(height: 30),
-              Row(
-                children: [
-                  Expanded(
-                    child: Text(
-                      'Checked Menu',
-                      style: BitokTextStyles.subTitle.copyWith(
-                        fontSize: 20,
-                        color: BitokColors.text,
-                      ),
-                    ),
-                  ),
-                  GestureDetector(
-                    behavior: HitTestBehavior.opaque,
-                    onTap: onForYouTap,
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Text(
-                          'For you',
-                          style: BitokTextStyles.buttonText2.copyWith(
-                            color: BitokColors.primary,
-                          ),
-                        ),
-                        SvgPicture.asset(
-                          BitokIcons.leftArrow20,
-                          width: 20,
-                          height: 20,
-                        ),
-                      ],
-                    ),
-                  ),
-                ],
-              ),
-              const SizedBox(height: 15),
-              for (final menu in menus) ...[
-                BitokMenuDetailCard(
-                  koreanName: menu.koreanName,
-                  englishName: menu.englishName,
-                  onTap: () => onMenuTap?.call(menu),
                 ),
-                const SizedBox(height: 8),
+                _BookmarkButton(
+                  saved: widget.saved,
+                  onTap: widget.onToggleSaved,
+                ),
               ],
-              if (loadingMore)
-                const Padding(
-                  padding: EdgeInsets.symmetric(vertical: 16),
-                  child: Center(child: CircularProgressIndicator()),
+            ),
+            const SizedBox(height: 3),
+            Text(
+              widget.info,
+              style: BitokTextStyles.body2.copyWith(color: BitokColors.grey0),
+            ),
+            const SizedBox(height: 30),
+            Row(
+              children: [
+                Expanded(
+                  child: Text(
+                    l10n.exploreCheckedMenu,
+                    style: BitokTextStyles.subTitle.copyWith(
+                      fontSize: 20,
+                      color: BitokColors.text,
+                    ),
+                  ),
                 ),
+                GestureDetector(
+                  behavior: HitTestBehavior.opaque,
+                  onTap: widget.onForYouTap,
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Text(
+                        l10n.exploreForYou,
+                        style: BitokTextStyles.buttonText2.copyWith(
+                          color: BitokColors.primary,
+                        ),
+                      ),
+                      SvgPicture.asset(
+                        BitokIcons.leftArrow20,
+                        width: 20,
+                        height: 20,
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 15),
+            for (final menu in widget.menus) ...[
+              BitokMenuDetailCard(
+                koreanName: menu.koreanName,
+                englishName: menu.englishName,
+                onTap: () => widget.onMenuTap?.call(menu),
+              ),
+              const SizedBox(height: 8),
             ],
-          ),
+            if (widget.loadingMore)
+              const Padding(
+                padding: EdgeInsets.symmetric(vertical: 16),
+                child: Center(child: CircularProgressIndicator()),
+              ),
+            if (widget.loadMoreFailed)
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 16),
+                child: Column(
+                  children: [
+                    Text(
+                      l10n.errorLoadFailed,
+                      style: BitokTextStyles.body2.copyWith(
+                        color: BitokColors.grey0,
+                      ),
+                    ),
+                    TextButton(
+                      onPressed: widget.onRetryLoadMore,
+                      style: TextButton.styleFrom(
+                        foregroundColor: BitokColors.primary,
+                      ),
+                      child: Text(l10n.commonRetry),
+                    ),
+                  ],
+                ),
+              ),
+          ],
         ),
       ),
     );
@@ -166,17 +226,3 @@ class _BookmarkButton extends StatelessWidget {
     );
   }
 }
-
-@Preview(group: 'Screens', name: 'Restaurant Detail', size: Size(390, 844))
-Widget restaurantDetailPreview() => const MaterialApp(
-  debugShowCheckedModeBanner: false,
-  home: RestaurantDetailScreen(
-    name: 'Myeongdong Kyoja',
-    info: 'Korean · 350 m',
-    menus: [
-      CheckedMenu(dishId: 1, koreanName: '김치찌개', englishName: 'Kimchi Jjigae'),
-      CheckedMenu(dishId: 2, koreanName: '비빔밥', englishName: 'Bibimbap'),
-      CheckedMenu(dishId: 3, koreanName: '불고기', englishName: 'Bulgogi'),
-    ],
-  ),
-);
