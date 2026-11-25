@@ -161,5 +161,45 @@
         "type": "int"
       }
     }
+  },
+  "exploreSearchHint": "Search restaurants",
+  "@exploreSearchHint": {
+    "description": "Placeholder of the restaurant search field on the map"
+  },
+  "exploreNoResults": "No restaurants found",
+  "@exploreNoResults": {
+    "description": "Shown when a restaurant search returns nothing"
+  },
+  "exploreCheckedMenu": "Checked Menu",
+  "@exploreCheckedMenu": {
+    "description": "Section title for checked menus on the restaurant detail screen"
+  },
+  "exploreForYou": "For you",
+  "@exploreForYou": {
+    "description": "Entry label for personalized menus on the restaurant detail screen"
+  },
+  "locationServiceDisabled": "Location services are turned off.",
+  "@locationServiceDisabled": {
+    "description": "Snackbar message when device location services are off"
+  },
+  "locationTurnOn": "Turn on",
+  "@locationTurnOn": {
+    "description": "Snackbar action that opens location settings"
+  },
+  "locationDenied": "Allow location access to see where you are.",
+  "@locationDenied": {
+    "description": "Snackbar message when location permission is denied"
+  },
+  "locationDeniedForever": "Location access is turned off for this app.",
+  "@locationDeniedForever": {
+    "description": "Snackbar message when location permission is permanently denied"
+  },
+  "locationOpenSettings": "Settings",
+  "@locationOpenSettings": {
+    "description": "Snackbar action that opens the app settings"
+  },
+  "locationUnavailable": "Could not find your location.",
+  "@locationUnavailable": {
+    "description": "Snackbar message when the location could not be determined"
   }
 }
