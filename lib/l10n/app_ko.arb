@@ -35,5 +35,15 @@
   "errorTryAgain": "문제가 발생했어요. 다시 시도해 주세요.",
   "errorLoadFailed": "불러오지 못했어요. 다시 시도해 주세요.",
   "commonRetry": "다시 시도",
-  "nicknameTooLong": "닉네임은 {max}자 이하로 입력해 주세요"
+  "nicknameTooLong": "닉네임은 {max}자 이하로 입력해 주세요",
+  "exploreSearchHint": "식당 검색",
+  "exploreNoResults": "검색된 식당이 없어요",
+  "exploreCheckedMenu": "확인한 메뉴",
+  "exploreForYou": "나를 위한 메뉴",
+  "locationServiceDisabled": "위치 서비스가 꺼져 있어요.",
+  "locationTurnOn": "켜기",
+  "locationDenied": "내 위치를 보려면 위치 접근을 허용해 주세요.",
+  "locationDeniedForever": "이 앱의 위치 접근이 꺼져 있어요.",
+  "locationOpenSettings": "설정",
+  "locationUnavailable": "내 위치를 찾지 못했어요."
 }

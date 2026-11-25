@@ -6,6 +6,7 @@ import 'package:kakao_map_sdk/kakao_map_sdk.dart';
 import '../../../../core/design_system/bitok_colors.dart';
 import '../../../../core/design_system/bitok_text_styles.dart';
 import '../../../../core/services/location_service.dart';
+import '../../../../l10n/generated/app_localizations.dart';
 import '../models/map_restaurant.dart';
 import 'marker_image_factory.dart';
 
@@ -17,6 +18,7 @@ class RestaurantMapView extends StatefulWidget {
     this.onRestaurantTap,
     this.onMapTap,
     this.onMyLocationTap,
+    this.onCenterChanged,
     this.sheet,
   });
 
@@ -25,6 +27,9 @@ class RestaurantMapView extends StatefulWidget {
   final ValueChanged<MapRestaurant>? onRestaurantTap;
   final VoidCallback? onMapTap;
   final VoidCallback? onMyLocationTap;
+
+  /// 사용자가 지도를 옮기거나 내 위치로 이동했을 때, 새 화면 중심을 알려줍니다.
+  final ValueChanged<({double lat, double lng})>? onCenterChanged;
 
   final Widget? sheet;
 
@@ -52,6 +57,9 @@ class _RestaurantMapViewState extends State<RestaurantMapView> {
   int _markerGeneration = 0;
 
   DateTime _lastPoiTap = DateTime.fromMillisecondsSinceEpoch(0);
+
+  bool _selectedByMarker = false;
+  bool _selectedMovePending = false;
 
   @override
   void initState() {
@@ -81,16 +89,18 @@ class _RestaurantMapViewState extends State<RestaurantMapView> {
       int generation,
       ) async {
     bool isStale() =>
-        !mounted || _controller != controller || generation != _markerGeneration;
+        !mounted ||
+            _controller != controller ||
+            generation != _markerGeneration;
 
     for (final r in widget.restaurants) {
       try {
         final normal = PoiStyle(
-          icon: await MarkerImageFactory.create(count: r.menuCount),
+          icon: await MarkerImageFactory.create(count: r.checkedMenuCount),
         );
         final selected = PoiStyle(
           icon: await MarkerImageFactory.create(
-            count: r.menuCount,
+            count: r.checkedMenuCount,
             selected: true,
           ),
         );
@@ -127,7 +137,9 @@ class _RestaurantMapViewState extends State<RestaurantMapView> {
         _log('removePoi failed', e);
       }
     }
-    if (!mounted || _controller != controller || generation != _markerGeneration) {
+    if (!mounted ||
+        _controller != controller ||
+        generation != _markerGeneration) {
       return;
     }
     await _addMarkers(controller, generation);
@@ -154,6 +166,15 @@ class _RestaurantMapViewState extends State<RestaurantMapView> {
     if (id == null) return;
     for (final r in widget.restaurants) {
       if (r.id == id) {
+        if (_selectedByMarker) {
+          _selectedMovePending = true;
+        } else {
+          final center = (lat: r.lat, lng: r.lng);
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (!mounted) return;
+            widget.onCenterChanged?.call(center);
+          });
+        }
         _controller?.moveCamera(
           CameraUpdate.newCenterPosition(LatLng(r.lat, r.lng)),
           animation: const CameraAnimation(300),
@@ -209,6 +230,7 @@ class _RestaurantMapViewState extends State<RestaurantMapView> {
       CameraUpdate.newCenterPosition(LatLng(location.lat, location.lng)),
       animation: const CameraAnimation(300),
     );
+    widget.onCenterChanged?.call(location);
   }
 
   Future<void> _goToMyLocation() async {
@@ -238,25 +260,26 @@ class _RestaurantMapViewState extends State<RestaurantMapView> {
   }
 
   void _showLocationIssue(LocationIssue issue) {
+    final l10n = AppLocalizations.of(context);
     final String message;
     String? actionLabel;
     VoidCallback? onAction;
 
     switch (issue) {
       case LocationIssue.serviceDisabled:
-        message = 'Location services are turned off.';
-        actionLabel = 'Turn on';
+        message = l10n.locationServiceDisabled;
+        actionLabel = l10n.locationTurnOn;
         onAction = LocationService.openLocationSettings;
       case LocationIssue.denied:
-        message = 'Allow location access to see where you are.';
-        actionLabel = 'Retry';
+        message = l10n.locationDenied;
+        actionLabel = l10n.commonRetry;
         onAction = _goToMyLocation;
       case LocationIssue.deniedForever:
-        message = 'Location access is turned off for this app.';
-        actionLabel = 'Settings';
+        message = l10n.locationDeniedForever;
+        actionLabel = l10n.locationOpenSettings;
         onAction = LocationService.openAppSettings;
       case LocationIssue.unavailable:
-        message = 'Could not find your location.';
+        message = l10n.locationUnavailable;
     }
 
     final messenger = ScaffoldMessenger.of(context);
@@ -306,12 +329,27 @@ class _RestaurantMapViewState extends State<RestaurantMapView> {
     final restaurant = _poiRestaurants[poi.id.toString()];
     if (restaurant == null) return;
     _lastPoiTap = DateTime.now();
+    _selectedByMarker = true;
     widget.onRestaurantTap?.call(restaurant);
   }
 
   void _onMapClick(KPoint point, LatLng latLng) {
     if (DateTime.now().difference(_lastPoiTap) < _poiTapGuard) return;
     widget.onMapTap?.call();
+  }
+
+  void _onCameraMoveEnd(CameraPosition position, GestureType gesture) {
+    final byUser = gesture != GestureType.unknown;
+    if (byUser) {
+      _selectedMovePending = false;
+    } else if (_selectedMovePending) {
+      _selectedMovePending = false;
+      return;
+    }
+    widget.onCenterChanged?.call((
+    lat: position.position.latitude,
+    lng: position.position.longitude,
+    ));
   }
 
   @override
@@ -324,6 +362,7 @@ class _RestaurantMapViewState extends State<RestaurantMapView> {
       _moveToSelected();
       _syncSelection();
     }
+    _selectedByMarker = false;
   }
 
   @override
@@ -342,6 +381,7 @@ class _RestaurantMapViewState extends State<RestaurantMapView> {
             onMapReady: _onMapReady,
             onMapClick: _onMapClick,
             onPoiClick: _onPoiClick,
+            onCameraMoveEnd: _onCameraMoveEnd,
           ),
         ),
         Positioned(
