@@ -9,6 +9,7 @@ typedef MapCenter = ({double lat, double lng});
 typedef NearbyQuery = ({MapCenter? center, bool checkedOnly});
 
 const MapCenter _fallbackLocation = (lat: 37.5636, lng: 126.9850);
+const Duration _locationWait = Duration(seconds: 5);
 
 final userLocationProvider = FutureProvider.autoDispose<MapCenter?>((
     ref,
@@ -26,7 +27,9 @@ final nearbyRestaurantsProvider = FutureProvider.autoDispose
     .family<List<MapRestaurant>, NearbyQuery>((ref, query) async {
   final target =
       query.center ??
-          ref.watch(userLocationProvider).value ??
+          await ref
+              .watch(userLocationProvider.future)
+              .timeout(_locationWait, onTimeout: () => null) ??
           _fallbackLocation;
   if (query.checkedOnly) {
     final briefs = await ref
