@@ -29,19 +29,35 @@ class RestaurantDetailPage extends ConsumerStatefulWidget {
       _RestaurantDetailPageState();
 }
 
+class _Paging {
+  _Paging(this.first)
+      : cursor = first.page.nextCursor,
+        hasMore = first.page.hasMore;
+
+  final RestaurantDetailResponse first;
+  final List<CheckedMenuItem> more = [];
+  String? cursor;
+  bool hasMore;
+  bool loading = false;
+  bool failed = false;
+}
+
 class _RestaurantDetailPageState extends ConsumerState<RestaurantDetailPage> {
   static const _title = 'Restaurant Detail';
 
-  RestaurantDetailResponse? _firstPage;
-  final List<CheckedMenuItem> _moreMenus = [];
-  String? _cursor;
-  bool _hasMore = false;
-  bool _loadingMore = false;
+  _Paging? _paging;
 
-  Future<void> _loadMore() async {
-    final cursor = _cursor;
-    if (!_hasMore || _loadingMore || cursor == null) return;
-    setState(() => _loadingMore = true);
+  Future<void> _loadMore({bool retry = false}) async {
+    final paging = _paging;
+    if (paging == null || !paging.hasMore || paging.loading) return;
+    if (paging.failed && !retry) return;
+    final cursor = paging.cursor;
+    if (cursor == null) return;
+
+    setState(() {
+      paging.loading = true;
+      paging.failed = false;
+    });
     final location = LocationService.cached;
     try {
       final response = await ref
@@ -52,16 +68,19 @@ class _RestaurantDetailPageState extends ConsumerState<RestaurantDetailPage> {
         lat: location?.lat,
         lng: location?.lng,
       );
-      if (!mounted) return;
+      if (!mounted || !identical(paging, _paging)) return;
       setState(() {
-        _moreMenus.addAll(response.checkedMenus);
-        _cursor = response.page.nextCursor;
-        _hasMore = response.page.hasMore;
-        _loadingMore = false;
+        paging.more.addAll(response.checkedMenus);
+        paging.cursor = response.page.nextCursor;
+        paging.hasMore = response.page.hasMore;
+        paging.loading = false;
       });
     } catch (_) {
-      if (!mounted) return;
-      setState(() => _loadingMore = false);
+      if (!mounted || !identical(paging, _paging)) return;
+      setState(() {
+        paging.loading = false;
+        paging.failed = true;
+      });
     }
   }
 
@@ -82,15 +101,12 @@ class _RestaurantDetailPageState extends ConsumerState<RestaurantDetailPage> {
     final async = ref.watch(restaurantDetailProvider(widget.restaurantId));
     final first = async.value;
 
-    if (first != null && !identical(first, _firstPage)) {
-      _firstPage = first;
-      _moreMenus.clear();
-      _cursor = first.page.nextCursor;
-      _hasMore = first.page.hasMore;
-      _loadingMore = false;
+    if (first != null && !identical(first, _paging?.first)) {
+      _paging = _Paging(first);
     }
 
-    if (first == null) {
+    final paging = _paging;
+    if (first == null || paging == null) {
       if (async.hasError) {
         return ExploreErrorScreen(
           title: _title,
@@ -107,7 +123,7 @@ class _RestaurantDetailPageState extends ConsumerState<RestaurantDetailPage> {
       name: restaurant.name,
       info: _infoOf(restaurant),
       menus: [
-        for (final item in [...first.checkedMenus, ..._moreMenus])
+        for (final item in [...first.checkedMenus, ...paging.more])
           CheckedMenu(
             dishId: item.dishId,
             koreanName: item.nameKo,
@@ -117,7 +133,8 @@ class _RestaurantDetailPageState extends ConsumerState<RestaurantDetailPage> {
       saved: ref
           .watch(savedRestaurantIdsProvider)
           .contains(restaurant.kakaoPlaceId),
-      loadingMore: _loadingMore,
+      loadingMore: paging.loading,
+      loadMoreFailed: paging.failed,
       onBack: widget.onBack,
       onToggleSaved: () => ref
           .read(savedRestaurantIdsProvider.notifier)
@@ -125,6 +142,7 @@ class _RestaurantDetailPageState extends ConsumerState<RestaurantDetailPage> {
       onForYouTap: widget.onForYouTap,
       onMenuTap: widget.onMenuTap,
       onLoadMore: _loadMore,
+      onRetryLoadMore: () => _loadMore(retry: true),
     );
   }
 }
