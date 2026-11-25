@@ -149,20 +149,30 @@ class _RestaurantMapSearchViewState
     _onQueryChanged('');
   }
 
+  void _showNearbyError() {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context)
+      ..hideCurrentSnackBar()
+      ..showSnackBar(
+        SnackBar(content: Text(AppLocalizations.of(context).errorLoadFailed)),
+      );
+  }
+
   @override
   Widget build(BuildContext context) {
     final selected = _selected;
-    final nearby = ref.watch(
-      nearbyRestaurantsProvider((
-        center: _center,
-        checkedOnly: widget.checkedOnly,
-      )),
-    );
+    final nearbyQuery = (center: _center, checkedOnly: widget.checkedOnly);
+    final nearby = ref.watch(nearbyRestaurantsProvider(nearbyQuery));
+    ref.listen(nearbyRestaurantsProvider(nearbyQuery), (previous, next) {
+      if (next.hasError && !next.isLoading && _lastNearby.isNotEmpty) {
+        _showNearbyError();
+      }
+    });
     final fetched = nearby.value;
     if (fetched != null) _lastNearby = fetched;
     final nearbyRestaurants = _lastNearby;
     final markers =
-        selected == null || nearbyRestaurants.any((r) => r.id == selected.id)
+    selected == null || nearbyRestaurants.any((r) => r.id == selected.id)
         ? nearbyRestaurants
         : [...nearbyRestaurants, selected];
 
