@@ -6,8 +6,10 @@ import 'package:kakao_map_sdk/kakao_map_sdk.dart';
 import '../../../../core/design_system/bitok_colors.dart';
 import '../../../../core/design_system/bitok_text_styles.dart';
 import '../../../../core/services/location_service.dart';
+import '../../../../l10n/generated/app_localizations.dart';
 import '../models/map_restaurant.dart';
 import 'marker_image_factory.dart';
+
 
 class RestaurantMapView extends StatefulWidget {
   const RestaurantMapView({
@@ -56,7 +58,8 @@ class _RestaurantMapViewState extends State<RestaurantMapView> {
   int _markerGeneration = 0;
 
   DateTime _lastPoiTap = DateTime.fromMillisecondsSinceEpoch(0);
-  DateTime _lastSelectedMove = DateTime.fromMillisecondsSinceEpoch(0);
+
+  bool _selectedMovePending = false;
 
   @override
   void initState() {
@@ -163,7 +166,7 @@ class _RestaurantMapViewState extends State<RestaurantMapView> {
     if (id == null) return;
     for (final r in widget.restaurants) {
       if (r.id == id) {
-        _lastSelectedMove = DateTime.now();
+        _selectedMovePending = true;
         _controller?.moveCamera(
           CameraUpdate.newCenterPosition(LatLng(r.lat, r.lng)),
           animation: const CameraAnimation(300),
@@ -249,25 +252,26 @@ class _RestaurantMapViewState extends State<RestaurantMapView> {
   }
 
   void _showLocationIssue(LocationIssue issue) {
+    final l10n = AppLocalizations.of(context);
     final String message;
     String? actionLabel;
     VoidCallback? onAction;
 
     switch (issue) {
       case LocationIssue.serviceDisabled:
-        message = 'Location services are turned off.';
-        actionLabel = 'Turn on';
+        message = l10n.locationServiceDisabled;
+        actionLabel = l10n.locationTurnOn;
         onAction = LocationService.openLocationSettings;
       case LocationIssue.denied:
-        message = 'Allow location access to see where you are.';
-        actionLabel = 'Retry';
+        message = l10n.locationDenied;
+        actionLabel = l10n.commonRetry;
         onAction = _goToMyLocation;
       case LocationIssue.deniedForever:
-        message = 'Location access is turned off for this app.';
-        actionLabel = 'Settings';
+        message = l10n.locationDeniedForever;
+        actionLabel = l10n.locationOpenSettings;
         onAction = LocationService.openAppSettings;
       case LocationIssue.unavailable:
-        message = 'Could not find your location.';
+        message = l10n.locationUnavailable;
     }
 
     final messenger = ScaffoldMessenger.of(context);
@@ -326,8 +330,11 @@ class _RestaurantMapViewState extends State<RestaurantMapView> {
   }
 
   void _onCameraMoveEnd(CameraPosition position, GestureType gesture) {
-    if (DateTime.now().difference(_lastSelectedMove) <
-        const Duration(milliseconds: 800)) {
+    final byUser = gesture.name.toLowerCase() != 'unknown';
+    if (byUser) {
+      _selectedMovePending = false;
+    } else if (_selectedMovePending) {
+      _selectedMovePending = false;
       return;
     }
     widget.onCenterChanged?.call((
