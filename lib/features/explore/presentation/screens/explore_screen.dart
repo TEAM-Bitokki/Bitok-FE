@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/widget_previews.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import '../../../../core/router/main_shell.dart';
 import '../../../../common/widgets/bitok_header.dart';
@@ -10,18 +9,14 @@ import '../models/map_restaurant.dart';
 import '../widgets/restaurant_map_search_view.dart';
 import '../widgets/restaurant_preview_card.dart';
 
-/// 지도 API 연동 전입니다.
 class ExploreScreen extends StatelessWidget {
   const ExploreScreen({
     super.key,
-    required this.restaurants,
     this.savedIds = const {},
     this.onProfileTap,
     this.onToggleSaved,
     this.onMenuResultsTap,
   });
-
-  final List<MapRestaurant> restaurants;
 
   /// 저장(북마크)된 식당 id
   final Set<String> savedIds;
@@ -40,7 +35,7 @@ class ExploreScreen extends StatelessWidget {
       backgroundColor: BitokColors.white,
       appBar: BitokHeader.explore(title: 'Explore', onProfile: onProfileTap),
       body: RestaurantMapSearchView(
-        restaurants: restaurants,
+        checkedOnly: true,
         previewBuilder: (context, restaurant) => RestaurantPreviewCard(
           restaurant: restaurant,
           footerGap: 15,
@@ -63,7 +58,7 @@ class ExploreScreen extends StatelessWidget {
               mainAxisSize: MainAxisSize.min,
               children: [
                 Text(
-                  '${restaurant.menuCount} menu results',
+                  '${restaurant.checkedMenuCount} menu results',
                   style: BitokTextStyles.buttonText2.copyWith(
                     color: BitokColors.primary,
                   ),
@@ -77,9 +72,3 @@ class ExploreScreen extends StatelessWidget {
     );
   }
 }
-
-@Preview(group: 'Screens', name: 'Explore', size: Size(390, 844))
-Widget exploreScreenPreview() => const MaterialApp(
-  debugShowCheckedModeBanner: false,
-  home: ExploreScreen(restaurants: mapRestaurantSamples),
-);
