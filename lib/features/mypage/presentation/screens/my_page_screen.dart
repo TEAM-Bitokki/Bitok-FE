@@ -13,7 +13,6 @@ class MyPageScreen extends StatelessWidget {
   const MyPageScreen({
     super.key,
     required this.nickname,
-    required this.email,
     required this.dietarySummary,
     this.onBack,
     this.onProfileTap,
@@ -24,7 +23,6 @@ class MyPageScreen extends StatelessWidget {
   });
 
   final String nickname;
-  final String email;
   final String dietarySummary;
 
   final VoidCallback? onBack;
@@ -48,11 +46,7 @@ class MyPageScreen extends StatelessWidget {
         child: ListView(
           padding: const EdgeInsets.fromLTRB(24, 12, 24, 24),
           children: [
-            MyPageProfileCard(
-              nickname: nickname,
-              email: email,
-              onTap: onProfileTap,
-            ),
+            MyPageProfileCard(nickname: nickname, onTap: onProfileTap),
             const SizedBox(height: 15),
             MyPageDietaryCard(summary: dietarySummary, onTap: onDietaryTap),
             const SizedBox(height: 25),
@@ -98,7 +92,6 @@ Widget myPagePreview() => const MaterialApp(
   debugShowCheckedModeBanner: false,
   home: MyPageScreen(
     nickname: 'Biiiiii',
-    email: 'bitok@kakao.com',
     dietarySummary: '4 food allergies · Vegetarian',
   ),
 );

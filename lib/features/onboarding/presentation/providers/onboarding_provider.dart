@@ -1,6 +1,7 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../mypage/presentation/providers/account_provider.dart';
+import '../../../auth/presentation/providers/account_provider.dart';
+import '../../../mypage/data/repositories/profile_repository.dart';
 import '../../../mypage/presentation/providers/dietary_profile_provider.dart';
 import 'onboarding_state.dart';
 
@@ -14,7 +15,7 @@ class OnboardingNotifier extends Notifier<OnboardingState> {
     state = state.copyWith(nickname: nickname);
   }
 
-  void toggleAllergy(String allergy) {
+  void toggleAllergy(AllergenItem allergy) {
     final allergies = state.allergies.contains(allergy)
         ? state.allergies.where((a) => a != allergy).toList()
         : [...state.allergies, allergy];
@@ -48,23 +49,30 @@ class OnboardingNotifier extends Notifier<OnboardingState> {
     );
   }
 
-  /// 입력한 프로필을 저장합니다.
+  /// 입력한 닉네임(PATCH /api/users/me)과 식단 프로필(PUT /api/profiles/me)을
+  /// 차례로 저장합니다.
+  ///
+  /// 하나라도 실패하면 ApiException을 던집니다. 닉네임 저장에 실패하면 프로필은 보내지 않습니다.
+  /// 두 요청 모두 같은 값을 다시 보내도 결과가 같으므로, 실패하면 처음부터 다시 호출하면 됩니다.
+  /// diet_options 변환(채식이 아니면 보내지 않음)은 ProfileRepository가 맡습니다.
   Future<void> submit() async {
-    // TODO: 온보딩 저장 API가 준비되면 repository를 통해 state를 전송합니다.
-    // 채식(vegetarian)이 아니면 eatsEggs/eatsDairy는 보내지 않습니다.
-    if (state.isNicknameValid) {
-      ref.read(accountProvider.notifier).saveNickname(state.nickname);
+    // 저장을 기다리는 동안 입력이 바뀌어도, 제출한 시점의 값만 저장합니다.
+    final draft = state;
+    if (draft.isNicknameValid) {
+      await ref.read(accountProvider.notifier).saveNickname(draft.nickname);
     }
-    ref
-        .read(dietaryProfileProvider.notifier)
-        .replace(
+    await ref
+        .read(profileRepositoryProvider)
+        .saveProfile(
           DietaryProfile(
-            allergies: state.allergies,
-            diet: state.diet ?? DietType.noParticularDiet,
-            eatsEggs: state.eatsEggs,
-            eatsDairy: state.eatsDairy,
+            allergies: draft.allergies,
+            diet: draft.diet ?? DietType.noParticularDiet,
+            eatsEggs: draft.eatsEggs,
+            eatsDairy: draft.eatsDairy,
           ),
         );
+    // 이미 불러온 프로필이 있으면 저장된 값으로 다시 불러옵니다. (아직 안 불러왔으면 아무 일도 없습니다)
+    ref.invalidate(dietaryProfileProvider);
   }
 
   /// 온보딩을 마치면 입력값을 비웁니다.
@@ -77,33 +85,3 @@ final onboardingProvider =
     NotifierProvider<OnboardingNotifier, OnboardingState>(
       OnboardingNotifier.new,
     );
-
-/// 알레르기 검색 대상 목록입니다.
-// TODO: 알레르기 목록 API가 준비되면 서버 응답으로 교체합니다.
-const List<String> onboardingAllergyCatalog = [
-  'Shrimp',
-  'Prawn',
-  'Crab',
-  'Lobster',
-  'Squid',
-  'Clam',
-  'Oyster',
-  'Mussel',
-  'Abalone',
-  'Anchovy',
-  'Mackerel',
-  'Egg',
-  'Milk',
-  'Wheat',
-  'Buckwheat',
-  'Soybean',
-  'Peanut',
-  'Walnut',
-  'Pine nut',
-  'Sesame',
-  'Peach',
-  'Tomato',
-  'Pork',
-  'Beef',
-  'Chicken',
-];

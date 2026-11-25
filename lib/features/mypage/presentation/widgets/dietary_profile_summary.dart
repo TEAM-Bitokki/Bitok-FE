@@ -5,7 +5,7 @@ import '../providers/dietary_profile_provider.dart';
 /// Dietary Profile 화면의 알레르기 카드 요약입니다. 예: 'Shrimp · Anchovy · Walnut'
 String allergySummaryOf(AppLocalizations l10n, DietaryProfile profile) {
   if (profile.allergies.isEmpty) return l10n.onboardingReviewNone;
-  return profile.allergies.join(' · ');
+  return profile.allergies.map((a) => a.label).join(' · ');
 }
 
 /// Dietary Profile 화면의 식단 카드 요약입니다. 예: 'Vegetarian · Eggs'

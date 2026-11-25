@@ -2,10 +2,12 @@
 // 함께 쓰는 입력 상태를 정의합니다. 각 단계 화면은 별도 라우트이므로
 // onboarding_provider.dart가 이 상태를 단계 간에 유지합니다.
 
+import '../../../../core/models/allergen_item.dart';
 import '../../../../core/models/diet_type.dart';
 
 // 이 파일을 import하던 곳이 그대로 DietType을 쓸 수 있도록 다시 내보냅니다.
 // 식단 선택 전에는 [OnboardingState.diet]가 null입니다.
+export '../../../../core/models/allergen_item.dart';
 export '../../../../core/models/diet_type.dart';
 
 class OnboardingState {
@@ -20,7 +22,7 @@ class OnboardingState {
   final String nickname;
 
   /// 선택한 순서를 유지합니다. 하단 칩도 이 순서로 표시됩니다.
-  final List<String> allergies;
+  final List<AllergenItem> allergies;
 
   final DietType? diet;
 
@@ -32,7 +34,7 @@ class OnboardingState {
 
   OnboardingState copyWith({
     String? nickname,
-    List<String>? allergies,
+    List<AllergenItem>? allergies,
     DietType? diet,
     bool? eatsEggs,
     bool? eatsDairy,

@@ -4,6 +4,8 @@ import 'package:go_router/go_router.dart';
 import '../../common/widgets/bitok_status_chip.dart';
 import '../utils/date_formatter.dart';
 import '../../l10n/generated/app_localizations.dart';
+import '../../features/auth/presentation/providers/account_provider.dart';
+import '../../features/auth/presentation/providers/login_provider.dart';
 import '../../features/auth/presentation/screens/login_screen.dart';
 import '../../features/explore/presentation/models/map_restaurant.dart';
 import '../../features/explore/presentation/models/mock_menu_catalog.dart';
@@ -14,7 +16,6 @@ import '../../features/explore/presentation/screens/personalized_menu_list_scree
 import '../../features/explore/presentation/screens/restaurant_detail_screen.dart';
 import '../../features/explore/presentation/screens/restaurant_select_screen.dart';
 import '../../features/home/presentation/screens/home_screen.dart';
-import '../../features/mypage/presentation/providers/account_provider.dart';
 import '../../features/mypage/presentation/providers/dietary_profile_provider.dart';
 import '../../features/mypage/presentation/providers/my_checks_provider.dart';
 import '../../features/mypage/presentation/screens/account_deletion_screen.dart';
@@ -103,8 +104,12 @@ class AppRoutes {
 
 // 바텀 네비게이션이 필요한 화면은 StatefulShellRoute의 branch에만 추가합니다.
 // 그 외 화면은 routes 최상위에 GoRoute로 추가하면 네비게이션 바 없이 표시됩니다.
-final GoRouter appRouter = GoRouter(
-  initialLocation: AppRoutes.login,
+//
+// [initialLocation]은 앱 시작 시 정합니다. 이미 가입·온보딩을 마친 기기면
+// main()에서 홈을 넘겨 로그인 화면을 건너뜁니다.
+GoRouter createAppRouter({String initialLocation = AppRoutes.login}) =>
+    GoRouter(
+  initialLocation: initialLocation,
   routes: [
     GoRoute(
       path: AppRoutes.login,
@@ -197,12 +202,17 @@ final GoRouter appRouter = GoRouter(
       path: AppRoutes.myPage,
       builder: (context, state) => Consumer(
         builder: (context, ref, _) => MyPageScreen(
-          nickname: ref.watch(accountProvider).nickname,
-          email: ref.watch(accountProvider).email,
-          dietarySummary: myPageDietarySummaryOf(
-            AppLocalizations.of(context),
-            ref.watch(dietaryProfileProvider),
-          ),
+          nickname: ref.watch(accountProvider)?.nickname ?? '',
+          // 불러오는 동안은 비워 두고, 실패하면 안내 문구를 보여줍니다.
+          // 카드를 눌러 Dietary Profile 화면에서 다시 시도할 수 있습니다.
+          dietarySummary: switch (ref.watch(dietaryProfileProvider)) {
+            AsyncData(:final value) => myPageDietarySummaryOf(
+              AppLocalizations.of(context),
+              value,
+            ),
+            AsyncError() => AppLocalizations.of(context).errorLoadFailed,
+            _ => '',
+          },
           onBack: () => context.pop(),
           onProfileTap: () => context.push(AppRoutes.editProfile),
           onDietaryTap: () => context.push(AppRoutes.dietaryProfile),
@@ -216,11 +226,11 @@ final GoRouter appRouter = GoRouter(
       path: AppRoutes.editProfile,
       builder: (context, state) => Consumer(
         builder: (context, ref, _) => EditProfileScreen(
-          initialNickname: ref.read(accountProvider).nickname,
+          initialNickname: ref.read(accountProvider)?.nickname ?? '',
           onBack: () => context.pop(),
-          onSave: (nickname) {
-            ref.read(accountProvider.notifier).saveNickname(nickname);
-            context.pop();
+          onSave: (nickname) async {
+            await ref.read(accountProvider.notifier).saveNickname(nickname);
+            if (context.mounted) context.pop();
           },
         ),
       ),
@@ -230,7 +240,21 @@ final GoRouter appRouter = GoRouter(
       builder: (context, state) => Consumer(
         builder: (context, ref, _) {
           final l10n = AppLocalizations.of(context);
-          final profile = ref.watch(dietaryProfileProvider);
+          final async = ref.watch(dietaryProfileProvider);
+          // 저장 후 다시 그릴 때도 이전 값을 보여주도록 value를 씁니다.
+          final profile = async.value;
+
+          if (profile == null) {
+            return DietaryProfileScreen(
+              allergySummary: '',
+              dietSummary: '',
+              onBack: () => context.pop(),
+              isLoading: !async.hasError,
+              onRetry: async.hasError
+                  ? () => ref.invalidate(dietaryProfileProvider)
+                  : null,
+            );
+          }
 
           // 수정 화면은 현재 프로필을 불러온 입력값(onboardingProvider)을 고칩니다.
           // Save를 눌러야 프로필에 반영되고, 뒤로 가면 고친 내용은 버려집니다.
@@ -253,11 +277,11 @@ final GoRouter appRouter = GoRouter(
       path: AppRoutes.foodAllergies,
       builder: (context, state) => Consumer(
         builder: (context, ref, _) => OnboardingAllergiesScreen(
-          onSave: () {
-            ref
+          onSave: () async {
+            await ref
                 .read(dietaryProfileProvider.notifier)
                 .saveAllergies(ref.read(onboardingProvider).allergies);
-            context.pop();
+            if (context.mounted) context.pop();
           },
         ),
       ),
@@ -266,18 +290,18 @@ final GoRouter appRouter = GoRouter(
       path: AppRoutes.dietPreference,
       builder: (context, state) => Consumer(
         builder: (context, ref, _) => OnboardingDietScreen(
-          onSave: () {
+          onSave: () async {
             final draft = ref.read(onboardingProvider);
             final diet = draft.diet;
             if (diet == null) return;
-            ref
+            await ref
                 .read(dietaryProfileProvider.notifier)
                 .saveDiet(
                   diet: diet,
                   eatsEggs: draft.eatsEggs,
                   eatsDairy: draft.eatsDairy,
                 );
-            context.pop();
+            if (context.mounted) context.pop();
           },
         ),
       ),
@@ -333,10 +357,27 @@ final GoRouter appRouter = GoRouter(
     ),
     GoRoute(
       path: AppRoutes.accountDeletion,
-      builder: (context, state) => AccountDeletionScreen(
-        onBack: () => context.pop(),
-        // TODO: 탈퇴 API 연결 후 로그인 화면으로 이동합니다.
-        onDelete: (deleteSavedMenus) => context.go(AppRoutes.home),
+      builder: (context, state) => Consumer(
+        builder: (context, ref, _) => AccountDeletionScreen(
+          onBack: () => context.pop(),
+          onDelete: (deleteSavedMenus) async {
+            // 요청 중에 뒤로 가서 이 화면(ref, context)이 사라져도 정리와 이동을 마치도록,
+            // 앱 수명의 container와 router를 요청 전에 잡아 둡니다.
+            final container = ProviderScope.containerOf(context);
+            final router = GoRouter.of(context);
+            await container
+                .read(accountProvider.notifier)
+                .deleteAccount(deleteSavedMenus: deleteSavedMenus);
+            // 탈퇴한 계정의 화면 상태를 비웁니다. 식단 프로필은 계정이 바뀌면 스스로 다시 불러옵니다.
+            container
+              ..invalidate(loginProvider)
+              ..invalidate(onboardingProvider)
+              ..invalidate(myChecksProvider)
+              ..invalidate(savedRestaurantIdsProvider)
+              ..invalidate(scanFlowProvider);
+            router.go(AppRoutes.login);
+          },
+        ),
       ),
     ),
 

@@ -144,5 +144,22 @@
   "errorTryAgain": "Something went wrong. Please try again.",
   "@errorTryAgain": {
     "description": "Generic message shown when a request fails"
+  },
+  "errorLoadFailed": "Couldn’t load. Please try again.",
+  "@errorLoadFailed": {
+    "description": "Shown in place of content that failed to load"
+  },
+  "commonRetry": "Retry",
+  "@commonRetry": {
+    "description": "Button that retries a failed request"
+  },
+  "nicknameTooLong": "Nickname must be {max} characters or less",
+  "@nicknameTooLong": {
+    "description": "Shown when the nickname is longer than the server limit",
+    "placeholders": {
+      "max": {
+        "type": "int"
+      }
+    }
   }
 }
