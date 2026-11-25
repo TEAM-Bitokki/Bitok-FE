@@ -17,6 +17,7 @@ class RestaurantMapView extends StatefulWidget {
     this.onRestaurantTap,
     this.onMapTap,
     this.onMyLocationTap,
+    this.onCenterChanged,
     this.sheet,
   });
 
@@ -25,6 +26,9 @@ class RestaurantMapView extends StatefulWidget {
   final ValueChanged<MapRestaurant>? onRestaurantTap;
   final VoidCallback? onMapTap;
   final VoidCallback? onMyLocationTap;
+
+  /// 사용자가 지도를 옮기거나 내 위치로 이동했을 때, 새 화면 중심을 알려줍니다.
+  final ValueChanged<({double lat, double lng})>? onCenterChanged;
 
   final Widget? sheet;
 
@@ -52,6 +56,7 @@ class _RestaurantMapViewState extends State<RestaurantMapView> {
   int _markerGeneration = 0;
 
   DateTime _lastPoiTap = DateTime.fromMillisecondsSinceEpoch(0);
+  DateTime _lastSelectedMove = DateTime.fromMillisecondsSinceEpoch(0);
 
   @override
   void initState() {
@@ -77,20 +82,22 @@ class _RestaurantMapViewState extends State<RestaurantMapView> {
   }
 
   Future<void> _addMarkers(
-      KakaoMapController controller,
-      int generation,
-      ) async {
+    KakaoMapController controller,
+    int generation,
+  ) async {
     bool isStale() =>
-        !mounted || _controller != controller || generation != _markerGeneration;
+        !mounted ||
+        _controller != controller ||
+        generation != _markerGeneration;
 
     for (final r in widget.restaurants) {
       try {
         final normal = PoiStyle(
-          icon: await MarkerImageFactory.create(count: r.menuCount),
+          icon: await MarkerImageFactory.create(count: r.checkedMenuCount),
         );
         final selected = PoiStyle(
           icon: await MarkerImageFactory.create(
-            count: r.menuCount,
+            count: r.checkedMenuCount,
             selected: true,
           ),
         );
@@ -127,7 +134,9 @@ class _RestaurantMapViewState extends State<RestaurantMapView> {
         _log('removePoi failed', e);
       }
     }
-    if (!mounted || _controller != controller || generation != _markerGeneration) {
+    if (!mounted ||
+        _controller != controller ||
+        generation != _markerGeneration) {
       return;
     }
     await _addMarkers(controller, generation);
@@ -154,6 +163,7 @@ class _RestaurantMapViewState extends State<RestaurantMapView> {
     if (id == null) return;
     for (final r in widget.restaurants) {
       if (r.id == id) {
+        _lastSelectedMove = DateTime.now();
         _controller?.moveCamera(
           CameraUpdate.newCenterPosition(LatLng(r.lat, r.lng)),
           animation: const CameraAnimation(300),
@@ -209,6 +219,7 @@ class _RestaurantMapViewState extends State<RestaurantMapView> {
       CameraUpdate.newCenterPosition(LatLng(location.lat, location.lng)),
       animation: const CameraAnimation(300),
     );
+    widget.onCenterChanged?.call(location);
   }
 
   Future<void> _goToMyLocation() async {
@@ -314,6 +325,17 @@ class _RestaurantMapViewState extends State<RestaurantMapView> {
     widget.onMapTap?.call();
   }
 
+  void _onCameraMoveEnd(CameraPosition position, GestureType gesture) {
+    if (DateTime.now().difference(_lastSelectedMove) <
+        const Duration(milliseconds: 800)) {
+      return;
+    }
+    widget.onCenterChanged?.call((
+      lat: position.position.latitude,
+      lng: position.position.longitude,
+    ));
+  }
+
   @override
   void didUpdateWidget(covariant RestaurantMapView oldWidget) {
     super.didUpdateWidget(oldWidget);
@@ -342,6 +364,7 @@ class _RestaurantMapViewState extends State<RestaurantMapView> {
             onMapReady: _onMapReady,
             onMapClick: _onMapClick,
             onPoiClick: _onPoiClick,
+            onCameraMoveEnd: _onCameraMoveEnd,
           ),
         ),
         Positioned(
