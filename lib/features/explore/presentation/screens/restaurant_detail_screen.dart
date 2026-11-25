@@ -8,16 +8,15 @@ import '../../../../core/design_system/bitok_colors.dart';
 import '../../../../core/design_system/bitok_icons.dart';
 import '../../../../core/design_system/bitok_text_styles.dart';
 
-//API 미적용 작성
 class CheckedMenu {
   const CheckedMenu({
-    required this.menuId,
+    required this.dishId,
     required this.koreanName,
     required this.englishName,
   });
 
-  /// 메뉴 상세('/menu/:id')로 이동할 때 쓰는 id입니다.
-  final String menuId;
+  /// 메뉴 상세로 이동할 때 쓰는 dish id입니다.
+  final int dishId;
   final String koreanName;
   final String englishName;
 }
@@ -29,26 +28,28 @@ class RestaurantDetailScreen extends StatelessWidget {
     required this.name,
     required this.info,
     required this.menus,
-    this.imageUrl,
     this.saved = false,
+    this.loadingMore = false,
     this.onBack,
     this.onToggleSaved,
     this.onForYouTap,
     this.onMenuTap,
+    this.onLoadMore,
   });
 
   final String name;
   final String info;
   final List<CheckedMenu> menus;
-
-  /// 서버에서 받은 식당 이미지 URL입니다. 없거나 불러오지 못하면 자리 박스를 보여줍니다.
-  final String? imageUrl;
   final bool saved;
+  final bool loadingMore;
 
   final VoidCallback? onBack;
   final VoidCallback? onToggleSaved;
   final VoidCallback? onForYouTap;
   final ValueChanged<CheckedMenu>? onMenuTap;
+
+  /// 목록 끝에 가까워지면 호출됩니다. (다음 페이지 불러오기)
+  final VoidCallback? onLoadMore;
 
   @override
   Widget build(BuildContext context) {
@@ -60,130 +61,83 @@ class RestaurantDetailScreen extends StatelessWidget {
       ),
       body: SafeArea(
         top: false,
-        child: ListView(
-          padding: const EdgeInsets.fromLTRB(24, 12, 24, 24),
-          children: [
-            Row(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Expanded(
-                  child: Text(
-                    name,
-                    style: BitokTextStyles.title.copyWith(
-                      color: BitokColors.text,
+        child: NotificationListener<ScrollNotification>(
+          onNotification: (notification) {
+            if (notification.metrics.extentAfter < 300) onLoadMore?.call();
+            return false;
+          },
+          child: ListView(
+            padding: const EdgeInsets.fromLTRB(24, 12, 24, 24),
+            children: [
+              Row(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Expanded(
+                    child: Text(
+                      name,
+                      style: BitokTextStyles.title.copyWith(
+                        color: BitokColors.text,
+                      ),
                     ),
                   ),
-                ),
-                _BookmarkButton(saved: saved, onTap: onToggleSaved),
-              ],
-            ),
-            const SizedBox(height: 3),
-            Text(
-              info,
-              style: BitokTextStyles.body2.copyWith(color: BitokColors.grey0),
-            ),
-            const SizedBox(height: 25),
-            _RestaurantImage(imageUrl: imageUrl),
-            const SizedBox(height: 30),
-            Row(
-              children: [
-                Expanded(
-                  child: Text(
-                    'Checked Menu',
-                    style: BitokTextStyles.subTitle.copyWith(
-                      fontSize: 20,
-                      color: BitokColors.text,
-                    ),
-                  ),
-                ),
-                GestureDetector(
-                  behavior: HitTestBehavior.opaque,
-                  onTap: onForYouTap,
-                  child: Row(
-                    mainAxisSize: MainAxisSize.min,
-                    children: [
-                      Text(
-                        'For you',
-                        style: BitokTextStyles.buttonText2.copyWith(
-                          color: BitokColors.primary,
-                        ),
-                      ),
-                      SvgPicture.asset(
-                        BitokIcons.leftArrow20,
-                        width: 20,
-                        height: 20,
-                      ),
-                    ],
-                  ),
-                ),
-              ],
-            ),
-            const SizedBox(height: 15),
-            for (final menu in menus) ...[
-              BitokMenuDetailCard(
-                koreanName: menu.koreanName,
-                englishName: menu.englishName,
-                onTap: () => onMenuTap?.call(menu),
+                  _BookmarkButton(saved: saved, onTap: onToggleSaved),
+                ],
               ),
-              const SizedBox(height: 8),
+              const SizedBox(height: 3),
+              Text(
+                info,
+                style: BitokTextStyles.body2.copyWith(color: BitokColors.grey0),
+              ),
+              const SizedBox(height: 30),
+              Row(
+                children: [
+                  Expanded(
+                    child: Text(
+                      'Checked Menu',
+                      style: BitokTextStyles.subTitle.copyWith(
+                        fontSize: 20,
+                        color: BitokColors.text,
+                      ),
+                    ),
+                  ),
+                  GestureDetector(
+                    behavior: HitTestBehavior.opaque,
+                    onTap: onForYouTap,
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          'For you',
+                          style: BitokTextStyles.buttonText2.copyWith(
+                            color: BitokColors.primary,
+                          ),
+                        ),
+                        SvgPicture.asset(
+                          BitokIcons.leftArrow20,
+                          width: 20,
+                          height: 20,
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 15),
+              for (final menu in menus) ...[
+                BitokMenuDetailCard(
+                  koreanName: menu.koreanName,
+                  englishName: menu.englishName,
+                  onTap: () => onMenuTap?.call(menu),
+                ),
+                const SizedBox(height: 8),
+              ],
+              if (loadingMore)
+                const Padding(
+                  padding: EdgeInsets.symmetric(vertical: 16),
+                  child: Center(child: CircularProgressIndicator()),
+                ),
             ],
-          ],
-        ),
-      ),
-    );
-  }
-}
-
-/// 식당 대표 이미지입니다. 342 × 180, 모서리 18.
-///
-/// [imageUrl]이 없거나, 불러오는 중이거나, 실패하면 'RESTAURANT' 자리 박스를 보여줍니다.
-class _RestaurantImage extends StatelessWidget {
-  const _RestaurantImage({this.imageUrl});
-
-  static const double height = 180;
-  static const double radius = 18;
-
-  final String? imageUrl;
-
-  @override
-  Widget build(BuildContext context) {
-    final url = imageUrl;
-    if (url == null || url.isEmpty) return const _RestaurantImagePlaceholder();
-
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(radius),
-      child: Image.network(
-        url,
-        height: height,
-        width: double.infinity,
-        fit: BoxFit.cover,
-        loadingBuilder: (context, child, progress) =>
-            progress == null ? child : const _RestaurantImagePlaceholder(),
-        errorBuilder: (context, error, stackTrace) =>
-            const _RestaurantImagePlaceholder(),
-      ),
-    );
-  }
-}
-
-class _RestaurantImagePlaceholder extends StatelessWidget {
-  const _RestaurantImagePlaceholder();
-
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      height: _RestaurantImage.height,
-      alignment: Alignment.center,
-      decoration: BoxDecoration(
-        color: BitokColors.grey1,
-        borderRadius: BorderRadius.circular(_RestaurantImage.radius),
-      ),
-      child: Text(
-        'RESTAURANT',
-        style: BitokTextStyles.subTitle.copyWith(
-          fontWeight: FontWeight.w600,
-          height: 1.25,
-          color: BitokColors.grey0,
+          ),
         ),
       ),
     );
@@ -220,17 +174,9 @@ Widget restaurantDetailPreview() => const MaterialApp(
     name: 'Myeongdong Kyoja',
     info: 'Korean · 350 m',
     menus: [
-      CheckedMenu(
-        menuId: 'kimchi-jjigae',
-        koreanName: '김치찌개',
-        englishName: 'Kimchi Jjigae',
-      ),
-      CheckedMenu(
-        menuId: 'bibimbap',
-        koreanName: '비빔밥',
-        englishName: 'Bibimbap',
-      ),
-      CheckedMenu(menuId: 'bulgogi', koreanName: '불고기', englishName: 'Bulgogi'),
+      CheckedMenu(dishId: 1, koreanName: '김치찌개', englishName: 'Kimchi Jjigae'),
+      CheckedMenu(dishId: 2, koreanName: '비빔밥', englishName: 'Bibimbap'),
+      CheckedMenu(dishId: 3, koreanName: '불고기', englishName: 'Bulgogi'),
     ],
   ),
 );
