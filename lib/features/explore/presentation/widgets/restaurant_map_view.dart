@@ -10,7 +10,6 @@ import '../../../../l10n/generated/app_localizations.dart';
 import '../models/map_restaurant.dart';
 import 'marker_image_factory.dart';
 
-
 class RestaurantMapView extends StatefulWidget {
   const RestaurantMapView({
     super.key,
@@ -59,6 +58,7 @@ class _RestaurantMapViewState extends State<RestaurantMapView> {
 
   DateTime _lastPoiTap = DateTime.fromMillisecondsSinceEpoch(0);
 
+  bool _selectedByMarker = false;
   bool _selectedMovePending = false;
 
   @override
@@ -85,13 +85,13 @@ class _RestaurantMapViewState extends State<RestaurantMapView> {
   }
 
   Future<void> _addMarkers(
-    KakaoMapController controller,
-    int generation,
-  ) async {
+      KakaoMapController controller,
+      int generation,
+      ) async {
     bool isStale() =>
         !mounted ||
-        _controller != controller ||
-        generation != _markerGeneration;
+            _controller != controller ||
+            generation != _markerGeneration;
 
     for (final r in widget.restaurants) {
       try {
@@ -166,7 +166,15 @@ class _RestaurantMapViewState extends State<RestaurantMapView> {
     if (id == null) return;
     for (final r in widget.restaurants) {
       if (r.id == id) {
-        _selectedMovePending = true;
+        if (_selectedByMarker) {
+          _selectedMovePending = true;
+        } else {
+          final center = (lat: r.lat, lng: r.lng);
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (!mounted) return;
+            widget.onCenterChanged?.call(center);
+          });
+        }
         _controller?.moveCamera(
           CameraUpdate.newCenterPosition(LatLng(r.lat, r.lng)),
           animation: const CameraAnimation(300),
@@ -321,6 +329,7 @@ class _RestaurantMapViewState extends State<RestaurantMapView> {
     final restaurant = _poiRestaurants[poi.id.toString()];
     if (restaurant == null) return;
     _lastPoiTap = DateTime.now();
+    _selectedByMarker = true;
     widget.onRestaurantTap?.call(restaurant);
   }
 
@@ -330,7 +339,7 @@ class _RestaurantMapViewState extends State<RestaurantMapView> {
   }
 
   void _onCameraMoveEnd(CameraPosition position, GestureType gesture) {
-    final byUser = gesture.name.toLowerCase() != 'unknown';
+    final byUser = gesture != GestureType.unknown;
     if (byUser) {
       _selectedMovePending = false;
     } else if (_selectedMovePending) {
@@ -338,8 +347,8 @@ class _RestaurantMapViewState extends State<RestaurantMapView> {
       return;
     }
     widget.onCenterChanged?.call((
-      lat: position.position.latitude,
-      lng: position.position.longitude,
+    lat: position.position.latitude,
+    lng: position.position.longitude,
     ));
   }
 
@@ -353,6 +362,7 @@ class _RestaurantMapViewState extends State<RestaurantMapView> {
       _moveToSelected();
       _syncSelection();
     }
+    _selectedByMarker = false;
   }
 
   @override
