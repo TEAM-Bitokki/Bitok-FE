@@ -104,8 +104,12 @@ class AppRoutes {
 
 // 바텀 네비게이션이 필요한 화면은 StatefulShellRoute의 branch에만 추가합니다.
 // 그 외 화면은 routes 최상위에 GoRoute로 추가하면 네비게이션 바 없이 표시됩니다.
-final GoRouter appRouter = GoRouter(
-  initialLocation: AppRoutes.login,
+//
+// [initialLocation]은 앱 시작 시 정합니다. 이미 가입·온보딩을 마친 기기면
+// main()에서 홈을 넘겨 로그인 화면을 건너뜁니다.
+GoRouter createAppRouter({String initialLocation = AppRoutes.login}) =>
+    GoRouter(
+  initialLocation: initialLocation,
   routes: [
     GoRoute(
       path: AppRoutes.login,

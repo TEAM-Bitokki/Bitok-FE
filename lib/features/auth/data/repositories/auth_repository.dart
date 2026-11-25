@@ -32,6 +32,19 @@ class AuthRepository {
     }
   }
 
+  /// 앱 시작 시 이 기기에 저장된 계정으로 바로 들어갈 수 있는지 확인합니다.
+  ///
+  /// 저장된 토큰이 없거나 조회에 실패하면(미가입·네트워크 오류 등) null을 돌려주고,
+  /// 이때는 지금처럼 로그인 화면에서 시작합니다. 여기서는 가입하지 않습니다.
+  Future<MeResponse?> restoreSession() async {
+    if (!_deviceTokenStorage.hasToken) return null;
+    try {
+      return await _remoteDataSource.getMe();
+    } catch (_) {
+      return null;
+    }
+  }
+
   /// 닉네임을 바꾸고 바뀐 계정 정보를 돌려줍니다. 앞뒤 공백은 지웁니다.
   Future<MeResponse> updateNickname(String nickname) {
     return _remoteDataSource.updateNickname(

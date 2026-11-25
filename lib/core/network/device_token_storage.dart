@@ -18,6 +18,9 @@ class DeviceTokenStorage {
 
   final SharedPreferences _prefs;
 
+  /// 이 기기에 저장된 토큰이 있는지 확인합니다. (새로 만들지 않습니다)
+  bool get hasToken => _prefs.getString(_key)?.isNotEmpty ?? false;
+
   String get token {
     final saved = _prefs.getString(_key);
     if (saved != null && saved.isNotEmpty) return saved;

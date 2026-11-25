@@ -17,8 +17,8 @@ class Account {
 
 /// 로그인 전에는 null입니다. 로그인에 성공하면 [setFromMe]로 채웁니다.
 ///
-/// 앱은 항상 로그인 화면(GET /api/auth/me)을 거쳐 시작하므로,
-/// 여기서 다시 조회하지 않고 로그인 결과를 그대로 씁니다.
+/// 앱은 시작 시 main()의 자동 로그인이나 로그인 화면(둘 다 GET /api/auth/me)을
+/// 거치므로, 여기서 다시 조회하지 않고 그 결과를 그대로 씁니다.
 class AccountNotifier extends Notifier<Account?> {
   @override
   Account? build() => null;
