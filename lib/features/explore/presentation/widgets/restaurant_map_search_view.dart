@@ -23,11 +23,9 @@ class RestaurantMapSearchView extends ConsumerStatefulWidget {
     this.onMyLocationTap,
   });
 
-  /// 선택된 식당의 미리보기 카드를 만듭니다.
   final Widget Function(BuildContext context, MapRestaurant restaurant)
   previewBuilder;
 
-  /// true면 메뉴를 확인한 식당만 지도에 보여줍니다.
   final bool checkedOnly;
 
   final VoidCallback? onMyLocationTap;
@@ -100,6 +98,7 @@ class _RestaurantMapSearchViewState
       query = query.substring(0, _maxQueryLength);
     }
     setState(() {
+      _searchResults = const [];
       _searchLoading = true;
       _searchFailed = false;
     });
@@ -155,15 +154,15 @@ class _RestaurantMapSearchViewState
     final selected = _selected;
     final nearby = ref.watch(
       nearbyRestaurantsProvider((
-      center: _center,
-      checkedOnly: widget.checkedOnly,
+        center: _center,
+        checkedOnly: widget.checkedOnly,
       )),
     );
     final fetched = nearby.value;
     if (fetched != null) _lastNearby = fetched;
     final nearbyRestaurants = _lastNearby;
     final markers =
-    selected == null || nearbyRestaurants.any((r) => r.id == selected.id)
+        selected == null || nearbyRestaurants.any((r) => r.id == selected.id)
         ? nearbyRestaurants
         : [...nearbyRestaurants, selected];
 
@@ -208,7 +207,7 @@ class _RestaurantMapSearchViewState
             child: BitokSearchField(
               controller: _controller,
               focusNode: _focusNode,
-              hintText: 'Search restaurants',
+              hintText: AppLocalizations.of(context).exploreSearchHint,
               variant: _searching
                   ? BitokTextFieldVariant.grey
                   : BitokTextFieldVariant.white,
@@ -236,18 +235,20 @@ class _ResultList extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final l10n = AppLocalizations.of(context);
+
     if (results.isEmpty) {
       final Widget message;
       if (loading) {
         message = const CircularProgressIndicator();
       } else if (failed) {
         message = Text(
-          AppLocalizations.of(context).errorLoadFailed,
+          l10n.errorLoadFailed,
           style: BitokTextStyles.body2.copyWith(color: BitokColors.grey0),
         );
       } else {
         message = Text(
-          'No restaurants found',
+          l10n.exploreNoResults,
           style: BitokTextStyles.body2.copyWith(color: BitokColors.grey0),
         );
       }
