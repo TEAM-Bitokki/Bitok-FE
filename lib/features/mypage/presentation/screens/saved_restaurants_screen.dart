@@ -5,7 +5,6 @@ import '../../../../common/widgets/bitok_header.dart';
 import '../../../../common/widgets/bitok_menu_card.dart';
 import '../../../../core/design_system/bitok_colors.dart';
 
-//API 미적용 작성
 class SavedRestaurant {
   const SavedRestaurant({
     required this.id,
@@ -14,7 +13,7 @@ class SavedRestaurant {
     required this.address,
   });
 
-  /// 식당 상세('/restaurant/:id')로 이동할 때 쓰는 id입니다.
+  /// 식당 상세('/restaurant/:id')로 이동할 때 쓰는 서버 restaurant_id입니다.
   final String id;
   final String name;
   final String category;

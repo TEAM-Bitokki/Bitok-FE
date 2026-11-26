@@ -2,6 +2,7 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../common/widgets/saving_state_mixin.dart';
 import '../utils/date_formatter.dart';
 import '../../l10n/generated/app_localizations.dart';
 import '../../features/auth/presentation/providers/account_provider.dart';
@@ -182,9 +183,18 @@ GoRouter createAppRouter({String initialLocation = AppRoutes.login}) =>
                     builder: (context, ref, _) => ExploreScreen(
                       savedIds: ref.watch(savedRestaurantIdsProvider),
                       onProfileTap: () => context.push(AppRoutes.myPage),
+                      // 북마크는 바로 바뀌고, 서버 저장에 실패하면 되돌린 뒤 안내합니다.
                       onToggleSaved: (restaurant) => ref
-                          .read(savedRestaurantIdsProvider.notifier)
-                          .toggle(restaurant.id),
+                          .read(savedRestaurantsProvider.notifier)
+                          .toggle(restaurant.toBrief())
+                          .catchError((Object _) {
+                            if (context.mounted) {
+                              showMessageSnackBar(
+                                context,
+                                AppLocalizations.of(context).errorTryAgain,
+                              );
+                            }
+                          }),
                       onMenuResultsTap: (restaurant) {
                         final restaurantId = restaurant.restaurantId;
                         if (restaurantId == null) return;
@@ -309,12 +319,24 @@ GoRouter createAppRouter({String initialLocation = AppRoutes.login}) =>
         ),
         GoRoute(
           path: AppRoutes.savedRestaurants,
-          builder: (context, state) => SavedRestaurantsScreen(
-            // TODO: 저장한 식당 목록 API로 교체합니다.
-            restaurants: const [],
-            onBack: () => context.pop(),
-            onRestaurantTap: (restaurant) =>
-                context.push(AppRoutes.restaurantDetailOf(restaurant.id)),
+          // 불러오는 중이거나 실패하면 빈 목록을 보여줍니다.
+          builder: (context, state) => Consumer(
+            builder: (context, ref, _) => SavedRestaurantsScreen(
+              restaurants: [
+                for (final restaurant
+                    in ref.watch(savedRestaurantsProvider).value ?? const [])
+                  if (restaurant.restaurantId case final restaurantId?)
+                    SavedRestaurant(
+                      id: '$restaurantId',
+                      name: restaurant.name,
+                      category: restaurant.category ?? '',
+                      address: restaurant.address ?? '',
+                    ),
+              ],
+              onBack: () => context.pop(),
+              onRestaurantTap: (restaurant) =>
+                  context.push(AppRoutes.restaurantDetailOf(restaurant.id)),
+            ),
           ),
         ),
         GoRoute(
@@ -357,7 +379,7 @@ GoRouter createAppRouter({String initialLocation = AppRoutes.login}) =>
                   ..invalidate(loginProvider)
                   ..invalidate(onboardingProvider)
                   ..invalidate(myChecksProvider)
-                  ..invalidate(savedRestaurantIdsProvider)
+                  ..invalidate(savedRestaurantsProvider)
                   ..invalidate(selectedRestaurantIdProvider)
                   ..invalidate(scanFlowProvider);
                 router.go(AppRoutes.login);
