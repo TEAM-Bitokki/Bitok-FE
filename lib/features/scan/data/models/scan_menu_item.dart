@@ -26,8 +26,16 @@ class ScanMenuItem {
 
   /// analyze 요청의 raw_name으로 보낼 이름입니다.
   /// 고쳤거나 직접 추가한 메뉴는 입력한 이름, 그 밖에는 메뉴판에서 읽은 이름입니다.
-  String get nameForAnalysis =>
-      renamed || koreanName.isEmpty ? englishName : koreanName;
+  ///
+  /// [maxNameLength]자를 넘으면 앞에서부터 그만큼만 보냅니다. 입력창은 이미 막지만,
+  /// 서버 인식 결과로 들어온 이름은 입력 제한을 거치지 않기 때문입니다.
+  /// (서버처럼 유니코드 코드 포인트 단위로 세어, 이모지 같은 글자가 중간에 잘리지 않게 합니다)
+  String get nameForAnalysis {
+    final name = renamed || koreanName.isEmpty ? englishName : koreanName;
+    final runes = name.runes;
+    if (runes.length <= maxNameLength) return name;
+    return String.fromCharCodes(runes.take(maxNameLength));
+  }
 
   ScanMenuItem copyWith({
     String? koreanName,

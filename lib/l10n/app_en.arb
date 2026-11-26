@@ -239,6 +239,15 @@
       }
     }
   },
+  "scanErrorTooManyItems": "There are more than {count} menu items. Please delete some and try again.",
+  "@scanErrorTooManyItems": {
+    "description": "Snackbar message when the menu list to analyze exceeds the server limit",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
   "savedMenusEmpty": "No saved menus",
   "@savedMenusEmpty": {
     "description": "Empty state message on the Saved Menus screen"

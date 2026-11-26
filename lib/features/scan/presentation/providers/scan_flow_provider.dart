@@ -133,6 +133,11 @@ class ScanFlowNotifier extends Notifier<ScanFlowState> {
     if (scanId == null) {
       throw StateError('analyze()는 recognize()가 성공한 뒤에 호출해야 합니다.');
     }
+    // 서버는 목록을 최대 100개까지 받습니다. 직접 추가는 막아 두었지만, 서버 인식 결과가
+    // 100개를 넘을 수도 있으므로 보내기 전에 한 번 더 확인합니다. (사용자가 몇 개를 지우면 됩니다)
+    if (state.items.length > maxItems) {
+      throw const TooManyScanItemsException(maxItems);
+    }
 
     final items = [
       for (final item in state.items)
@@ -249,6 +254,17 @@ class ScanFlowNotifier extends Notifier<ScanFlowState> {
 final scanFlowProvider = NotifierProvider<ScanFlowNotifier, ScanFlowState>(
   ScanFlowNotifier.new,
 );
+
+/// 분석하려는 메뉴 목록이 서버 제한([maxItems]개)을 넘을 때 [ScanFlowNotifier.analyze]가 던집니다.
+/// 화면은 몇 개를 지운 뒤 다시 시도하라고 안내합니다.
+class TooManyScanItemsException implements Exception {
+  const TooManyScanItemsException(this.maxItems);
+
+  final int maxItems;
+
+  @override
+  String toString() => 'TooManyScanItemsException(maxItems: $maxItems)';
+}
 
 /// 분석 요청 하나를 구분하는 값입니다. 필드를 하나하나 비교합니다.
 /// (문자열로 이어 붙여 비교하면 메뉴 이름에 쉼표·콜론이 있을 때 서로 다른 요청이 같다고 판단될 수 있습니다)

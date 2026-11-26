@@ -54,6 +54,7 @@
   "scanErrorInvalidImage": "사용할 수 없는 사진이에요. 다른 사진으로 시도해 주세요.",
   "scanErrorProfileRequired": "먼저 식단 프로필을 등록해 주세요.",
   "scanMaxItems": "메뉴는 최대 {count}개까지 추가할 수 있어요.",
+  "scanErrorTooManyItems": "메뉴가 {count}개를 넘어요. 몇 개를 지운 뒤 다시 시도해 주세요.",
   "savedMenusEmpty": "저장한 메뉴가 없어요",
   "savedRestaurantsEmpty": "저장한 식당이 없어요",
   "scanErrorAlreadySaved": "이미 저장한 스캔이에요. 새로 스캔해 주세요.",
