@@ -2,6 +2,7 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../common/widgets/double_back_to_exit.dart';
 import '../../common/widgets/saving_state_mixin.dart';
 import '../utils/date_formatter.dart';
 import '../../l10n/generated/app_localizations.dart';
@@ -116,7 +117,9 @@ GoRouter createAppRouter({String initialLocation = AppRoutes.login}) =>
       routes: [
         GoRoute(
           path: AppRoutes.login,
-          builder: (context, state) => const LoginScreen(),
+          // 로그인은 첫 화면이라 뒤로 가기를 누르면 앱이 종료됩니다.
+          builder: (context, state) =>
+              const DoubleBackToExit(child: LoginScreen()),
         ),
         // 온보딩 단계는 push로 쌓아 뒤로가기로 이전 단계에 돌아갈 수 있게 하고,
         // 완료 화면은 go로 이동해 이전 단계 스택을 비웁니다.
@@ -138,7 +141,9 @@ GoRouter createAppRouter({String initialLocation = AppRoutes.login}) =>
         ),
         GoRoute(
           path: AppRoutes.onboardingComplete,
-          builder: (context, state) => const OnboardingCompleteScreen(),
+          // go로 이동해 이전 단계 스택이 비어 있으므로 뒤로 가기를 누르면 앱이 종료됩니다.
+          builder: (context, state) =>
+              const DoubleBackToExit(child: OnboardingCompleteScreen()),
         ),
         StatefulShellRoute.indexedStack(
           builder: (context, state, navigationShell) =>

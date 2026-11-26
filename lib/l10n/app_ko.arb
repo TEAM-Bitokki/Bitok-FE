@@ -53,5 +53,6 @@
   "scanErrorBlurry": "사진이 흐려요. 다시 촬영해 주세요.",
   "scanErrorInvalidImage": "사용할 수 없는 사진이에요. 다른 사진으로 시도해 주세요.",
   "scanErrorProfileRequired": "먼저 식단 프로필을 등록해 주세요.",
-  "scanErrorSlow": "메뉴 확인이 오래 걸리고 있어요. 다시 시도해 주세요."
+  "scanErrorSlow": "메뉴 확인이 오래 걸리고 있어요. 다시 시도해 주세요.",
+  "appExitConfirm": "뒤로 가기를 한 번 더 누르면 앱이 종료됩니다."
 }

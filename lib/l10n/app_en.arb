@@ -233,5 +233,9 @@
   "scanErrorSlow": "The menu check is taking too long. Please try again.",
   "@scanErrorSlow": {
     "description": "Snackbar message when menu recognition or analysis times out"
+  },
+  "appExitConfirm": "Press back again to exit.",
+  "@appExitConfirm": {
+    "description": "Shown after the first back press on a screen where back closes the app"
   }
 }

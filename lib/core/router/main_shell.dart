@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../common/widgets/bitok_bottom_navigation.dart';
+import '../../common/widgets/double_back_to_exit.dart';
 
 /// 바텀 네비게이션이 있는 탭 화면(Home, Explore)을 감싸는 셸입니다.
 ///
@@ -19,6 +20,15 @@ class MainShell extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    // 탭 화면은 돌아갈 화면이 없어서 뒤로 가기를 누르면 앱이 종료됩니다.
+    // 실수로 나가지 않도록 한 번 더 눌러야 종료되게 하고, 안내는 네비게이션 바 위에 띄웁니다.
+    return DoubleBackToExit(
+      bottomOffset: MediaQuery.paddingOf(context).bottom + contentBottomInset,
+      child: _buildShell(),
+    );
+  }
+
+  Widget _buildShell() {
     return Stack(
       children: [
         Positioned.fill(child: navigationShell),
