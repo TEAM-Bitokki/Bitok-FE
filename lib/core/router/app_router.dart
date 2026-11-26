@@ -1,10 +1,11 @@
 import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:flutter_riverpod/misc.dart' show ProviderListenable;
 import 'package:go_router/go_router.dart';
 
 import '../../common/widgets/bitok_button.dart';
+import '../../common/widgets/bitok_toast.dart';
 import '../../common/widgets/double_back_to_exit.dart';
-import '../../common/widgets/saving_state_mixin.dart';
 import '../utils/date_formatter.dart';
 import '../../l10n/generated/app_localizations.dart';
 import '../../features/auth/presentation/providers/account_provider.dart';
@@ -112,18 +113,17 @@ class AppRoutes {
 //
 // [initialLocation]은 앱 시작 시 정합니다. 이미 가입·온보딩을 마친 기기면
 // main()에서 홈을 넘겨 로그인 화면을 건너뜁니다.
-GoRouter createAppRouter({
-  String initialLocation = AppRoutes.login,
-}) => GoRouter(
+GoRouter createAppRouter({String initialLocation = AppRoutes.login}) =>
+    GoRouter(
       initialLocation: initialLocation,
       routes: [
         GoRoute(
           path: AppRoutes.login,
-      // 로그인은 첫 화면이라 뒤로 가기를 누르면 앱이 종료됩니다. 안내는 Get Started 버튼 위에 띄웁니다.
-      builder: (context, state) => const DoubleBackToExit(
-        bottomOffset: _bottomButtonTop,
-        child: LoginScreen(),
-      ),
+          // 로그인은 첫 화면이라 뒤로 가기를 누르면 앱이 종료됩니다. 안내는 Get Started 버튼 위에 띄웁니다.
+          builder: (context, state) => const DoubleBackToExit(
+            bottomOffset: _bottomButtonTop,
+            child: LoginScreen(),
+          ),
         ),
         // 온보딩 단계는 push로 쌓아 뒤로가기로 이전 단계에 돌아갈 수 있게 하고,
         // 완료 화면은 go로 이동해 이전 단계 스택을 비웁니다.
@@ -145,12 +145,12 @@ GoRouter createAppRouter({
         ),
         GoRoute(
           path: AppRoutes.onboardingComplete,
-      // go로 이동해 이전 단계 스택이 비어 있으므로 뒤로 가기를 누르면 앱이 종료됩니다.
-      // 안내는 Start 버튼 위에 띄웁니다.
-      builder: (context, state) => const DoubleBackToExit(
-        bottomOffset: _bottomButtonTop,
-        child: OnboardingCompleteScreen(),
-      ),
+          // go로 이동해 이전 단계 스택이 비어 있으므로 뒤로 가기를 누르면 앱이 종료됩니다.
+          // 안내는 Start 버튼 위에 띄웁니다.
+          builder: (context, state) => const DoubleBackToExit(
+            bottomOffset: _bottomButtonTop,
+            child: OnboardingCompleteScreen(),
+          ),
         ),
         StatefulShellRoute.indexedStack(
           builder: (context, state, navigationShell) =>
@@ -161,30 +161,54 @@ GoRouter createAppRouter({
                 GoRoute(
                   path: AppRoutes.home,
                   builder: (context, state) => Consumer(
-                    builder: (context, ref, _) => HomeScreen(
-                  // 처음 불러오는 동안 로딩 표시, 실패하면 빈 목록(No checks yet)을 보여줍니다.
-                  // 저장 후 다시 불러올 때는 이전 목록을 그대로 보여줍니다.
-                  isLoading: _isFirstLoad(ref.watch(myChecksProvider)),
-                      recentChecks: [
-                    for (final check
-                        in ref.watch(myChecksProvider).value ?? const [])
-                          RecentCheck(
-                        analysisId: check.analysisId,
-                            koreanName: check.koreanName,
-                            englishName: check.englishName,
-                            subtitle: _checkSubtitle(check),
-                            status: check.status,
-                          ),
-                      ],
-                      onProfileTap: () => context.push(AppRoutes.myPage),
-                      // 식당 선택 화면은 최상위 경로라 하단 탭 없이 열립니다.
-                      onCheckMenuTap: () =>
-                          context.push(AppRoutes.restaurantSelect),
-                      // 메뉴 상세는 최상위 경로라 하단 탭 없이 열립니다.
-                      onRecentCheckTap: (check) => context.push(
-                    AppRoutes.analysisDetailOf(check.analysisId),
-                      ),
-                    ),
+                    builder: (context, ref, _) {
+                      // 불러오지 못하면 토스트로 알리고 빈 목록(No checks yet)을 보여줍니다.
+                      // 토스트는 네비게이션 바 위에 띄웁니다.
+                      _toastOnLoadError(
+                        context,
+                        ref,
+                        myChecksProvider,
+                        path: AppRoutes.home,
+                        bottomOffset: MainShell.contentBottomInset,
+                      );
+                      final checks = ref.watch(myChecksProvider);
+                      final page = checks.value;
+                      return HomeScreen(
+                        // 처음 불러오는 동안만 로딩 표시합니다. 저장 후 다시 불러올 때는 이전 목록을 그대로 둡니다.
+                        isLoading: _isFirstLoad(checks),
+                        recentChecks: [
+                          for (final check in page?.items ?? const <MenuCheck>[])
+                            RecentCheck(
+                              analysisId: check.analysisId,
+                              koreanName: check.koreanName,
+                              englishName: check.englishName,
+                              subtitle: _checkSubtitle(check),
+                              status: check.status,
+                            ),
+                        ],
+                        loadingMore: page?.loadingMore ?? false,
+                        loadMoreFailed: page?.loadMoreFailed ?? false,
+                        onLoadMore: () => _loadMoreMyChecks(
+                          context,
+                          ref,
+                          bottomOffset: MainShell.contentBottomInset,
+                        ),
+                        onRetryLoadMore: () => _loadMoreMyChecks(
+                          context,
+                          ref,
+                          bottomOffset: MainShell.contentBottomInset,
+                          retry: true,
+                        ),
+                        onProfileTap: () => context.push(AppRoutes.myPage),
+                        // 식당 선택 화면은 최상위 경로라 하단 탭 없이 열립니다.
+                        onCheckMenuTap: () =>
+                            context.push(AppRoutes.restaurantSelect),
+                        // 메뉴 상세는 최상위 경로라 하단 탭 없이 열립니다.
+                        onRecentCheckTap: (check) => context.push(
+                          AppRoutes.analysisDetailOf(check.analysisId),
+                        ),
+                      );
+                    },
                   ),
                 ),
               ],
@@ -202,10 +226,12 @@ GoRouter createAppRouter({
                       .read(savedRestaurantsProvider.notifier)
                       .toggle(restaurant.toBrief())
                       .catchError((Object _) {
+                        // 일반 스낵바는 네비게이션 바에 가려지므로 그 위에 토스트로 띄웁니다.
                         if (context.mounted) {
-                          showMessageSnackBar(
+                          showBitokToast(
                             context,
                             AppLocalizations.of(context).errorTryAgain,
+                            bottomOffset: MainShell.contentBottomInset,
                           );
                         }
                       }),
@@ -333,47 +359,71 @@ GoRouter createAppRouter({
         ),
         GoRoute(
           path: AppRoutes.savedRestaurants,
-      // 처음 불러오는 동안 로딩 표시, 실패하면 빈 목록을 보여줍니다.
-      builder: (context, state) => Consumer(
-        builder: (context, ref, _) => SavedRestaurantsScreen(
-          isLoading: _isFirstLoad(ref.watch(savedRestaurantsProvider)),
-          restaurants: [
-            for (final restaurant
-                in ref.watch(savedRestaurantsProvider).value ?? const [])
-              if (restaurant.restaurantId case final restaurantId?)
-                SavedRestaurant(
-                  id: '$restaurantId',
-                  name: restaurant.name,
-                  category: restaurant.category ?? '',
-                  address: restaurant.address ?? '',
-                ),
-          ],
-            onBack: () => context.pop(),
-            onRestaurantTap: (restaurant) =>
-                context.push(AppRoutes.restaurantDetailOf(restaurant.id)),
-        ),
+          // 처음 불러오는 동안 로딩 표시, 실패하면 토스트로 알리고 빈 목록을 보여줍니다.
+          builder: (context, state) => Consumer(
+            builder: (context, ref, _) {
+              _toastOnLoadError(
+                context,
+                ref,
+                savedRestaurantsProvider,
+                path: AppRoutes.savedRestaurants,
+              );
+              final restaurants = ref.watch(savedRestaurantsProvider);
+              return SavedRestaurantsScreen(
+                isLoading: _isFirstLoad(restaurants),
+                restaurants: [
+                  for (final restaurant in restaurants.value ?? const [])
+                    if (restaurant.restaurantId case final restaurantId?)
+                      SavedRestaurant(
+                        id: '$restaurantId',
+                        name: restaurant.name,
+                        category: restaurant.category ?? '',
+                        address: restaurant.address ?? '',
+                      ),
+                ],
+                onBack: () => context.pop(),
+                onRestaurantTap: (restaurant) =>
+                    context.push(AppRoutes.restaurantDetailOf(restaurant.id)),
+              );
+            },
           ),
         ),
         GoRoute(
           path: AppRoutes.savedMenus,
           // 홈 Recent Checks와 같은 My Checks 목록을 보여줍니다.
+          // 처음 불러오는 동안 로딩 표시, 실패하면 토스트로 알리고 빈 목록을 보여줍니다.
           builder: (context, state) => Consumer(
-            builder: (context, ref, _) => SavedMenusScreen(
-          isLoading: _isFirstLoad(ref.watch(myChecksProvider)),
-              menus: [
-            for (final check in ref.watch(myChecksProvider).value ?? const [])
-                  SavedMenu(
-                analysisId: check.analysisId,
-                    koreanName: check.koreanName,
-                    englishName: check.englishName,
-                    subtitle: _checkSubtitle(check),
-                    status: check.status,
-                  ),
-              ],
-              onBack: () => context.pop(),
-          onMenuTap: (menu) =>
-              context.push(AppRoutes.analysisDetailOf(menu.analysisId)),
-            ),
+            builder: (context, ref, _) {
+              _toastOnLoadError(
+                context,
+                ref,
+                myChecksProvider,
+                path: AppRoutes.savedMenus,
+              );
+              final checks = ref.watch(myChecksProvider);
+              final page = checks.value;
+              return SavedMenusScreen(
+                isLoading: _isFirstLoad(checks),
+                menus: [
+                  for (final check in page?.items ?? const <MenuCheck>[])
+                    SavedMenu(
+                      analysisId: check.analysisId,
+                      koreanName: check.koreanName,
+                      englishName: check.englishName,
+                      subtitle: _checkSubtitle(check),
+                      status: check.status,
+                    ),
+                ],
+                loadingMore: page?.loadingMore ?? false,
+                loadMoreFailed: page?.loadMoreFailed ?? false,
+                onLoadMore: () => _loadMoreMyChecks(context, ref),
+                onRetryLoadMore: () =>
+                    _loadMoreMyChecks(context, ref, retry: true),
+                onBack: () => context.pop(),
+                onMenuTap: (menu) =>
+                    context.push(AppRoutes.analysisDetailOf(menu.analysisId)),
+              );
+            },
           ),
         ),
         GoRoute(
@@ -394,7 +444,7 @@ GoRouter createAppRouter({
                   ..invalidate(loginProvider)
                   ..invalidate(onboardingProvider)
                   ..invalidate(myChecksProvider)
-              ..invalidate(savedRestaurantsProvider)
+                  ..invalidate(savedRestaurantsProvider)
                   ..invalidate(selectedRestaurantIdProvider)
                   ..invalidate(scanFlowProvider);
                 router.go(AppRoutes.login);
@@ -403,21 +453,22 @@ GoRouter createAppRouter({
           ),
         ),
 
-    // ---- 내 기록의 메뉴 상세 ('/analysis/:id') ----
-    // 그 스캔에서 받은 직원 답으로 판정한 결과입니다(GET /api/analyses/{id}).
+        // ---- 내 기록의 메뉴 상세 ('/analysis/:id') ----
+        // 그 스캔에서 받은 직원 답으로 판정한 결과입니다(GET /api/analyses/{id}).
         GoRoute(
-      path: AppRoutes.analysisDetail,
-      redirect: (context, state) => _redirectUnlessInts(state, const ['id']),
-      builder: (context, state) {
-        final analysisId = int.parse(state.pathParameters['id']!);
-        return Consumer(
-          builder: (context, ref, _) => _menuDetailPage(
-            context,
-            ref.watch(analysisDetailProvider(analysisId)),
-            onRetry: () => ref.invalidate(analysisDetailProvider(analysisId)),
-            ),
-        );
-      },
+          path: AppRoutes.analysisDetail,
+          redirect: (context, state) => _redirectUnlessInts(state, const ['id']),
+          builder: (context, state) {
+            final analysisId = int.parse(state.pathParameters['id']!);
+            return Consumer(
+              builder: (context, ref, _) => _menuDetailPage(
+                context,
+                ref.watch(analysisDetailProvider(analysisId)),
+                onRetry: () =>
+                    ref.invalidate(analysisDetailProvider(analysisId)),
+              ),
+            );
+          },
         ),
         // ---- 식당 선택 (REST-01) ----
         GoRoute(
@@ -435,7 +486,7 @@ GoRouter createAppRouter({
                   .select(registered.restaurantId);
               // 이전 스캔 결과가 남지 않도록 초기화한 뒤 선택한 식당으로 스캔을 시작합니다.
               final scanRestaurant = ScanRestaurant(
-            restaurantId: registered.restaurantId,
+                restaurantId: registered.restaurantId,
                 name: registered.name,
                 category: registered.category ?? '',
                 address: registered.address ?? '',
@@ -456,8 +507,9 @@ GoRouter createAppRouter({
             return RestaurantDetailPage(
               restaurantId: restaurantId,
               onBack: () => context.pop(),
-          onForYouTap: () =>
-              context.push(AppRoutes.personalizedMenusOf('$restaurantId')),
+              onForYouTap: () => context.push(
+                AppRoutes.personalizedMenusOf('$restaurantId'),
+              ),
               onMenuTap: (menu) => context.push(
                 AppRoutes.restaurantMenuDetailOf(restaurantId, menu.dishId),
               ),
@@ -505,21 +557,24 @@ GoRouter createAppRouter({
             dishId: int.parse(state.pathParameters['dishId']!),
             );
             return Consumer(
-          builder: (context, ref, _) => _menuDetailPage(
-            context,
-            ref.watch(menuDetailProvider(key)),
-                  onRetry: () => ref.invalidate(menuDetailProvider(key)),
-                ),
+              builder: (context, ref, _) => _menuDetailPage(
+                context,
+                ref.watch(menuDetailProvider(key)),
+                onRetry: () => ref.invalidate(menuDetailProvider(key)),
+              ),
             );
           },
         ),
 
         // ---- 메뉴 스캔 (네비게이션 바 없음) ----
         // 진입점: 식당 선택(REST-01)의 Select. 식당 정보는 extra(ScanRestaurant)로 받습니다.
+        // extra 없이 열리면(식당을 고르지 않은 경우) 식당 선택 화면으로 보냅니다.
         GoRoute(
           path: AppRoutes.scan,
+          redirect: (context, state) =>
+              state.extra is ScanRestaurant ? null : AppRoutes.restaurantSelect,
           builder: (context, state) => ScanScreen(
-            restaurant: state.extra as ScanRestaurant? ?? _mockScanRestaurant,
+            restaurant: state.extra! as ScanRestaurant,
             onBack: () => context.pop(),
             onImageSelected: (image) =>
                 context.push(AppRoutes.scanPreview, extra: image.path),
@@ -533,7 +588,7 @@ GoRouter createAppRouter({
           builder: (context, state) => ScanPreviewScreen(
             imagePath: state.extra! as String,
             onBack: () => context.pop(),
-        // 인식에 실패하면 예외가 화면까지 올라가 안내 스낵바가 뜹니다.
+            // 인식에 실패하면 예외가 화면까지 올라가 안내 스낵바가 뜹니다.
             onNext: () async {
               // 라우터는 위젯 트리 밖에 있으므로 ProviderScope에서 직접 provider를 읽습니다.
               await ProviderScope.containerOf(
@@ -554,16 +609,16 @@ GoRouter createAppRouter({
           path: AppRoutes.scanSelect,
           builder: (context, state) => ScanSelectScreen(
             onBack: () => context.pop(),
-        // 분석에 실패하면 예외가 화면까지 올라가 안내 스낵바가 뜹니다.
+            // 분석에 실패하면 예외가 화면까지 올라가 안내 스낵바가 뜹니다.
             onNext: () async {
               final container = ProviderScope.containerOf(context);
-          final scan = container.read(scanFlowProvider.notifier);
-          await scan.analyze();
+              final scan = container.read(scanFlowProvider.notifier);
+              await scan.analyze();
               if (!context.mounted) return;
               if (container.read(scanFlowProvider).questions.isEmpty) {
-            // 직원에게 확인할 질문이 없으면 REST-06을 건너뛰고 바로 최종 결과를 받습니다.
-            await scan.loadResult();
-            if (context.mounted) context.push(AppRoutes.scanResult);
+                // 직원에게 확인할 질문이 없으면 REST-06을 건너뛰고 바로 최종 결과를 받습니다.
+                await scan.loadResult();
+                if (context.mounted) context.push(AppRoutes.scanResult);
                 return;
               }
               context.push(AppRoutes.scanAskStaff);
@@ -574,13 +629,13 @@ GoRouter createAppRouter({
           path: AppRoutes.scanAskStaff,
           builder: (context, state) => ScanAskStaffScreen(
             onBack: () => context.pop(),
-        // 마지막 답변 뒤 최종 결과를 받습니다. 실패하면 화면에 안내 스낵바가 뜹니다.
-        onComplete: () async {
-          await ProviderScope.containerOf(
-            context,
-          ).read(scanFlowProvider.notifier).loadResult();
-          if (context.mounted) context.push(AppRoutes.scanResult);
-        },
+            // 마지막 답변 뒤 최종 결과를 받습니다. 실패하면 화면에 안내 스낵바가 뜹니다.
+            onComplete: () async {
+              await ProviderScope.containerOf(
+                context,
+              ).read(scanFlowProvider.notifier).loadResult();
+              if (context.mounted) context.push(AppRoutes.scanResult);
+            },
           ),
         ),
         GoRoute(
@@ -594,19 +649,23 @@ GoRouter createAppRouter({
               if (context.mounted) context.push(AppRoutes.scanSaved);
             },
             onFinish: () => context.go(AppRoutes.home),
-        // 이 스캔의 직원 답으로 판정한 내 기록의 메뉴 상세를 엽니다.
-        onViewDetails: (menu) =>
-            context.push(AppRoutes.analysisDetailOf(menu.analysisId)),
+            // 이 스캔의 직원 답으로 판정한 내 기록의 메뉴 상세를 엽니다.
+            onViewDetails: (menu) =>
+                context.push(AppRoutes.analysisDetailOf(menu.analysisId)),
           ),
         ),
+        // 스캔 상태에 식당이 없으면(스캔을 거치지 않고 열린 경우) 홈으로 보냅니다.
         GoRoute(
           path: AppRoutes.scanSaved,
+          redirect: (context, state) =>
+              ProviderScope.containerOf(context).read(scanFlowProvider).restaurant ==
+                  null
+              ? AppRoutes.home
+              : null,
           builder: (context, state) => ScanSavedScreen(
-            restaurant:
-            ProviderScope.containerOf(
+            restaurant: ProviderScope.containerOf(
               context,
-            ).read(scanFlowProvider).restaurant ??
-                _mockScanRestaurant,
+            ).read(scanFlowProvider).restaurant!,
             onBack: () => context.pop(),
             onDone: () => context.go(AppRoutes.home),
           ),
@@ -637,9 +696,56 @@ Widget _menuDetailPage(
 const double _bottomButtonTop = 10 + BitokButton.height;
 
 /// 아직 한 번도 값을 받지 못한 채 불러오는 중이면 true입니다.
-/// 다시 불러오는 중(invalidate 뒤)에는 이전 값이 있으므로 false입니다.
+/// - 다시 불러오는 중(invalidate 뒤)에는 이전 값이 있으므로 false입니다.
+/// - 한 번 실패하면 false입니다. Riverpod는 실패한 provider를 30초 넘게 자동으로 다시 시도하는데,
+///   그동안 로딩만 보여주지 않고 토스트와 빈 화면을 보여줍니다. 다시 시도가 성공하면 목록이 나타납니다.
 bool _isFirstLoad(AsyncValue<Object?> value) =>
-    value.isLoading && !value.hasValue;
+    value.isLoading && !value.hasValue && !value.hasError;
+
+/// 목록 provider를 불러오지 못하면 '불러오지 못했어요' 토스트를 띄웁니다. Consumer의 build에서 호출하세요.
+///
+/// 실패가 처음 생길 때 한 번만 띄웁니다. (자동 다시 시도가 이어져도 반복해서 띄우지 않습니다)
+/// 같은 provider를 여러 화면이 보고 있어도, 지금 보이는 화면([path])일 때만 띄웁니다.
+void _toastOnLoadError(
+  BuildContext context,
+  WidgetRef ref,
+  ProviderListenable<AsyncValue<Object?>> provider, {
+  required String path,
+  double bottomOffset = 0,
+}) {
+  ref.listen(provider, (previous, next) {
+    if (!next.hasError || (previous?.hasError ?? false)) return;
+    if (!context.mounted || !_isShowing(context, path)) return;
+    showBitokToast(
+      context,
+      AppLocalizations.of(context).errorLoadFailed,
+      bottomOffset: bottomOffset,
+    );
+  });
+}
+
+/// My Checks 다음 페이지를 불러옵니다. 실패하면 토스트로 알립니다(목록 끝에는 다시 시도 버튼이 생깁니다).
+Future<void> _loadMoreMyChecks(
+  BuildContext context,
+  WidgetRef ref, {
+  double bottomOffset = 0,
+  bool retry = false,
+}) async {
+  try {
+    await ref.read(myChecksProvider.notifier).loadMore(retry: retry);
+  } catch (_) {
+    if (!context.mounted) return;
+    showBitokToast(
+      context,
+      AppLocalizations.of(context).errorLoadFailed,
+      bottomOffset: bottomOffset,
+    );
+  }
+}
+
+/// 지금 화면에 보이는 경로가 [path]이면 true입니다.
+bool _isShowing(BuildContext context, String path) =>
+    GoRouter.of(context).routerDelegate.currentConfiguration.uri.path == path;
 
 String? _redirectUnlessInts(GoRouterState state, List<String> keys) =>
     keys.every((key) => int.tryParse(state.pathParameters[key] ?? '') != null)
@@ -651,17 +757,3 @@ String _checkSubtitle(MenuCheck check) {
   final day = check.checkedAt.toRelativeDayLabel();
   return check.restaurantName.isEmpty ? day : '${check.restaurantName} · $day';
 }
-
-// ---- 임시 데이터 (서버/상태 연결 전까지만 사용) ----
-const List<String> _mockAllergens = [
-  'Shrimp',
-  'Prawn',
-  'Walnut',
-  'Anchovy',
-  'Peanut',
-];
-const ScanRestaurant _mockScanRestaurant = ScanRestaurant(
-  name: 'Myeongdong Kyoja',
-  category: 'Korean Restaurant',
-  address: '29 Myeongdong 10-gil, Jung-gu',
-);

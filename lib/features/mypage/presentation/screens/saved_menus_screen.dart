@@ -3,6 +3,7 @@ import 'package:flutter/widget_previews.dart';
 
 import '../../../../common/widgets/bitok_empty_state.dart';
 import '../../../../common/widgets/bitok_header.dart';
+import '../../../../common/widgets/bitok_load_more.dart';
 import '../../../../common/widgets/bitok_menu_card.dart';
 import '../../../../common/widgets/bitok_status_chip.dart';
 import '../../../../core/design_system/bitok_colors.dart';
@@ -25,11 +26,15 @@ class SavedMenu {
   final BitokMenuStatus status;
 }
 
-class SavedMenusScreen extends StatelessWidget {
+class SavedMenusScreen extends StatefulWidget {
   const SavedMenusScreen({
     super.key,
     required this.menus,
     this.isLoading = false,
+    this.loadingMore = false,
+    this.loadMoreFailed = false,
+    this.onLoadMore,
+    this.onRetryLoadMore,
     this.onBack,
     this.onMenuTap,
   });
@@ -39,20 +44,42 @@ class SavedMenusScreen extends StatelessWidget {
   /// 목록을 처음 불러오는 중이면 true입니다. 목록 대신 로딩 표시를 보여줍니다.
   final bool isLoading;
 
+  /// 다음 페이지를 불러오는 중이면 true입니다. 목록 끝에 로딩 표시를 보여줍니다.
+  final bool loadingMore;
+
+  /// 다음 페이지를 불러오지 못했으면 true입니다. 목록 끝에 다시 시도 버튼을 보여줍니다.
+  final bool loadMoreFailed;
+
+  /// 목록 끝에 가까워지면 호출됩니다(무한 스크롤).
+  final VoidCallback? onLoadMore;
+  final VoidCallback? onRetryLoadMore;
+
   final VoidCallback? onBack;
   final ValueChanged<SavedMenu>? onMenuTap;
 
   @override
+  State<SavedMenusScreen> createState() => _SavedMenusScreenState();
+}
+
+class _SavedMenusScreenState extends State<SavedMenusScreen>
+    with LoadMoreOnScroll {
+  @override
+  void onNearEnd() => widget.onLoadMore?.call();
+
+  @override
   Widget build(BuildContext context) {
+    checkLoadMoreAfterBuild();
+    final menus = widget.menus;
+
     return Scaffold(
       backgroundColor: BitokColors.white,
       appBar: BitokHeader.sub(
         title: 'Saved Menues',
-        onBack: onBack ?? () => Navigator.maybePop(context),
+        onBack: widget.onBack ?? () => Navigator.maybePop(context),
       ),
       body: SafeArea(
         top: false,
-        child: isLoading
+        child: widget.isLoading
             ? const Center(
                 child: CircularProgressIndicator(color: BitokColors.primary),
               )
@@ -66,17 +93,26 @@ class SavedMenusScreen extends StatelessWidget {
                 ),
               )
             : ListView.separated(
+                controller: loadMoreController,
                 padding: const EdgeInsets.fromLTRB(24, 12, 24, 24),
-                itemCount: menus.length,
+                // 마지막 한 칸은 다음 페이지 로딩·다시 시도 영역입니다.
+                itemCount: menus.length + 1,
                 separatorBuilder: (_, _) => const SizedBox(height: 8),
                 itemBuilder: (context, index) {
+                  if (index == menus.length) {
+                    return BitokLoadMoreFooter(
+                      loading: widget.loadingMore,
+                      failed: widget.loadMoreFailed,
+                      onRetry: widget.onRetryLoadMore,
+                    );
+                  }
                   final menu = menus[index];
                   return BitokRecentMenuCard(
                     koreanName: menu.koreanName,
                     englishName: menu.englishName,
                     subtitle: menu.subtitle,
                     status: menu.status,
-                    onTap: () => onMenuTap?.call(menu),
+                    onTap: () => widget.onMenuTap?.call(menu),
                   );
                 },
               ),

@@ -3,9 +3,8 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 
-import '../../core/design_system/bitok_colors.dart';
-import '../../core/design_system/bitok_text_styles.dart';
 import '../../l10n/generated/app_localizations.dart';
+import 'bitok_toast.dart';
 
 /// 뒤로 가기를 누르면 앱이 종료되는 화면(로그인, 홈·Explore 탭 등)을 감쌉니다.
 ///
@@ -26,7 +25,7 @@ class DoubleBackToExit extends StatefulWidget {
   });
 
   /// 안내와 그 아래 요소(버튼, 네비게이션 바) 사이의 기본 간격입니다.
-  static const double defaultGap = 8;
+  static const double defaultGap = bitokToastGap;
 
   final Widget child;
 
@@ -62,25 +61,13 @@ class _DoubleBackToExitState extends State<DoubleBackToExit> {
     }
     _exitWindow = Timer(_window, () {});
 
-    ScaffoldMessenger.of(context)
-      ..hideCurrentSnackBar()
-      ..showSnackBar(
-        SnackBar(
-          duration: _window,
-          behavior: SnackBarBehavior.floating,
-          margin: EdgeInsets.fromLTRB(
-            24,
-            0,
-            24,
-            widget.bottomOffset + widget.gap,
-          ),
-          content: Text(
-            AppLocalizations.of(context).appExitConfirm,
-            textAlign: TextAlign.center,
-            style: BitokTextStyles.body2.copyWith(color: BitokColors.white),
-          ),
-        ),
-      );
+    showBitokToast(
+      context,
+      AppLocalizations.of(context).appExitConfirm,
+      bottomOffset: widget.bottomOffset,
+      gap: widget.gap,
+      duration: _window,
+    );
   }
 
   @override

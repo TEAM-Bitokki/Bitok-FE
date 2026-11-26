@@ -55,21 +55,59 @@ class MenuCheck {
   final DateTime checkedAt;
 }
 
+/// 지금까지 불러온 My Checks 목록과 다음 페이지 상태입니다.
+class MyChecksPage {
+  const MyChecksPage({
+    this.items = const [],
+    this.hasMore = false,
+    this.nextCursor,
+    this.loadingMore = false,
+    this.loadMoreFailed = false,
+  });
+
+  /// 지금까지 불러온 항목입니다. 최근에 저장한 것이 앞에 옵니다.
+  final List<MenuCheck> items;
+
+  /// 서버에 다음 페이지가 남아 있으면 true입니다.
+  final bool hasMore;
+
+  /// 다음 페이지 요청에 넘길 커서입니다. 마지막 페이지면 null입니다.
+  final String? nextCursor;
+
+  /// 다음 페이지를 불러오는 중이면 true입니다. 목록 끝에 로딩 표시를 보여줍니다.
+  final bool loadingMore;
+
+  /// 다음 페이지를 불러오지 못했으면 true입니다. 스크롤로는 다시 요청하지 않고, 다시 시도 버튼을 보여줍니다.
+  final bool loadMoreFailed;
+
+  /// 다음 페이지 요청 상태만 바꿉니다. 목록과 커서를 바꿀 때는 새로 만드세요.
+  MyChecksPage copyWith({bool? loadingMore, bool? loadMoreFailed}) {
+    return MyChecksPage(
+      items: items,
+      hasMore: hasMore,
+      nextCursor: nextCursor,
+      loadingMore: loadingMore ?? this.loadingMore,
+      loadMoreFailed: loadMoreFailed ?? this.loadMoreFailed,
+    );
+  }
+}
+
 /// 저장한 메뉴 확인 결과 목록(GET /api/my-checks)입니다. 최근에 저장한 것이 앞에 옵니다.
 ///
-/// 다시 불러오는 경우:
+/// 처음에는 첫 페이지만 불러오고, 화면이 목록 끝에 가까워지면 [loadMore]로 다음 페이지를 붙입니다.
+///
+/// 처음부터 다시 불러오는 경우:
 /// - 로그인한 계정(userId)이 바뀔 때
 /// - 식단 프로필을 수정했을 때 (서버가 판정을 현재 프로필 기준으로 다시 계산하므로)
 /// - 새로 저장한 뒤 (scan_flow_provider가 invalidate합니다)
-class MyChecksNotifier extends AsyncNotifier<List<MenuCheck>> {
-  /// 한 번에 불러오는 개수입니다(서버 최대값).
-  // TODO: Saved Menus에 무한 스크롤이 필요해지면 page.nextCursor로 다음 페이지를 불러옵니다.
-  static const int _limit = 50;
+class MyChecksNotifier extends AsyncNotifier<MyChecksPage> {
+  /// 한 페이지 크기입니다(서버 기본값 20, 최대 50).
+  static const int _pageSize = 20;
 
   @override
-  Future<List<MenuCheck>> build() async {
+  Future<MyChecksPage> build() async {
     final userId = ref.watch(accountProvider.select((a) => a?.userId));
-    if (userId == null) return const [];
+    if (userId == null) return const MyChecksPage();
 
     // watch로 두면 프로필을 (다시) 불러오는 순간마다 목록도 한 번 더 요청합니다.
     // (앱 시작, 계정이 바뀔 때 — 계정 변경은 위의 userId watch가 이미 다시 불러옵니다)
@@ -85,12 +123,58 @@ class MyChecksNotifier extends AsyncNotifier<List<MenuCheck>> {
 
     final response = await ref
         .read(myChecksRepositoryProvider)
-        .list(limit: _limit);
-    return response.items.map(MenuCheck.fromItem).toList();
+        .list(limit: _pageSize);
+    return MyChecksPage(
+      items: response.items.map(MenuCheck.fromItem).toList(),
+      hasMore: response.page.hasMore,
+      nextCursor: response.page.nextCursor,
+    );
+  }
+
+  /// 다음 페이지를 불러와 목록 뒤에 붙입니다.
+  ///
+  /// 이미 불러오는 중이거나 더 없으면 아무것도 하지 않습니다.
+  /// 한 번 실패하면 스크롤로는 다시 요청하지 않고, [retry]가 true일 때(다시 시도 버튼)만 요청합니다.
+  /// 실패하면 [MyChecksPage.loadMoreFailed]를 켜고 ApiException을 던집니다. 화면이 안내를 맡습니다.
+  Future<void> loadMore({bool retry = false}) async {
+    final current = state.value;
+    if (current == null || state.isLoading) return;
+    final cursor = current.nextCursor;
+    if (!current.hasMore || current.loadingMore || cursor == null) return;
+    if (current.loadMoreFailed && !retry) return;
+
+    final loading = current.copyWith(loadingMore: true, loadMoreFailed: false);
+    state = AsyncData(loading);
+
+    // 기다리는 동안 처음부터 다시 불러왔으면(저장·계정 변경 등) 상태가 바뀌어 있습니다.
+    // 그때는 이 요청의 결과를 버립니다. (Riverpod 3는 다시 불러올 때 Notifier를 새로 만들므로,
+    // Notifier 필드가 아니라 상태 객체가 그대로인지로 판단합니다)
+    bool stillCurrent() =>
+        ref.mounted && !state.isLoading && identical(state.value, loading);
+
+    try {
+      final response = await ref
+          .read(myChecksRepositoryProvider)
+          .list(cursor: cursor, limit: _pageSize);
+      if (!stillCurrent()) return;
+      state = AsyncData(
+        MyChecksPage(
+          items: [...loading.items, ...response.items.map(MenuCheck.fromItem)],
+          hasMore: response.page.hasMore,
+          nextCursor: response.page.nextCursor,
+        ),
+      );
+    } catch (_) {
+      if (stillCurrent()) {
+        state = AsyncData(
+          loading.copyWith(loadingMore: false, loadMoreFailed: true),
+        );
+      }
+      rethrow;
+    }
   }
 }
 
-final myChecksProvider =
-    AsyncNotifierProvider<MyChecksNotifier, List<MenuCheck>>(
-      MyChecksNotifier.new,
-    );
+final myChecksProvider = AsyncNotifierProvider<MyChecksNotifier, MyChecksPage>(
+  MyChecksNotifier.new,
+);

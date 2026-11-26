@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/widget_previews.dart';
 
 import '../../../../common/widgets/bitok_header.dart';
+import '../../../../common/widgets/bitok_load_more.dart';
 import '../../../../common/widgets/bitok_menu_card.dart';
 import '../../../../common/widgets/bitok_status_chip.dart';
 import '../../../../core/design_system/bitok_colors.dart';
@@ -28,11 +29,15 @@ class RecentCheck {
   final BitokMenuStatus status;
 }
 
-class HomeScreen extends StatelessWidget {
+class HomeScreen extends StatefulWidget {
   const HomeScreen({
     super.key,
     required this.recentChecks,
     this.isLoading = false,
+    this.loadingMore = false,
+    this.loadMoreFailed = false,
+    this.onLoadMore,
+    this.onRetryLoadMore,
     this.onProfileTap,
     this.onCheckMenuTap,
     this.onRecentCheckTap,
@@ -44,17 +49,38 @@ class HomeScreen extends StatelessWidget {
   /// 목록을 처음 불러오는 중이면 true입니다. 목록 자리에 로딩 표시를 보여줍니다.
   final bool isLoading;
 
+  /// 다음 페이지를 불러오는 중이면 true입니다. 목록 끝에 로딩 표시를 보여줍니다.
+  final bool loadingMore;
+
+  /// 다음 페이지를 불러오지 못했으면 true입니다. 목록 끝에 다시 시도 버튼을 보여줍니다.
+  final bool loadMoreFailed;
+
+  /// 목록 끝에 가까워지면 호출됩니다(무한 스크롤).
+  final VoidCallback? onLoadMore;
+  final VoidCallback? onRetryLoadMore;
+
   final VoidCallback? onProfileTap;
   final VoidCallback? onCheckMenuTap;
   final ValueChanged<RecentCheck>? onRecentCheckTap;
 
+  @override
+  State<HomeScreen> createState() => _HomeScreenState();
+}
+
+class _HomeScreenState extends State<HomeScreen> with LoadMoreOnScroll {
   static const double _horizontalPadding = 24;
 
   /// 스크롤 끝에서 콘텐츠와 네비게이션 바 사이에 남겨 둘 간격입니다.
   static const double _contentEndGap = 20;
 
   @override
+  void onNearEnd() => widget.onLoadMore?.call();
+
+  @override
   Widget build(BuildContext context) {
+    checkLoadMoreAfterBuild();
+    final recentChecks = widget.recentChecks;
+
     // 네비게이션 바가 콘텐츠 위에 떠 있으므로, 스크롤 끝의 콘텐츠가 가려지지 않게 여백을 둡니다.
     final contentBottomPadding =
         MediaQuery.paddingOf(context).bottom +
@@ -71,9 +97,10 @@ class HomeScreen extends StatelessWidget {
           // 이미지(207×120)가 박스와 비율이 같아 그대로 맞고, 바뀌더라도 찌그러지지 않게 비율을 지킵니다.
           fit: BoxFit.contain,
         ),
-        onProfile: onProfileTap,
+        onProfile: widget.onProfileTap,
       ),
       body: CustomScrollView(
+        controller: loadMoreController,
         slivers: [
           SliverPadding(
             padding: const EdgeInsets.fromLTRB(
@@ -86,7 +113,7 @@ class HomeScreen extends StatelessWidget {
               child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
-                  HomeCheckMenuCard(onTap: onCheckMenuTap),
+                  HomeCheckMenuCard(onTap: widget.onCheckMenuTap),
                   const SizedBox(height: 30),
                   Text(
                     'Recent checks',
@@ -98,7 +125,7 @@ class HomeScreen extends StatelessWidget {
               ),
             ),
           ),
-          if (isLoading)
+          if (widget.isLoading)
             SliverPadding(
               padding: EdgeInsets.fromLTRB(
                 _horizontalPadding,
@@ -136,13 +163,13 @@ class HomeScreen extends StatelessWidget {
                 ),
               ),
             )
-          else
+          else ...[
             SliverPadding(
-              padding: EdgeInsets.fromLTRB(
+              padding: const EdgeInsets.fromLTRB(
                 _horizontalPadding,
                 15,
                 _horizontalPadding,
-                contentBottomPadding,
+                0,
               ),
               sliver: SliverList.separated(
                 itemCount: recentChecks.length,
@@ -154,11 +181,27 @@ class HomeScreen extends StatelessWidget {
                     englishName: check.englishName,
                     subtitle: check.subtitle,
                     status: check.status,
-                    onTap: () => onRecentCheckTap?.call(check),
+                    onTap: () => widget.onRecentCheckTap?.call(check),
                   );
                 },
               ),
             ),
+            SliverPadding(
+              padding: EdgeInsets.fromLTRB(
+                _horizontalPadding,
+                0,
+                _horizontalPadding,
+                contentBottomPadding,
+              ),
+              sliver: SliverToBoxAdapter(
+                child: BitokLoadMoreFooter(
+                  loading: widget.loadingMore,
+                  failed: widget.loadMoreFailed,
+                  onRetry: widget.onRetryLoadMore,
+                ),
+              ),
+            ),
+          ],
         ],
       ),
     );
