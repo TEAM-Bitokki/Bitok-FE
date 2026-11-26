@@ -2,6 +2,7 @@ import 'package:dio/dio.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/network/api_client.dart';
+import '../../../explore/data/models/menu_detail_response.dart';
 import '../models/analyze_request.dart';
 import '../models/analyze_response.dart';
 import '../models/answer_request.dart';
@@ -53,6 +54,14 @@ class ScanRemoteDataSource {
     await _api.get('/api/scans/$scanId/result'),
     ScanResultResponse.fromJson,
   );
+
+  /// 내 기록의 메뉴 상세입니다(Staff Check Results·Saved Menus의 View details).
+  /// 그 스캔에서 받은 직원 답으로 판정합니다. 응답 형식은 식당 메뉴 상세와 같습니다.
+  Future<MenuDetailResponse> analysisDetail(int analysisId) async =>
+      ApiClient.decode(
+        await _api.get('/api/analyses/$analysisId'),
+        MenuDetailResponse.fromJson,
+      );
 }
 
 final scanRemoteDataSourceProvider = Provider<ScanRemoteDataSource>(

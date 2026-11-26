@@ -1,5 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../explore/data/models/menu_detail_response.dart';
 import '../datasources/scan_remote_data_source.dart';
 import '../models/analyze_request.dart';
 import '../models/analyze_response.dart';
@@ -43,6 +44,9 @@ class ScanRepository {
   );
 
   Future<ScanResultResponse> result(int scanId) => _remote.result(scanId);
+
+  Future<MenuDetailResponse> analysisDetail(int analysisId) =>
+      _remote.analysisDetail(analysisId);
 }
 
 final scanRepositoryProvider = Provider<ScanRepository>(

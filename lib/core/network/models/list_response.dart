@@ -10,7 +10,7 @@ List<T> _parseItems<T>(Map<String, dynamic> json, JsonItemParser<T> parseItem) =
 
 /// `{"items": [...]}` 형태의 목록 응답.
 ///
-/// 해당 API: restaurants/nearby·checked·search, saved-restaurants,
+/// 해당 API: restaurants/nearby·checked·search, saved-restaurants(GET),
 /// ingredients/search, restaurants/{id}/menus/for-you
 ///
 /// ```dart
