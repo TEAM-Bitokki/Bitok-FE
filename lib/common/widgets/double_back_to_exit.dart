@@ -14,17 +14,28 @@ import '../../l10n/generated/app_localizations.dart';
 ///
 /// 하위 화면의 PopScope가 뒤로 가기를 막고 있으면(예: Explore 검색 닫기) 그쪽이 먼저 처리하고,
 /// 이 위젯은 호출되지 않습니다.
+///
+/// 안내 위치: 화면 하단 안전 영역 위로 [bottomOffset] + [gap]만큼 떨어진 곳에 안내 아래쪽 끝이 옵니다.
+/// (안전 영역(홈 인디케이터 등) 높이는 Scaffold가 알아서 더하므로 여기 넣지 않습니다)
 class DoubleBackToExit extends StatefulWidget {
   const DoubleBackToExit({
     super.key,
     required this.child,
     this.bottomOffset = 0,
+    this.gap = defaultGap,
   });
+
+  /// 안내와 그 아래 요소(버튼, 네비게이션 바) 사이의 기본 간격입니다.
+  static const double defaultGap = 8;
 
   final Widget child;
 
-  /// 안내가 화면 하단 요소(예: 떠 있는 네비게이션 바)에 가리지 않도록 띄울 높이입니다.
+  /// 안내가 가리지 않아야 하는 하단 요소의 높이입니다. 안전 영역 위부터 그 요소 윗변까지 잽니다.
+  /// 예: 하단 버튼(60)이 안전 영역에서 10 떨어져 있으면 70.
   final double bottomOffset;
+
+  /// 그 요소 윗변과 안내 사이의 간격입니다.
+  final double gap;
 
   @override
   State<DoubleBackToExit> createState() => _DoubleBackToExitState();
@@ -57,7 +68,12 @@ class _DoubleBackToExitState extends State<DoubleBackToExit> {
         SnackBar(
           duration: _window,
           behavior: SnackBarBehavior.floating,
-          margin: EdgeInsets.fromLTRB(24, 0, 24, widget.bottomOffset + 16),
+          margin: EdgeInsets.fromLTRB(
+            24,
+            0,
+            24,
+            widget.bottomOffset + widget.gap,
+          ),
           content: Text(
             AppLocalizations.of(context).appExitConfirm,
             textAlign: TextAlign.center,

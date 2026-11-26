@@ -2,6 +2,7 @@ import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
+import '../../common/widgets/bitok_button.dart';
 import '../../common/widgets/double_back_to_exit.dart';
 import '../../common/widgets/saving_state_mixin.dart';
 import '../utils/date_formatter.dart';
@@ -111,372 +112,372 @@ class AppRoutes {
 //
 // [initialLocation]은 앱 시작 시 정합니다. 이미 가입·온보딩을 마친 기기면
 // main()에서 홈을 넘겨 로그인 화면을 건너뜁니다.
-GoRouter createAppRouter({String initialLocation = AppRoutes.login}) =>
-    GoRouter(
-      initialLocation: initialLocation,
-      routes: [
-        GoRoute(
-          path: AppRoutes.login,
-          // 로그인은 첫 화면이라 뒤로 가기를 누르면 앱이 종료됩니다.
-          builder: (context, state) =>
-              const DoubleBackToExit(child: LoginScreen()),
-        ),
-        // 온보딩 단계는 push로 쌓아 뒤로가기로 이전 단계에 돌아갈 수 있게 하고,
-        // 완료 화면은 go로 이동해 이전 단계 스택을 비웁니다.
-        GoRoute(
-          path: AppRoutes.onboardingNickname,
-          builder: (context, state) => const OnboardingNicknameScreen(),
-        ),
-        GoRoute(
-          path: AppRoutes.onboardingAllergies,
-          builder: (context, state) => const OnboardingAllergiesScreen(),
-        ),
-        GoRoute(
-          path: AppRoutes.onboardingDiet,
-          builder: (context, state) => const OnboardingDietScreen(),
-        ),
-        GoRoute(
-          path: AppRoutes.onboardingReview,
-          builder: (context, state) => const OnboardingReviewScreen(),
-        ),
-        GoRoute(
-          path: AppRoutes.onboardingComplete,
-          // go로 이동해 이전 단계 스택이 비어 있으므로 뒤로 가기를 누르면 앱이 종료됩니다.
-          builder: (context, state) =>
-              const DoubleBackToExit(child: OnboardingCompleteScreen()),
-        ),
-        StatefulShellRoute.indexedStack(
-          builder: (context, state, navigationShell) =>
-              MainShell(navigationShell: navigationShell),
-          branches: [
-            StatefulShellBranch(
-              routes: [
-                GoRoute(
-                  path: AppRoutes.home,
-                  builder: (context, state) => Consumer(
-                    builder: (context, ref, _) => HomeScreen(
-                      // 처음 불러오는 동안 로딩 표시, 실패하면 빈 목록(No checks yet)을 보여줍니다.
-                      // 저장 후 다시 불러올 때는 이전 목록을 그대로 보여줍니다.
-                      isLoading: _isFirstLoad(ref.watch(myChecksProvider)),
-                      recentChecks: [
-                        for (final check
-                            in ref.watch(myChecksProvider).value ?? const [])
-                          RecentCheck(
-                            analysisId: check.analysisId,
-                            koreanName: check.koreanName,
-                            englishName: check.englishName,
-                            subtitle: _checkSubtitle(check),
-                            status: check.status,
-                          ),
-                      ],
-                      onProfileTap: () => context.push(AppRoutes.myPage),
-                      // 식당 선택 화면은 최상위 경로라 하단 탭 없이 열립니다.
-                      onCheckMenuTap: () =>
-                          context.push(AppRoutes.restaurantSelect),
-                      // 메뉴 상세는 최상위 경로라 하단 탭 없이 열립니다.
-                      onRecentCheckTap: (check) => context.push(
-                        AppRoutes.analysisDetailOf(check.analysisId),
+GoRouter createAppRouter({
+  String initialLocation = AppRoutes.login,
+}) => GoRouter(
+  initialLocation: initialLocation,
+  routes: [
+    GoRoute(
+      path: AppRoutes.login,
+      // 로그인은 첫 화면이라 뒤로 가기를 누르면 앱이 종료됩니다. 안내는 Get Started 버튼 위에 띄웁니다.
+      builder: (context, state) => const DoubleBackToExit(
+        bottomOffset: _bottomButtonTop,
+        child: LoginScreen(),
+      ),
+    ),
+    // 온보딩 단계는 push로 쌓아 뒤로가기로 이전 단계에 돌아갈 수 있게 하고,
+    // 완료 화면은 go로 이동해 이전 단계 스택을 비웁니다.
+    GoRoute(
+      path: AppRoutes.onboardingNickname,
+      builder: (context, state) => const OnboardingNicknameScreen(),
+    ),
+    GoRoute(
+      path: AppRoutes.onboardingAllergies,
+      builder: (context, state) => const OnboardingAllergiesScreen(),
+    ),
+    GoRoute(
+      path: AppRoutes.onboardingDiet,
+      builder: (context, state) => const OnboardingDietScreen(),
+    ),
+    GoRoute(
+      path: AppRoutes.onboardingReview,
+      builder: (context, state) => const OnboardingReviewScreen(),
+    ),
+    GoRoute(
+      path: AppRoutes.onboardingComplete,
+      // go로 이동해 이전 단계 스택이 비어 있으므로 뒤로 가기를 누르면 앱이 종료됩니다.
+      // 안내는 Start 버튼 위에 띄웁니다.
+      builder: (context, state) => const DoubleBackToExit(
+        bottomOffset: _bottomButtonTop,
+        child: OnboardingCompleteScreen(),
+      ),
+    ),
+    StatefulShellRoute.indexedStack(
+      builder: (context, state, navigationShell) =>
+          MainShell(navigationShell: navigationShell),
+      branches: [
+        StatefulShellBranch(
+          routes: [
+            GoRoute(
+              path: AppRoutes.home,
+              builder: (context, state) => Consumer(
+                builder: (context, ref, _) => HomeScreen(
+                  // 처음 불러오는 동안 로딩 표시, 실패하면 빈 목록(No checks yet)을 보여줍니다.
+                  // 저장 후 다시 불러올 때는 이전 목록을 그대로 보여줍니다.
+                  isLoading: _isFirstLoad(ref.watch(myChecksProvider)),
+                  recentChecks: [
+                    for (final check
+                        in ref.watch(myChecksProvider).value ?? const [])
+                      RecentCheck(
+                        analysisId: check.analysisId,
+                        koreanName: check.koreanName,
+                        englishName: check.englishName,
+                        subtitle: _checkSubtitle(check),
+                        status: check.status,
                       ),
-                    ),
+                  ],
+                  onProfileTap: () => context.push(AppRoutes.myPage),
+                  // 식당 선택 화면은 최상위 경로라 하단 탭 없이 열립니다.
+                  onCheckMenuTap: () =>
+                      context.push(AppRoutes.restaurantSelect),
+                  // 메뉴 상세는 최상위 경로라 하단 탭 없이 열립니다.
+                  onRecentCheckTap: (check) => context.push(
+                    AppRoutes.analysisDetailOf(check.analysisId),
                   ),
                 ),
-              ],
-            ),
-            StatefulShellBranch(
-              routes: [
-                GoRoute(
-                  path: AppRoutes.explore,
-                  builder: (context, state) => Consumer(
-                    builder: (context, ref, _) => ExploreScreen(
-                      savedIds: ref.watch(savedRestaurantIdsProvider),
-                      onProfileTap: () => context.push(AppRoutes.myPage),
-                      // 북마크는 바로 바뀌고, 서버 저장에 실패하면 되돌린 뒤 안내합니다.
-                      onToggleSaved: (restaurant) => ref
-                          .read(savedRestaurantsProvider.notifier)
-                          .toggle(restaurant.toBrief())
-                          .catchError((Object _) {
-                            if (context.mounted) {
-                              showMessageSnackBar(
-                                context,
-                                AppLocalizations.of(context).errorTryAgain,
-                              );
-                            }
-                          }),
-                      onMenuResultsTap: (restaurant) {
-                        final restaurantId = restaurant.restaurantId;
-                        if (restaurantId == null) return;
-                        context.push(AppRoutes.restaurantDetailOf('$restaurantId'));
-                      },
-                    ),
-                  ),
-                ),
-              ],
+              ),
             ),
           ],
         ),
-
-        // ---- 마이페이지 (네비게이션 바 없음) ----
-        GoRoute(
-          path: AppRoutes.myPage,
-          builder: (context, state) => Consumer(
-            builder: (context, ref, _) => MyPageScreen(
-              nickname: ref.watch(accountProvider)?.nickname ?? '',
-              // 불러오는 동안은 비워 두고, 실패하면 안내 문구를 보여줍니다.
-              // 카드를 눌러 Dietary Profile 화면에서 다시 시도할 수 있습니다.
-              dietarySummary: switch (ref.watch(dietaryProfileProvider)) {
-                AsyncData(:final value) => myPageDietarySummaryOf(
-                  AppLocalizations.of(context),
-                  value,
+        StatefulShellBranch(
+          routes: [
+            GoRoute(
+              path: AppRoutes.explore,
+              builder: (context, state) => Consumer(
+                builder: (context, ref, _) => ExploreScreen(
+                  savedIds: ref.watch(savedRestaurantIdsProvider),
+                  onProfileTap: () => context.push(AppRoutes.myPage),
+                  // 북마크는 바로 바뀌고, 서버 저장에 실패하면 되돌린 뒤 안내합니다.
+                  onToggleSaved: (restaurant) => ref
+                      .read(savedRestaurantsProvider.notifier)
+                      .toggle(restaurant.toBrief())
+                      .catchError((Object _) {
+                        if (context.mounted) {
+                          showMessageSnackBar(
+                            context,
+                            AppLocalizations.of(context).errorTryAgain,
+                          );
+                        }
+                      }),
+                  onMenuResultsTap: (restaurant) {
+                    final restaurantId = restaurant.restaurantId;
+                    if (restaurantId == null) return;
+                    context.push(AppRoutes.restaurantDetailOf('$restaurantId'));
+                  },
                 ),
-                AsyncError() => AppLocalizations.of(context).errorLoadFailed,
-                _ => '',
-              },
+              ),
+            ),
+          ],
+        ),
+      ],
+    ),
+
+    // ---- 마이페이지 (네비게이션 바 없음) ----
+    GoRoute(
+      path: AppRoutes.myPage,
+      builder: (context, state) => Consumer(
+        builder: (context, ref, _) => MyPageScreen(
+          nickname: ref.watch(accountProvider)?.nickname ?? '',
+          // 불러오는 동안은 비워 두고, 실패하면 안내 문구를 보여줍니다.
+          // 카드를 눌러 Dietary Profile 화면에서 다시 시도할 수 있습니다.
+          dietarySummary: switch (ref.watch(dietaryProfileProvider)) {
+            AsyncData(:final value) => myPageDietarySummaryOf(
+              AppLocalizations.of(context),
+              value,
+            ),
+            AsyncError() => AppLocalizations.of(context).errorLoadFailed,
+            _ => '',
+          },
+          onBack: () => context.pop(),
+          onProfileTap: () => context.push(AppRoutes.editProfile),
+          onDietaryTap: () => context.push(AppRoutes.dietaryProfile),
+          onSavedRestaurantsTap: () => context.push(AppRoutes.savedRestaurants),
+          onSavedMenusTap: () => context.push(AppRoutes.savedMenus),
+          onDeleteAccountTap: () => context.push(AppRoutes.accountDeletion),
+        ),
+      ),
+    ),
+    GoRoute(
+      path: AppRoutes.editProfile,
+      builder: (context, state) => Consumer(
+        builder: (context, ref, _) => EditProfileScreen(
+          initialNickname: ref.read(accountProvider)?.nickname ?? '',
+          onBack: () => context.pop(),
+          onSave: (nickname) async {
+            await ref.read(accountProvider.notifier).saveNickname(nickname);
+            if (context.mounted) context.pop();
+          },
+        ),
+      ),
+    ),
+    GoRoute(
+      path: AppRoutes.dietaryProfile,
+      builder: (context, state) => Consumer(
+        builder: (context, ref, _) {
+          final l10n = AppLocalizations.of(context);
+          final async = ref.watch(dietaryProfileProvider);
+          // 저장 후 다시 그릴 때도 이전 값을 보여주도록 value를 씁니다.
+          final profile = async.value;
+
+          if (profile == null) {
+            return DietaryProfileScreen(
+              allergySummary: '',
+              dietSummary: '',
               onBack: () => context.pop(),
-              onProfileTap: () => context.push(AppRoutes.editProfile),
-              onDietaryTap: () => context.push(AppRoutes.dietaryProfile),
-              onSavedRestaurantsTap: () => context.push(AppRoutes.savedRestaurants),
-              onSavedMenusTap: () => context.push(AppRoutes.savedMenus),
-              onDeleteAccountTap: () => context.push(AppRoutes.accountDeletion),
-            ),
-          ),
-        ),
-        GoRoute(
-          path: AppRoutes.editProfile,
-          builder: (context, state) => Consumer(
-            builder: (context, ref, _) => EditProfileScreen(
-              initialNickname: ref.read(accountProvider)?.nickname ?? '',
-              onBack: () => context.pop(),
-              onSave: (nickname) async {
-                await ref.read(accountProvider.notifier).saveNickname(nickname);
-                if (context.mounted) context.pop();
-              },
-            ),
-          ),
-        ),
-        GoRoute(
-          path: AppRoutes.dietaryProfile,
-          builder: (context, state) => Consumer(
-            builder: (context, ref, _) {
-              final l10n = AppLocalizations.of(context);
-              final async = ref.watch(dietaryProfileProvider);
-              // 저장 후 다시 그릴 때도 이전 값을 보여주도록 value를 씁니다.
-              final profile = async.value;
+              isLoading: !async.hasError,
+              onRetry: async.hasError
+                  ? () => ref.invalidate(dietaryProfileProvider)
+                  : null,
+            );
+          }
 
-              if (profile == null) {
-                return DietaryProfileScreen(
-                  allergySummary: '',
-                  dietSummary: '',
-                  onBack: () => context.pop(),
-                  isLoading: !async.hasError,
-                  onRetry: async.hasError
-                      ? () => ref.invalidate(dietaryProfileProvider)
-                      : null,
-                );
-              }
+          // 수정 화면은 현재 프로필을 불러온 입력값(onboardingProvider)을 고칩니다.
+          // Save를 눌러야 프로필에 반영되고, 뒤로 가면 고친 내용은 버려집니다.
+          void openEditor(String location) {
+            ref.read(onboardingProvider.notifier).loadProfile(profile);
+            context.push(location);
+          }
 
-              // 수정 화면은 현재 프로필을 불러온 입력값(onboardingProvider)을 고칩니다.
-              // Save를 눌러야 프로필에 반영되고, 뒤로 가면 고친 내용은 버려집니다.
-              void openEditor(String location) {
-                ref.read(onboardingProvider.notifier).loadProfile(profile);
-                context.push(location);
-              }
-
-              return DietaryProfileScreen(
-                allergySummary: allergySummaryOf(l10n, profile),
-                dietSummary: dietSummaryOfProfile(l10n, profile),
-                onBack: () => context.pop(),
-                onEditAllergies: () => openEditor(AppRoutes.foodAllergies),
-                onEditDiet: () => openEditor(AppRoutes.dietPreference),
-              );
-            },
-          ),
+          return DietaryProfileScreen(
+            allergySummary: allergySummaryOf(l10n, profile),
+            dietSummary: dietSummaryOfProfile(l10n, profile),
+            onBack: () => context.pop(),
+            onEditAllergies: () => openEditor(AppRoutes.foodAllergies),
+            onEditDiet: () => openEditor(AppRoutes.dietPreference),
+          );
+        },
+      ),
+    ),
+    GoRoute(
+      path: AppRoutes.foodAllergies,
+      builder: (context, state) => Consumer(
+        builder: (context, ref, _) => OnboardingAllergiesScreen(
+          onSave: () async {
+            await ref
+                .read(dietaryProfileProvider.notifier)
+                .saveAllergies(ref.read(onboardingProvider).allergies);
+            if (context.mounted) context.pop();
+          },
         ),
-        GoRoute(
-          path: AppRoutes.foodAllergies,
-          builder: (context, state) => Consumer(
-            builder: (context, ref, _) => OnboardingAllergiesScreen(
-              onSave: () async {
-                await ref
-                    .read(dietaryProfileProvider.notifier)
-                    .saveAllergies(ref.read(onboardingProvider).allergies);
-                if (context.mounted) context.pop();
-              },
-            ),
-          ),
-        ),
-        GoRoute(
-          path: AppRoutes.dietPreference,
-          builder: (context, state) => Consumer(
-            builder: (context, ref, _) => OnboardingDietScreen(
-              onSave: () async {
-                final draft = ref.read(onboardingProvider);
-                final diet = draft.diet;
-                if (diet == null) return;
-                await ref
-                    .read(dietaryProfileProvider.notifier)
-                    .saveDiet(
+      ),
+    ),
+    GoRoute(
+      path: AppRoutes.dietPreference,
+      builder: (context, state) => Consumer(
+        builder: (context, ref, _) => OnboardingDietScreen(
+          onSave: () async {
+            final draft = ref.read(onboardingProvider);
+            final diet = draft.diet;
+            if (diet == null) return;
+            await ref
+                .read(dietaryProfileProvider.notifier)
+                .saveDiet(
                   diet: diet,
                   eatsEggs: draft.eatsEggs,
                   eatsDairy: draft.eatsDairy,
                 );
-                if (context.mounted) context.pop();
-              },
-            ),
-          ),
-        ),
-        GoRoute(
-          path: AppRoutes.savedRestaurants,
-          // 처음 불러오는 동안 로딩 표시, 실패하면 빈 목록을 보여줍니다.
-          builder: (context, state) => Consumer(
-            builder: (context, ref, _) => SavedRestaurantsScreen(
-              isLoading: _isFirstLoad(ref.watch(savedRestaurantsProvider)),
-              restaurants: [
-                for (final restaurant
-                    in ref.watch(savedRestaurantsProvider).value ?? const [])
-                  if (restaurant.restaurantId case final restaurantId?)
-                    SavedRestaurant(
-                      id: '$restaurantId',
-                      name: restaurant.name,
-                      category: restaurant.category ?? '',
-                      address: restaurant.address ?? '',
-                    ),
-              ],
-              onBack: () => context.pop(),
-              onRestaurantTap: (restaurant) =>
-                  context.push(AppRoutes.restaurantDetailOf(restaurant.id)),
-            ),
-          ),
-        ),
-        GoRoute(
-          path: AppRoutes.savedMenus,
-          // 홈 Recent Checks와 같은 My Checks 목록을 보여줍니다.
-          builder: (context, state) => Consumer(
-            builder: (context, ref, _) => SavedMenusScreen(
-              isLoading: _isFirstLoad(ref.watch(myChecksProvider)),
-              menus: [
-                for (final check
-                    in ref.watch(myChecksProvider).value ?? const [])
-                  SavedMenu(
-                    analysisId: check.analysisId,
-                    koreanName: check.koreanName,
-                    englishName: check.englishName,
-                    subtitle: _checkSubtitle(check),
-                    status: check.status,
-                  ),
-              ],
-              onBack: () => context.pop(),
-              onMenuTap: (menu) =>
-                  context.push(AppRoutes.analysisDetailOf(menu.analysisId)),
-            ),
-          ),
-        ),
-        GoRoute(
-          path: AppRoutes.accountDeletion,
-          builder: (context, state) => Consumer(
-            builder: (context, ref, _) => AccountDeletionScreen(
-              onBack: () => context.pop(),
-              onDelete: (deleteSavedMenus) async {
-                // 요청 중에 뒤로 가서 이 화면(ref, context)이 사라져도 정리와 이동을 마치도록,
-                // 앱 수명의 container와 router를 요청 전에 잡아 둡니다.
-                final container = ProviderScope.containerOf(context);
-                final router = GoRouter.of(context);
-                await container
-                    .read(accountProvider.notifier)
-                    .deleteAccount(deleteSavedMenus: deleteSavedMenus);
-                // 탈퇴한 계정의 화면 상태를 비웁니다. 식단 프로필은 계정이 바뀌면 스스로 다시 불러옵니다.
-                container
-                  ..invalidate(loginProvider)
-                  ..invalidate(onboardingProvider)
-                  ..invalidate(myChecksProvider)
-                  ..invalidate(savedRestaurantsProvider)
-                  ..invalidate(selectedRestaurantIdProvider)
-                  ..invalidate(scanFlowProvider);
-                router.go(AppRoutes.login);
-              },
-            ),
-          ),
-        ),
-
-        // ---- 내 기록의 메뉴 상세 ('/analysis/:id') ----
-        // 그 스캔에서 받은 직원 답으로 판정한 결과입니다(GET /api/analyses/{id}).
-        GoRoute(
-          path: AppRoutes.analysisDetail,
-          redirect: (context, state) => _redirectUnlessInts(state, const ['id']),
-          builder: (context, state) {
-            final analysisId = int.parse(state.pathParameters['id']!);
-            return Consumer(
-              builder: (context, ref, _) => _menuDetailPage(
-                context,
-                ref.watch(analysisDetailProvider(analysisId)),
-                onRetry: () =>
-                    ref.invalidate(analysisDetailProvider(analysisId)),
-              ),
-            );
+            if (context.mounted) context.pop();
           },
         ),
-        // ---- 식당 선택 (REST-01) ----
-        GoRoute(
-          path: AppRoutes.restaurantSelect,
-          builder: (context, state) => RestaurantSelectScreen(
-            onBack: () => context.pop(),
-            onSelect: (restaurant) async {
-              final container = ProviderScope.containerOf(context);
-              final registered = await container
-                  .read(restaurantRepositoryProvider)
-                  .register(restaurant.toBrief());
-              if (!context.mounted) return;
-              container
-                  .read(selectedRestaurantIdProvider.notifier)
-                  .select(registered.restaurantId);
-              // 이전 스캔 결과가 남지 않도록 초기화한 뒤 선택한 식당으로 스캔을 시작합니다.
-              final scanRestaurant = ScanRestaurant(
-                restaurantId: registered.restaurantId,
-                name: registered.name,
-                category: registered.category ?? '',
-                address: registered.address ?? '',
-              );
-              container.read(scanFlowProvider.notifier).start(scanRestaurant);
-              context.push(AppRoutes.scan, extra: scanRestaurant);
-            },
-          ),
+      ),
+    ),
+    GoRoute(
+      path: AppRoutes.savedRestaurants,
+      // 처음 불러오는 동안 로딩 표시, 실패하면 빈 목록을 보여줍니다.
+      builder: (context, state) => Consumer(
+        builder: (context, ref, _) => SavedRestaurantsScreen(
+          isLoading: _isFirstLoad(ref.watch(savedRestaurantsProvider)),
+          restaurants: [
+            for (final restaurant
+                in ref.watch(savedRestaurantsProvider).value ?? const [])
+              if (restaurant.restaurantId case final restaurantId?)
+                SavedRestaurant(
+                  id: '$restaurantId',
+                  name: restaurant.name,
+                  category: restaurant.category ?? '',
+                  address: restaurant.address ?? '',
+                ),
+          ],
+          onBack: () => context.pop(),
+          onRestaurantTap: (restaurant) =>
+              context.push(AppRoutes.restaurantDetailOf(restaurant.id)),
         ),
-
-        // ---- 식당 상세 (EXP-02) ----
-        // 식당 선택('/restaurant/select') 뒤에 등록해야 'select'가 :id로 잡히지 않습니다.
-        GoRoute(
-          path: AppRoutes.restaurantDetail,
-          redirect: (context, state) => _redirectUnlessInts(state, const ['id']),
-          builder: (context, state) {
-            final restaurantId = int.parse(state.pathParameters['id']!);
-            return RestaurantDetailPage(
-              restaurantId: restaurantId,
-              onBack: () => context.pop(),
-              onForYouTap: () => context.push(
-                AppRoutes.personalizedMenusOf('$restaurantId'),
+      ),
+    ),
+    GoRoute(
+      path: AppRoutes.savedMenus,
+      // 홈 Recent Checks와 같은 My Checks 목록을 보여줍니다.
+      builder: (context, state) => Consumer(
+        builder: (context, ref, _) => SavedMenusScreen(
+          isLoading: _isFirstLoad(ref.watch(myChecksProvider)),
+          menus: [
+            for (final check in ref.watch(myChecksProvider).value ?? const [])
+              SavedMenu(
+                analysisId: check.analysisId,
+                koreanName: check.koreanName,
+                englishName: check.englishName,
+                subtitle: _checkSubtitle(check),
+                status: check.status,
               ),
-              onMenuTap: (menu) => context.push(
-                AppRoutes.restaurantMenuDetailOf(restaurantId, menu.dishId),
-              ),
-            );
+          ],
+          onBack: () => context.pop(),
+          onMenuTap: (menu) =>
+              context.push(AppRoutes.analysisDetailOf(menu.analysisId)),
+        ),
+      ),
+    ),
+    GoRoute(
+      path: AppRoutes.accountDeletion,
+      builder: (context, state) => Consumer(
+        builder: (context, ref, _) => AccountDeletionScreen(
+          onBack: () => context.pop(),
+          onDelete: (deleteSavedMenus) async {
+            // 요청 중에 뒤로 가서 이 화면(ref, context)이 사라져도 정리와 이동을 마치도록,
+            // 앱 수명의 container와 router를 요청 전에 잡아 둡니다.
+            final container = ProviderScope.containerOf(context);
+            final router = GoRouter.of(context);
+            await container
+                .read(accountProvider.notifier)
+                .deleteAccount(deleteSavedMenus: deleteSavedMenus);
+            // 탈퇴한 계정의 화면 상태를 비웁니다. 식단 프로필은 계정이 바뀌면 스스로 다시 불러옵니다.
+            container
+              ..invalidate(loginProvider)
+              ..invalidate(onboardingProvider)
+              ..invalidate(myChecksProvider)
+              ..invalidate(savedRestaurantsProvider)
+              ..invalidate(selectedRestaurantIdProvider)
+              ..invalidate(scanFlowProvider);
+            router.go(AppRoutes.login);
           },
         ),
-        // ---- 개인화 메뉴 리스트 (EXP-03) ----
-        GoRoute(
-          path: AppRoutes.personalizedMenus,
-          redirect: (context, state) => _redirectUnlessInts(state, const ['id']),
-          builder: (context, state) {
-            final restaurantId = int.parse(state.pathParameters['id']!);
-            return Consumer(
-              builder: (context, ref, _) =>
+      ),
+    ),
+
+    // ---- 내 기록의 메뉴 상세 ('/analysis/:id') ----
+    // 그 스캔에서 받은 직원 답으로 판정한 결과입니다(GET /api/analyses/{id}).
+    GoRoute(
+      path: AppRoutes.analysisDetail,
+      redirect: (context, state) => _redirectUnlessInts(state, const ['id']),
+      builder: (context, state) {
+        final analysisId = int.parse(state.pathParameters['id']!);
+        return Consumer(
+          builder: (context, ref, _) => _menuDetailPage(
+            context,
+            ref.watch(analysisDetailProvider(analysisId)),
+            onRetry: () => ref.invalidate(analysisDetailProvider(analysisId)),
+          ),
+        );
+      },
+    ),
+    // ---- 식당 선택 (REST-01) ----
+    GoRoute(
+      path: AppRoutes.restaurantSelect,
+      builder: (context, state) => RestaurantSelectScreen(
+        onBack: () => context.pop(),
+        onSelect: (restaurant) async {
+          final container = ProviderScope.containerOf(context);
+          final registered = await container
+              .read(restaurantRepositoryProvider)
+              .register(restaurant.toBrief());
+          if (!context.mounted) return;
+          container
+              .read(selectedRestaurantIdProvider.notifier)
+              .select(registered.restaurantId);
+          // 이전 스캔 결과가 남지 않도록 초기화한 뒤 선택한 식당으로 스캔을 시작합니다.
+          final scanRestaurant = ScanRestaurant(
+            restaurantId: registered.restaurantId,
+            name: registered.name,
+            category: registered.category ?? '',
+            address: registered.address ?? '',
+          );
+          container.read(scanFlowProvider.notifier).start(scanRestaurant);
+          context.push(AppRoutes.scan, extra: scanRestaurant);
+        },
+      ),
+    ),
+
+    // ---- 식당 상세 (EXP-02) ----
+    // 식당 선택('/restaurant/select') 뒤에 등록해야 'select'가 :id로 잡히지 않습니다.
+    GoRoute(
+      path: AppRoutes.restaurantDetail,
+      redirect: (context, state) => _redirectUnlessInts(state, const ['id']),
+      builder: (context, state) {
+        final restaurantId = int.parse(state.pathParameters['id']!);
+        return RestaurantDetailPage(
+          restaurantId: restaurantId,
+          onBack: () => context.pop(),
+          onForYouTap: () =>
+              context.push(AppRoutes.personalizedMenusOf('$restaurantId')),
+          onMenuTap: (menu) => context.push(
+            AppRoutes.restaurantMenuDetailOf(restaurantId, menu.dishId),
+          ),
+        );
+      },
+    ),
+    // ---- 개인화 메뉴 리스트 (EXP-03) ----
+    GoRoute(
+      path: AppRoutes.personalizedMenus,
+      redirect: (context, state) => _redirectUnlessInts(state, const ['id']),
+      builder: (context, state) {
+        final restaurantId = int.parse(state.pathParameters['id']!);
+        return Consumer(
+          builder: (context, ref, _) =>
               switch (ref.watch(personalizedMenusProvider(restaurantId))) {
                 AsyncData(:final value) => PersonalizedMenuListScreen(
                   menus: value,
                   onBack: () => context.pop(),
                   onMenuTap: (menu) => context.push(
-                    AppRoutes.restaurantMenuDetailOf(
-                      restaurantId,
-                      menu.dishId,
-                    ),
+                    AppRoutes.restaurantMenuDetailOf(restaurantId, menu.dishId),
                   ),
                 ),
                 AsyncError() => ExploreErrorScreen(
@@ -490,128 +491,128 @@ GoRouter createAppRouter({String initialLocation = AppRoutes.login}) =>
                   onBack: () => context.pop(),
                 ),
               },
-            );
-          },
-        ),
-        // ---- 메뉴 상세 ('/restaurant/:id/menu/:dishId') ----
-        GoRoute(
-          path: AppRoutes.restaurantMenuDetail,
-          redirect: (context, state) =>
-              _redirectUnlessInts(state, const ['id', 'dishId']),
-          builder: (context, state) {
-            final key = (
-            restaurantId: int.parse(state.pathParameters['id']!),
-            dishId: int.parse(state.pathParameters['dishId']!),
-            );
-            return Consumer(
-              builder: (context, ref, _) => _menuDetailPage(
-                context,
-                ref.watch(menuDetailProvider(key)),
-                onRetry: () => ref.invalidate(menuDetailProvider(key)),
-              ),
-            );
-          },
-        ),
+        );
+      },
+    ),
+    // ---- 메뉴 상세 ('/restaurant/:id/menu/:dishId') ----
+    GoRoute(
+      path: AppRoutes.restaurantMenuDetail,
+      redirect: (context, state) =>
+          _redirectUnlessInts(state, const ['id', 'dishId']),
+      builder: (context, state) {
+        final key = (
+          restaurantId: int.parse(state.pathParameters['id']!),
+          dishId: int.parse(state.pathParameters['dishId']!),
+        );
+        return Consumer(
+          builder: (context, ref, _) => _menuDetailPage(
+            context,
+            ref.watch(menuDetailProvider(key)),
+            onRetry: () => ref.invalidate(menuDetailProvider(key)),
+          ),
+        );
+      },
+    ),
 
-        // ---- 메뉴 스캔 (네비게이션 바 없음) ----
-        // 진입점: 식당 선택(REST-01)의 Select. 식당 정보는 extra(ScanRestaurant)로 받습니다.
-        GoRoute(
-          path: AppRoutes.scan,
-          builder: (context, state) => ScanScreen(
-            restaurant: state.extra as ScanRestaurant? ?? _mockScanRestaurant,
-            onBack: () => context.pop(),
-            onImageSelected: (image) =>
-                context.push(AppRoutes.scanPreview, extra: image.path),
-          ),
-        ),
-        // extra로 선택한 이미지 경로(String)를 넘겨받습니다.
-        GoRoute(
-          path: AppRoutes.scanPreview,
-          redirect: (context, state) =>
+    // ---- 메뉴 스캔 (네비게이션 바 없음) ----
+    // 진입점: 식당 선택(REST-01)의 Select. 식당 정보는 extra(ScanRestaurant)로 받습니다.
+    GoRoute(
+      path: AppRoutes.scan,
+      builder: (context, state) => ScanScreen(
+        restaurant: state.extra as ScanRestaurant? ?? _mockScanRestaurant,
+        onBack: () => context.pop(),
+        onImageSelected: (image) =>
+            context.push(AppRoutes.scanPreview, extra: image.path),
+      ),
+    ),
+    // extra로 선택한 이미지 경로(String)를 넘겨받습니다.
+    GoRoute(
+      path: AppRoutes.scanPreview,
+      redirect: (context, state) =>
           state.extra is String ? null : AppRoutes.scan,
-          builder: (context, state) => ScanPreviewScreen(
-            imagePath: state.extra! as String,
-            onBack: () => context.pop(),
-            // 인식에 실패하면 예외가 화면까지 올라가 안내 스낵바가 뜹니다.
-            onNext: () async {
-              // 라우터는 위젯 트리 밖에 있으므로 ProviderScope에서 직접 provider를 읽습니다.
-              await ProviderScope.containerOf(
-                context,
-              ).read(scanFlowProvider.notifier).recognize(state.extra! as String);
-              if (context.mounted) context.push(AppRoutes.scanCheck);
-            },
-          ),
-        ),
-        GoRoute(
-          path: AppRoutes.scanCheck,
-          builder: (context, state) => ScanCheckScreen(
-            onBack: () => context.pop(),
-            onNext: () => context.push(AppRoutes.scanSelect),
-          ),
-        ),
-        GoRoute(
-          path: AppRoutes.scanSelect,
-          builder: (context, state) => ScanSelectScreen(
-            onBack: () => context.pop(),
-            // 분석에 실패하면 예외가 화면까지 올라가 안내 스낵바가 뜹니다.
-            onNext: () async {
-              final container = ProviderScope.containerOf(context);
-              final scan = container.read(scanFlowProvider.notifier);
-              await scan.analyze();
-              if (!context.mounted) return;
-              if (container.read(scanFlowProvider).questions.isEmpty) {
-                // 직원에게 확인할 질문이 없으면 REST-06을 건너뛰고 바로 최종 결과를 받습니다.
-                await scan.loadResult();
-                if (context.mounted) context.push(AppRoutes.scanResult);
-                return;
-              }
-              context.push(AppRoutes.scanAskStaff);
-            },
-          ),
-        ),
-        GoRoute(
-          path: AppRoutes.scanAskStaff,
-          builder: (context, state) => ScanAskStaffScreen(
-            onBack: () => context.pop(),
-            // 마지막 답변 뒤 최종 결과를 받습니다. 실패하면 화면에 안내 스낵바가 뜹니다.
-            onComplete: () async {
-              await ProviderScope.containerOf(
-                context,
-              ).read(scanFlowProvider.notifier).loadResult();
-              if (context.mounted) context.push(AppRoutes.scanResult);
-            },
-          ),
-        ),
-        GoRoute(
-          path: AppRoutes.scanResult,
-          builder: (context, state) => ScanResultScreen(
-            onBack: () => context.pop(),
-            onSave: () async {
-              await ProviderScope.containerOf(
-                context,
-              ).read(scanFlowProvider.notifier).save();
-              if (context.mounted) context.push(AppRoutes.scanSaved);
-            },
-            onFinish: () => context.go(AppRoutes.home),
-            // 이 스캔의 직원 답으로 판정한 내 기록의 메뉴 상세를 엽니다.
-            onViewDetails: (menu) =>
-                context.push(AppRoutes.analysisDetailOf(menu.analysisId)),
-          ),
-        ),
-        GoRoute(
-          path: AppRoutes.scanSaved,
-          builder: (context, state) => ScanSavedScreen(
-            restaurant:
+      builder: (context, state) => ScanPreviewScreen(
+        imagePath: state.extra! as String,
+        onBack: () => context.pop(),
+        // 인식에 실패하면 예외가 화면까지 올라가 안내 스낵바가 뜹니다.
+        onNext: () async {
+          // 라우터는 위젯 트리 밖에 있으므로 ProviderScope에서 직접 provider를 읽습니다.
+          await ProviderScope.containerOf(
+            context,
+          ).read(scanFlowProvider.notifier).recognize(state.extra! as String);
+          if (context.mounted) context.push(AppRoutes.scanCheck);
+        },
+      ),
+    ),
+    GoRoute(
+      path: AppRoutes.scanCheck,
+      builder: (context, state) => ScanCheckScreen(
+        onBack: () => context.pop(),
+        onNext: () => context.push(AppRoutes.scanSelect),
+      ),
+    ),
+    GoRoute(
+      path: AppRoutes.scanSelect,
+      builder: (context, state) => ScanSelectScreen(
+        onBack: () => context.pop(),
+        // 분석에 실패하면 예외가 화면까지 올라가 안내 스낵바가 뜹니다.
+        onNext: () async {
+          final container = ProviderScope.containerOf(context);
+          final scan = container.read(scanFlowProvider.notifier);
+          await scan.analyze();
+          if (!context.mounted) return;
+          if (container.read(scanFlowProvider).questions.isEmpty) {
+            // 직원에게 확인할 질문이 없으면 REST-06을 건너뛰고 바로 최종 결과를 받습니다.
+            await scan.loadResult();
+            if (context.mounted) context.push(AppRoutes.scanResult);
+            return;
+          }
+          context.push(AppRoutes.scanAskStaff);
+        },
+      ),
+    ),
+    GoRoute(
+      path: AppRoutes.scanAskStaff,
+      builder: (context, state) => ScanAskStaffScreen(
+        onBack: () => context.pop(),
+        // 마지막 답변 뒤 최종 결과를 받습니다. 실패하면 화면에 안내 스낵바가 뜹니다.
+        onComplete: () async {
+          await ProviderScope.containerOf(
+            context,
+          ).read(scanFlowProvider.notifier).loadResult();
+          if (context.mounted) context.push(AppRoutes.scanResult);
+        },
+      ),
+    ),
+    GoRoute(
+      path: AppRoutes.scanResult,
+      builder: (context, state) => ScanResultScreen(
+        onBack: () => context.pop(),
+        onSave: () async {
+          await ProviderScope.containerOf(
+            context,
+          ).read(scanFlowProvider.notifier).save();
+          if (context.mounted) context.push(AppRoutes.scanSaved);
+        },
+        onFinish: () => context.go(AppRoutes.home),
+        // 이 스캔의 직원 답으로 판정한 내 기록의 메뉴 상세를 엽니다.
+        onViewDetails: (menu) =>
+            context.push(AppRoutes.analysisDetailOf(menu.analysisId)),
+      ),
+    ),
+    GoRoute(
+      path: AppRoutes.scanSaved,
+      builder: (context, state) => ScanSavedScreen(
+        restaurant:
             ProviderScope.containerOf(
               context,
             ).read(scanFlowProvider).restaurant ??
-                _mockScanRestaurant,
-            onBack: () => context.pop(),
-            onDone: () => context.go(AppRoutes.home),
-          ),
-        ),
-      ],
-    );
+            _mockScanRestaurant,
+        onBack: () => context.pop(),
+        onDone: () => context.go(AppRoutes.home),
+      ),
+    ),
+  ],
+);
 
 /// 메뉴 상세 응답 상태에 맞는 화면입니다. 식당 메뉴 상세와 내 기록의 메뉴 상세가 함께 씁니다.
 Widget _menuDetailPage(
@@ -631,6 +632,10 @@ Widget _menuDetailPage(
   _ => ExploreLoadingScreen(title: 'Menu Detail', onBack: () => context.pop()),
 };
 
+/// 로그인·온보딩 완료 화면의 하단 버튼 윗변 높이입니다(안전 영역 기준).
+/// 두 화면 모두 버튼 아래 여백이 10이라 10 + 버튼 높이입니다. 화면 여백을 바꾸면 같이 바꿔 주세요.
+const double _bottomButtonTop = 10 + BitokButton.height;
+
 /// 아직 한 번도 값을 받지 못한 채 불러오는 중이면 true입니다.
 /// 다시 불러오는 중(invalidate 뒤)에는 이전 값이 있으므로 false입니다.
 bool _isFirstLoad(AsyncValue<Object?> value) =>
@@ -638,8 +643,8 @@ bool _isFirstLoad(AsyncValue<Object?> value) =>
 
 String? _redirectUnlessInts(GoRouterState state, List<String> keys) =>
     keys.every((key) => int.tryParse(state.pathParameters[key] ?? '') != null)
-        ? null
-        : AppRoutes.explore;
+    ? null
+    : AppRoutes.explore;
 
 /// 홈 Recent Checks·Saved Menus 카드의 부제입니다. 예: 'Myeongdong Kyoja · Today'
 String _checkSubtitle(MenuCheck check) {
