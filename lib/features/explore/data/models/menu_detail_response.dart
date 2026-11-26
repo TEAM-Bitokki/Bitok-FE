@@ -18,7 +18,7 @@ class DishBrief {
 class MenuMatch {
   const MenuMatch({
     required this.ingredient,
-    required this.verdict,
+    this.verdict,
     this.ingredientEn,
     this.tag,
     this.tagEn,
@@ -35,7 +35,9 @@ class MenuMatch {
   final String? tagEn;
   final String? status;
   final String? likelihood;
-  final String verdict;
+
+  /// 재료별 판정(avoid, safe, not_sure). 서버 명세상 null일 수 있습니다.
+  final String? verdict;
 }
 
 @JsonSerializable(createToJson: false)

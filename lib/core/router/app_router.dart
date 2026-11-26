@@ -1,14 +1,13 @@
+import 'package:flutter/widgets.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
-import '../../common/widgets/bitok_status_chip.dart';
 import '../utils/date_formatter.dart';
 import '../../l10n/generated/app_localizations.dart';
 import '../../features/auth/presentation/providers/account_provider.dart';
 import '../../features/auth/presentation/providers/login_provider.dart';
 import '../../features/auth/presentation/screens/login_screen.dart';
 import '../../features/explore/data/repositories/restaurant_repository.dart';
-import '../../features/explore/presentation/models/mock_menu_catalog.dart';
 import '../../features/explore/presentation/providers/menu_detail_provider.dart';
 import '../../features/explore/presentation/providers/personalized_menus_provider.dart';
 import '../../features/explore/presentation/providers/saved_restaurants_provider.dart';
@@ -36,6 +35,7 @@ import '../../features/onboarding/presentation/screens/onboarding_diet_screen.da
 import '../../features/onboarding/presentation/screens/onboarding_nickname_screen.dart';
 import '../../features/onboarding/presentation/screens/onboarding_review_screen.dart';
 import '../../features/scan/data/models/scan_restaurant.dart';
+import '../../features/scan/presentation/providers/analysis_detail_provider.dart';
 import '../../features/scan/presentation/providers/scan_flow_provider.dart';
 import '../../features/scan/presentation/screens/scan_ask_staff_screen.dart';
 import '../../features/scan/presentation/screens/scan_check_screen.dart';
@@ -78,7 +78,10 @@ class AppRoutes {
   static const String restaurantDetail = '/restaurant/:id';
   static const String personalizedMenus = '/restaurant/:id/for-you';
   static const String restaurantMenuDetail = '/restaurant/:id/menu/:dishId';
-  static const String menuDetail = '/menu/:id';
+
+  // 내 기록의 메뉴 상세입니다. id는 서버의 analysis_id입니다.
+  // 스캔 결과·Recent Checks·Saved Menus의 View details가 엽니다.
+  static const String analysisDetail = '/analysis/:id';
 
   static String restaurantDetailOf(String id) =>
       '/restaurant/${Uri.encodeComponent(id)}';
@@ -86,18 +89,8 @@ class AppRoutes {
   static String restaurantMenuDetailOf(int restaurantId, int dishId) =>
       '/restaurant/$restaurantId/menu/$dishId';
 
-  /// [status]를 주면 메뉴 상세가 임시 카탈로그 대신 그 판정(저장한 확인 결과)과
-  /// 직원에게 확인한 재료([checkedIngredients])를 보여줍니다.
-  static String menuDetailOf(
-      String id, {
-        BitokMenuStatus? status,
-        List<String> checkedIngredients = const [],
-      }) => Uri(
-    path: '/menu/${Uri.encodeComponent(id)}',
-    queryParameters: status == null
-        ? null
-        : {'status': status.name, 'ingredient': checkedIngredients},
-  ).toString();
+  static String analysisDetailOf(int analysisId) => '/analysis/$analysisId';
+
   static String personalizedMenusOf(String id) =>
       '${restaurantDetailOf(id)}/for-you';
 
@@ -161,7 +154,7 @@ GoRouter createAppRouter({String initialLocation = AppRoutes.login}) =>
                         for (final check
                             in ref.watch(myChecksProvider).value ?? const [])
                           RecentCheck(
-                            menuId: check.menuId,
+                            analysisId: check.analysisId,
                             koreanName: check.koreanName,
                             englishName: check.englishName,
                             subtitle: _checkSubtitle(check),
@@ -174,11 +167,7 @@ GoRouter createAppRouter({String initialLocation = AppRoutes.login}) =>
                           context.push(AppRoutes.restaurantSelect),
                       // 메뉴 상세는 최상위 경로라 하단 탭 없이 열립니다.
                       onRecentCheckTap: (check) => context.push(
-                        AppRoutes.menuDetailOf(
-                          check.menuId,
-                          status: check.status,
-                          checkedIngredients: check.checkedIngredients,
-                        ),
+                        AppRoutes.analysisDetailOf(check.analysisId),
                       ),
                     ),
                   ),
@@ -337,7 +326,7 @@ GoRouter createAppRouter({String initialLocation = AppRoutes.login}) =>
                 for (final check
                     in ref.watch(myChecksProvider).value ?? const [])
                   SavedMenu(
-                    menuId: check.menuId,
+                    analysisId: check.analysisId,
                     koreanName: check.koreanName,
                     englishName: check.englishName,
                     subtitle: _checkSubtitle(check),
@@ -345,13 +334,8 @@ GoRouter createAppRouter({String initialLocation = AppRoutes.login}) =>
                   ),
               ],
               onBack: () => context.pop(),
-              onMenuTap: (menu) => context.push(
-                AppRoutes.menuDetailOf(
-                  menu.menuId,
-                  status: menu.status,
-                  checkedIngredients: menu.checkedIngredients,
-                ),
-              ),
+              onMenuTap: (menu) =>
+                  context.push(AppRoutes.analysisDetailOf(menu.analysisId)),
             ),
           ),
         ),
@@ -382,21 +366,22 @@ GoRouter createAppRouter({String initialLocation = AppRoutes.login}) =>
           ),
         ),
 
-        // ---- 메뉴 상세 ('/menu/:id') ----
-        // TODO: 홈 Recent Checks·Saved Menus·스캔 결과가 restaurant_id와 dish_id를 넘기게 되면
-        // 이 경로와 mock_menu_catalog를 삭제하고 restaurantMenuDetail로 옮깁니다.
+        // ---- 내 기록의 메뉴 상세 ('/analysis/:id') ----
+        // 그 스캔에서 받은 직원 답으로 판정한 결과입니다(GET /api/analyses/{id}).
         GoRoute(
-          path: AppRoutes.menuDetail,
-          builder: (context, state) => MenuDetailScreen(
-            menu: findMockMenuDetail(
-              state.pathParameters['id']!,
-              status: BitokMenuStatus.values
-                  .asNameMap()[state.uri.queryParameters['status']],
-              checkedIngredients:
-              state.uri.queryParametersAll['ingredient'] ?? const [],
-            ),
-            onBack: () => context.pop(),
-          ),
+          path: AppRoutes.analysisDetail,
+          redirect: (context, state) => _redirectUnlessInts(state, const ['id']),
+          builder: (context, state) {
+            final analysisId = int.parse(state.pathParameters['id']!);
+            return Consumer(
+              builder: (context, ref, _) => _menuDetailPage(
+                context,
+                ref.watch(analysisDetailProvider(analysisId)),
+                onRetry: () =>
+                    ref.invalidate(analysisDetailProvider(analysisId)),
+              ),
+            );
+          },
         ),
         // ---- 식당 선택 (REST-01) ----
         GoRoute(
@@ -488,23 +473,11 @@ GoRouter createAppRouter({String initialLocation = AppRoutes.login}) =>
             dishId: int.parse(state.pathParameters['dishId']!),
             );
             return Consumer(
-              builder: (context, ref, _) => switch (ref.watch(
-                menuDetailProvider(key),
-              )) {
-                AsyncData(:final value) => MenuDetailScreen(
-                  menu: value,
-                  onBack: () => context.pop(),
-                ),
-                AsyncError() => ExploreErrorScreen(
-                  title: 'Menu Detail',
-                  onBack: () => context.pop(),
-                  onRetry: () => ref.invalidate(menuDetailProvider(key)),
-                ),
-                _ => ExploreLoadingScreen(
-                  title: 'Menu Detail',
-                  onBack: () => context.pop(),
-                ),
-              },
+              builder: (context, ref, _) => _menuDetailPage(
+                context,
+                ref.watch(menuDetailProvider(key)),
+                onRetry: () => ref.invalidate(menuDetailProvider(key)),
+              ),
             );
           },
         ),
@@ -589,17 +562,9 @@ GoRouter createAppRouter({String initialLocation = AppRoutes.login}) =>
               if (context.mounted) context.push(AppRoutes.scanSaved);
             },
             onFinish: () => context.go(AppRoutes.home),
-            // 스캔한 식당의 메뉴 상세('/restaurant/:id/menu/:dishId')를 엽니다.
-            // 스캔은 항상 식당 선택(REST-01)에서 시작하므로 restaurantId가 있습니다.
-            onViewDetails: (menu) {
-              final restaurantId = ProviderScope.containerOf(
-                context,
-              ).read(scanFlowProvider).restaurant?.restaurantId;
-              if (restaurantId == null) return;
-              context.push(
-                AppRoutes.restaurantMenuDetailOf(restaurantId, menu.dishId),
-              );
-            },
+            // 이 스캔의 직원 답으로 판정한 내 기록의 메뉴 상세를 엽니다.
+            onViewDetails: (menu) =>
+                context.push(AppRoutes.analysisDetailOf(menu.analysisId)),
           ),
         ),
         GoRoute(
@@ -616,6 +581,24 @@ GoRouter createAppRouter({String initialLocation = AppRoutes.login}) =>
         ),
       ],
     );
+
+/// 메뉴 상세 응답 상태에 맞는 화면입니다. 식당 메뉴 상세와 내 기록의 메뉴 상세가 함께 씁니다.
+Widget _menuDetailPage(
+  BuildContext context,
+  AsyncValue<MenuDetail> detail, {
+  required VoidCallback onRetry,
+}) => switch (detail) {
+  AsyncData(:final value) => MenuDetailScreen(
+    menu: value,
+    onBack: () => context.pop(),
+  ),
+  AsyncError() => ExploreErrorScreen(
+    title: 'Menu Detail',
+    onBack: () => context.pop(),
+    onRetry: onRetry,
+  ),
+  _ => ExploreLoadingScreen(title: 'Menu Detail', onBack: () => context.pop()),
+};
 
 String? _redirectUnlessInts(GoRouterState state, List<String> keys) =>
     keys.every((key) => int.tryParse(state.pathParameters[key] ?? '') != null)

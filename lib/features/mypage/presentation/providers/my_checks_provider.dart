@@ -3,7 +3,6 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../common/widgets/bitok_status_chip.dart';
 import '../../../auth/presentation/providers/account_provider.dart';
 import '../../../explore/presentation/models/menu_verdict.dart';
-import '../../../explore/presentation/models/mock_menu_catalog.dart';
 import '../../data/models/my_check_item.dart';
 import '../../data/repositories/my_checks_repository.dart';
 
@@ -53,10 +52,6 @@ class MenuCheck {
 
   /// 저장한 시각입니다.
   final DateTime checkedAt;
-
-  /// 메뉴 상세('/menu/:id')로 이동할 때 쓰는 mock 메뉴 id입니다.
-  // TODO: 메뉴 상세를 analysisId로 열게 되면 삭제합니다.
-  String get menuId => mockMenuIdOf(englishName);
 }
 
 /// 저장한 메뉴 확인 결과 목록(GET /api/my-checks)입니다. 최근에 저장한 것이 앞에 옵니다.
