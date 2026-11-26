@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../common/widgets/saving_state_mixin.dart';
 import '../../../../core/services/location_service.dart';
+import '../../../../l10n/generated/app_localizations.dart';
 import '../../data/models/restaurant_brief.dart';
 import '../../data/models/restaurant_detail_response.dart';
 import '../../data/repositories/explore_repository.dart';
@@ -136,9 +138,18 @@ class _RestaurantDetailPageState extends ConsumerState<RestaurantDetailPage> {
       loadingMore: paging.loading,
       loadMoreFailed: paging.failed,
       onBack: widget.onBack,
+      // 북마크는 바로 바뀌고, 서버 저장에 실패하면 되돌린 뒤 안내합니다.
       onToggleSaved: () => ref
-          .read(savedRestaurantIdsProvider.notifier)
-          .toggle(restaurant.kakaoPlaceId),
+          .read(savedRestaurantsProvider.notifier)
+          .toggle(restaurant)
+          .catchError((Object _) {
+            if (context.mounted) {
+              showMessageSnackBar(
+                context,
+                AppLocalizations.of(context).errorTryAgain,
+              );
+            }
+          }),
       onForYouTap: widget.onForYouTap,
       onMenuTap: widget.onMenuTap,
       onLoadMore: _loadMore,

@@ -41,6 +41,9 @@ class MenuDetail {
 class MenuDetailScreen extends StatelessWidget {
   const MenuDetailScreen({super.key, required this.menu, this.onBack});
 
+  /// 화면 제목입니다. 불러오는 중·오류 화면도 같은 제목을 씁니다.
+  static const String title = 'Menu Detail';
+
   final MenuDetail menu;
   final VoidCallback? onBack;
 
@@ -49,7 +52,7 @@ class MenuDetailScreen extends StatelessWidget {
     return Scaffold(
       backgroundColor: BitokColors.white,
       appBar: BitokHeader.sub(
-        title: 'Menu Detail',
+        title: title,
         onBack: onBack ?? () => Navigator.maybePop(context),
       ),
       body: SafeArea(

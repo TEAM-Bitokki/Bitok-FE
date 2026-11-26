@@ -1,15 +1,30 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../explore/presentation/models/mock_menu_catalog.dart';
+import '../../../mypage/data/repositories/my_checks_repository.dart';
 import '../../../mypage/presentation/providers/my_checks_provider.dart';
+import '../../data/models/analyze_request.dart';
 import '../../data/models/scan_menu_item.dart';
 import '../../data/models/scan_restaurant.dart';
 import '../../data/models/staff_question.dart';
+import '../../data/repositories/scan_repository.dart';
 import 'scan_flow_state.dart';
 
 /// 메뉴 스캔 플로우의 상태(이미지, 인식한 메뉴 목록, 선택한 메뉴)를 관리합니다.
 class ScanFlowNotifier extends Notifier<ScanFlowState> {
+  /// 분석 요청에 보낼 수 있는 메뉴 목록의 최대 개수입니다(서버 제한).
+  static const int maxItems = 100;
+
   int _nextId = 0;
+
+  /// 가장 최근에 인식을 요청한 이미지 경로입니다. 늦게 도착한 이전 응답을 버릴 때 씁니다.
+  String? _recognizingPath;
+
+  /// 마지막으로 성공한 분석 요청입니다. 같은 요청을 다시 보내지 않을 때 씁니다.
+  _AnalyzeRequestKey? _analyzedKey;
+
+  /// 분석 요청을 시작할 때마다 1씩 늘어납니다. 가장 최근 요청의 응답만 반영할 때 씁니다.
+  int _analyzeSeq = 0;
 
   @override
   ScanFlowState build() => const ScanFlowState();
@@ -21,33 +36,54 @@ class ScanFlowNotifier extends Notifier<ScanFlowState> {
   void start(ScanRestaurant restaurant) =>
       state = ScanFlowState(restaurant: restaurant);
 
-  /// 메뉴판 이미지에서 메뉴를 인식합니다.
+  /// 메뉴판 이미지를 서버(POST /api/scans)에 올려 메뉴를 인식합니다. 10~25초 걸립니다.
   ///
   /// 이미 인식한 이미지와 같으면 다시 인식하지 않아, REST-04에서 고친 목록이 유지됩니다.
   /// (REST-04 → REST-03으로 돌아갔다가 다시 Next를 누르는 경우)
   /// 다른 이미지면 이전 스캔 결과를 지우고 새로 인식합니다.
+  ///
+  /// 실패하면 상태를 바꾸지 않고 ApiException을 던집니다. 화면이 안내를 맡습니다.
   Future<void> recognize(String imagePath) async {
-    if (state.imagePath == imagePath) return;
+    if (state.imagePath == imagePath && state.scanId != null) return;
 
-    // TODO: OCR API를 연결하면 응답으로 메뉴 목록을 채웁니다.
-    // 연동 전까지는 화면 확인을 위해 임시 데이터를 사용합니다.
+    _recognizingPath = imagePath;
+    final restaurant = state.restaurant;
+    final response = await ref
+        .read(scanRepositoryProvider)
+        .createScan(
+          imagePath: imagePath,
+          restaurantId: restaurant?.restaurantId,
+        );
+    // 기다리는 동안 다른 사진으로 다시 인식했거나 새 스캔을 시작했으면 이 응답은 버립니다.
+    if (!ref.mounted ||
+        _recognizingPath != imagePath ||
+        !identical(state.restaurant, restaurant)) {
+      return;
+    }
+
     state = ScanFlowState(
-      restaurant: state.restaurant,
+      restaurant: restaurant,
       imagePath: imagePath,
+      scanId: response.scanId,
       items: [
-        _newItem(koreanName: '김치찌개', englishName: 'Kimchi Jjigae'),
-        _newItem(koreanName: '비빔밥', englishName: 'Bibimbap'),
-        _newItem(koreanName: '불고기', englishName: 'Bulgogi'),
+        for (final item in response.items)
+          ScanMenuItem(
+            id: item.tempId,
+            koreanName: item.rawName,
+            englishName: item.nameEn ?? item.rawName,
+          ),
       ],
     );
   }
 
-  /// 메뉴 이름(영문)을 바꿉니다.
+  /// 메뉴 이름(영문)을 바꿉니다. 이름이 실제로 바뀌면 분석에도 고친 이름을 보냅니다.
   void renameItem(String id, String englishName) {
     state = state.copyWith(
       items: [
         for (final item in state.items)
-          item.id == id ? item.copyWith(englishName: englishName) : item,
+          item.id == id && item.englishName != englishName
+              ? item.copyWith(englishName: englishName, renamed: true)
+              : item,
       ],
     );
   }
@@ -67,8 +103,12 @@ class ScanFlowNotifier extends Notifier<ScanFlowState> {
     state = state.copyWith(selectedIds: selectedIds);
   }
 
-  /// 인식되지 않은 메뉴를 직접 추가합니다.
+  /// 메뉴를 더 추가할 수 있으면 true입니다. 목록이 [maxItems]개면 false입니다.
+  bool get canAddItem => state.items.length < maxItems;
+
+  /// 인식되지 않은 메뉴를 직접 추가합니다. 이미 [maxItems]개면 추가하지 않습니다.
   void addItem(String englishName) {
+    if (!canAddItem) return;
     state = state.copyWith(
       items: [
         ...state.items,
@@ -77,66 +117,125 @@ class ScanFlowNotifier extends Notifier<ScanFlowState> {
     );
   }
 
-  /// REST-05에서 고른 메뉴를 분석해 직원에게 확인할 질문을 만듭니다.
+  /// REST-05에서 고른 메뉴를 서버(POST /api/scans/{scan_id}/analyze)에서 분석합니다.
   ///
-  /// 고른 메뉴마다 질문이 한 개씩 만들어집니다(고르지 않은 메뉴는 질문하지 않습니다).
-  /// 이미 답한 메뉴의 답변은 유지합니다.
-  /// (REST-06 → REST-05로 돌아가 선택을 바꾼 뒤 다시 Next를 누르는 경우)
+  /// 메뉴별 판정([ScanFlowState.menus])과 직원에게 확인할 질문(0~5개)을 받습니다.
+  /// 목록과 선택이 지난번 분석과 같으면 다시 요청하지 않습니다.
+  /// (REST-06 → REST-05로 돌아갔다가 그대로 Next를 누르는 경우)
+  /// 다시 분석해도 같은 질문 id에 대한 답변은 유지합니다.
+  ///
+  /// 분석 중에 뒤로 갔다가 다시 분석하면 요청이 겹칠 수 있습니다. 이때는 가장 최근에 시작한
+  /// 요청의 응답만 반영하고, 그 전 요청의 응답은 (늦게 도착해도) 버립니다.
+  ///
+  /// 실패하면 상태를 바꾸지 않고 ApiException을 던집니다. 화면이 안내를 맡습니다.
   Future<void> analyze() async {
-    // TODO: 메뉴 분석 API를 연결하면 응답으로 메뉴별 확인할 재료를 채웁니다.
-    // 연동 전까지는 임시 데이터(_mockIngredientsToCheck)로 질문을 만듭니다.
-    final questions = [
-      for (final item in state.selectedItems)
-        StaffQuestion(
-          itemId: item.id,
-          // 직접 추가한 메뉴는 한글 이름이 없어서 입력한 이름으로 질문합니다.
-          menuKoreanName: item.koreanName.isEmpty
-              ? item.englishName
-              : item.koreanName,
-          menuEnglishName: item.englishName,
-          ingredients:
-              _mockIngredientsToCheck[item.koreanName] ??
-              _mockDefaultIngredients,
-        ),
+    final scanId = state.scanId;
+    if (scanId == null) {
+      throw StateError('analyze()는 recognize()가 성공한 뒤에 호출해야 합니다.');
+    }
+    // 서버는 목록을 최대 100개까지 받습니다. 직접 추가는 막아 두었지만, 서버 인식 결과가
+    // 100개를 넘을 수도 있으므로 보내기 전에 한 번 더 확인합니다. (사용자가 몇 개를 지우면 됩니다)
+    if (state.items.length > maxItems) {
+      throw const TooManyScanItemsException(maxItems);
+    }
+
+    final items = [
+      for (final item in state.items)
+        AnalyzeItem(tempId: item.id, rawName: item.nameForAnalysis),
     ];
+    final selectedTempIds = [for (final item in state.selectedItems) item.id];
+    final requestKey = _AnalyzeRequestKey(
+      scanId: scanId,
+      items: [for (final item in items) (item.tempId, item.rawName)],
+      selectedTempIds: selectedTempIds,
+    );
+    if (state.menus.isNotEmpty && requestKey == _analyzedKey) return;
+
+    final seq = ++_analyzeSeq;
+    final response = await ref
+        .read(scanRepositoryProvider)
+        .analyze(
+          scanId: scanId,
+          items: items,
+          selectedTempIds: selectedTempIds,
+        );
+    // 기다리는 동안 새 스캔을 시작했거나 더 최근 분석 요청이 있으면 이 응답은 버립니다.
+    if (!ref.mounted || state.scanId != scanId || seq != _analyzeSeq) return;
+
+    _analyzedKey = requestKey;
+    final questions = response.questions.map(StaffQuestion.fromResponse);
     final questionIds = questions.map((question) => question.id).toSet();
     state = state.copyWith(
-      questions: questions,
+      menus: response.menus,
+      questions: questions.toList(),
       answers: Map.fromEntries(
         state.answers.entries.where((e) => questionIds.contains(e.key)),
       ),
     );
   }
 
-  /// REST-06에서 직원의 답변을 기록합니다.
-  void answer(String questionId, StaffAnswer answer) {
+  /// REST-06에서 직원의 답변을 서버(POST /api/scans/{scan_id}/answers)에 기록합니다.
+  ///
+  /// 같은 질문에 다시 답하면 서버도 마지막 답으로 바꿉니다.
+  /// 식당을 고른 스캔이면 이 답변은 같은 식당·메뉴를 보는 다른 사용자에게도 집계됩니다.
+  ///
+  /// 실패하면 상태를 바꾸지 않고 ApiException을 던집니다. 화면이 안내를 맡습니다.
+  Future<void> answer(int questionId, StaffAnswer answer) async {
+    final scanId = state.scanId;
+    if (scanId == null) {
+      throw StateError('answer()는 recognize()가 성공한 뒤에 호출해야 합니다.');
+    }
+
+    await ref
+        .read(scanRepositoryProvider)
+        .answer(
+          scanId: scanId,
+          questionId: questionId,
+          answer: answer.apiValue,
+        );
+    if (!ref.mounted || state.scanId != scanId) return;
+
     state = state.copyWith(answers: {...state.answers, questionId: answer});
   }
 
-  /// REST-07 결과를 My Checks에 저장합니다.
+  /// 직원 응답을 반영한 최종 판정(GET /api/scans/{scan_id}/result)으로 [ScanFlowState.menus]를 바꿉니다.
   ///
-  /// 고른 메뉴마다 확인 결과가 한 건씩 저장되어 홈 Recent Checks와 Saved Menus에 나타납니다.
-  /// 이미 저장한 결과를 다시 저장하면(REST-08 → REST-07로 돌아온 경우) 중복으로 추가하지 않습니다.
+  /// 모든 질문에 답한 뒤(질문이 없으면 분석 직후) REST-07로 가기 전에 호출합니다.
+  /// 확인하지 않은 차단 성분이 남아 있으면 safe가 나오지 않고, '모르겠어요'는 not_sure가 됩니다.
+  ///
+  /// 실패하면 상태를 바꾸지 않고 ApiException을 던집니다. 화면이 안내를 맡습니다.
+  Future<void> loadResult() async {
+    final scanId = state.scanId;
+    if (scanId == null) {
+      throw StateError('loadResult()는 analyze()가 성공한 뒤에 호출해야 합니다.');
+    }
+
+    final result = await ref.read(scanRepositoryProvider).result(scanId);
+    if (!ref.mounted || state.scanId != scanId) return;
+
+    state = state.copyWith(menus: result.menus);
+  }
+
+  /// REST-07 결과를 서버(POST /api/my-checks)에 저장합니다.
+  ///
+  /// 분석한 메뉴마다 확인 결과가 한 건씩 저장되어 홈 Recent Checks와 Saved Menus에 나타납니다.
+  /// 이미 저장한 결과를 다시 저장하면(REST-08 → REST-07로 돌아온 경우) 다시 요청하지 않습니다.
+  /// (서버도 같은 스캔을 다시 저장하면 그대로 둡니다)
+  ///
+  /// 실패하면 상태를 바꾸지 않고 ApiException을 던집니다. 화면이 안내를 맡습니다.
   Future<void> save() async {
     if (state.savedAt != null) return;
-    // TODO: 저장 API를 연결합니다.
-    final checks = ref.read(myChecksProvider.notifier);
-    final now = DateTime.now();
-    checks.addAll([
-      for (final item in state.selectedItems)
-        MenuCheck(
-          id: checks.newId(),
-          // TODO: 메뉴 분석 API가 메뉴 id를 주면 그 값을 씁니다.
-          menuId: mockMenuIdOf(item.englishName),
-          koreanName: item.koreanName,
-          englishName: item.englishName,
-          restaurantName: state.restaurant?.name ?? '',
-          status: state.statusOf(item.id),
-          checkedAt: now,
-          checkedIngredients: state.checkedIngredientsOf(item.id),
-        ),
-    ]);
-    state = state.copyWith(savedAt: now);
+    final scanId = state.scanId;
+    if (scanId == null) {
+      throw StateError('save()는 loadResult()가 성공한 뒤에 호출해야 합니다.');
+    }
+
+    await ref.read(myChecksRepositoryProvider).save(scanId);
+    if (!ref.mounted) return;
+    // 홈 Recent Checks와 Saved Menus가 새로 저장한 메뉴를 보여주도록 다시 불러옵니다.
+    ref.invalidate(myChecksProvider);
+    if (state.scanId != scanId) return;
+    state = state.copyWith(savedAt: DateTime.now());
   }
 
   ScanMenuItem _newItem({
@@ -144,7 +243,8 @@ class ScanFlowNotifier extends Notifier<ScanFlowState> {
     required String englishName,
   }) {
     return ScanMenuItem(
-      id: '${_nextId++}',
+      // 서버 temp_id(i1, i2, ...)와 겹치지 않도록 접두어를 다르게 둡니다.
+      id: 'm${_nextId++}',
       koreanName: koreanName,
       englishName: englishName,
     );
@@ -155,17 +255,43 @@ final scanFlowProvider = NotifierProvider<ScanFlowNotifier, ScanFlowState>(
   ScanFlowNotifier.new,
 );
 
-// TODO: 메뉴 분석 API 연동 후 삭제합니다. 메뉴(한글 이름)별로 직원에게 확인할 재료입니다.
-const Map<String, List<StaffCheckIngredient>> _mockIngredientsToCheck = {
-  '김치찌개': [
-    StaffCheckIngredient(koreanName: '새우', englishName: 'shrimp'),
-    StaffCheckIngredient(koreanName: '멸치', englishName: 'anchovy'),
-  ],
-  '불고기': [StaffCheckIngredient(koreanName: '고기', englishName: 'meat')],
-};
+/// 분석하려는 메뉴 목록이 서버 제한([maxItems]개)을 넘을 때 [ScanFlowNotifier.analyze]가 던집니다.
+/// 화면은 몇 개를 지운 뒤 다시 시도하라고 안내합니다.
+class TooManyScanItemsException implements Exception {
+  const TooManyScanItemsException(this.maxItems);
 
-// TODO: 메뉴 분석 API 연동 후 삭제합니다.
-// 위 표에 없는 메뉴(직접 추가한 메뉴 포함)에 쓰는 기본 재료입니다.
-const List<StaffCheckIngredient> _mockDefaultIngredients = [
-  StaffCheckIngredient(koreanName: '새우', englishName: 'shrimp'),
-];
+  final int maxItems;
+
+  @override
+  String toString() => 'TooManyScanItemsException(maxItems: $maxItems)';
+}
+
+/// 분석 요청 하나를 구분하는 값입니다. 필드를 하나하나 비교합니다.
+/// (문자열로 이어 붙여 비교하면 메뉴 이름에 쉼표·콜론이 있을 때 서로 다른 요청이 같다고 판단될 수 있습니다)
+class _AnalyzeRequestKey {
+  const _AnalyzeRequestKey({
+    required this.scanId,
+    required this.items,
+    required this.selectedTempIds,
+  });
+
+  final int scanId;
+
+  /// (temp_id, raw_name) 목록입니다.
+  final List<(String, String)> items;
+  final List<String> selectedTempIds;
+
+  @override
+  bool operator ==(Object other) =>
+      other is _AnalyzeRequestKey &&
+      other.scanId == scanId &&
+      listEquals(other.items, items) &&
+      listEquals(other.selectedTempIds, selectedTempIds);
+
+  @override
+  int get hashCode => Object.hash(
+    scanId,
+    Object.hashAll(items),
+    Object.hashAll(selectedTempIds),
+  );
+}

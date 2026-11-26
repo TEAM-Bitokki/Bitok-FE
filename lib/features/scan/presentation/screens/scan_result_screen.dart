@@ -5,17 +5,18 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../common/widgets/bitok_button.dart';
 import '../../../../common/widgets/bitok_header.dart';
 import '../../../../common/widgets/bitok_menu_card.dart';
+import '../../../../common/widgets/saving_state_mixin.dart';
 import '../../../../core/design_system/bitok_colors.dart';
 import '../../../../core/design_system/bitok_text_styles.dart';
-import '../../data/models/scan_menu_item.dart';
-import '../../data/models/staff_question.dart';
+import '../../data/models/analyzed_menu.dart';
 import '../providers/scan_flow_provider.dart';
 import '../providers/scan_flow_state.dart';
 
 /// REST-07 · 직원 확인 결과(메뉴별 Avoid / Safe / Not Sure)를 보여주는 화면입니다.
 ///
 /// Save to My Checks를 누르면 [onSave], Finish without Saving을 누르면 [onFinish]가 호출됩니다.
-class ScanResultScreen extends ConsumerWidget {
+/// 저장하는 동안 버튼을 막고, 실패하면 '다시 시도' 스낵바를 띄웁니다.
+class ScanResultScreen extends ConsumerStatefulWidget {
   const ScanResultScreen({
     super.key,
     this.onBack,
@@ -25,16 +26,26 @@ class ScanResultScreen extends ConsumerWidget {
   });
 
   final VoidCallback? onBack;
-  final VoidCallback? onSave;
+  final Future<void> Function()? onSave;
   final VoidCallback? onFinish;
-  final ValueChanged<ScanMenuItem>? onViewDetails;
+  final ValueChanged<AnalyzedMenu>? onViewDetails;
 
+  @override
+  ConsumerState<ScanResultScreen> createState() => _ScanResultScreenState();
+}
+
+class _ScanResultScreenState extends ConsumerState<ScanResultScreen>
+    with SavingStateMixin {
   static const double _horizontalPadding = 24;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final flow = ref.watch(scanFlowProvider);
-    final items = flow.selectedItems;
+    final menus = flow.menus;
+    final onBack = widget.onBack;
+    final onSave = widget.onSave;
+    final onFinish = widget.onFinish;
+    final onViewDetails = widget.onViewDetails;
 
     return Scaffold(
       backgroundColor: BitokColors.white,
@@ -68,22 +79,31 @@ class ScanResultScreen extends ConsumerWidget {
               Expanded(
                 child: ListView.separated(
                   padding: EdgeInsets.zero,
-                  itemCount: items.length,
+                  itemCount: menus.length,
                   separatorBuilder: (_, _) => const SizedBox(height: 8),
                   itemBuilder: (context, index) {
-                    final item = items[index];
+                    final menu = menus[index];
                     return BitokMenuDetailCard(
-                      key: ValueKey(item.id),
-                      koreanName: item.koreanName,
-                      englishName: item.englishName,
-                      status: flow.statusOf(item.id),
-                      onViewDetailsTap: () => onViewDetails?.call(item),
+                      key: ValueKey(menu.analysisId),
+                      koreanName: menu.nameKo,
+                      englishName: menu.nameEn,
+                      status: flow.statusOf(menu),
+                      // 저장하는 동안에는 상세로 가지 않게 막습니다.
+                      // (상세를 보는 중에 저장이 끝나면 그 위에 저장 완료 화면이 열립니다)
+                      onViewDetailsTap: saving
+                          ? null
+                          : () => onViewDetails?.call(menu),
                     );
                   },
                 ),
               ),
               const SizedBox(height: 16),
-              BitokButton(label: 'Save to My Checks', onPressed: onSave),
+              BitokButton(
+                label: 'Save to My Checks',
+                onPressed: onSave == null || saving
+                    ? null
+                    : () => runSaving(onSave),
+              ),
               const SizedBox(height: 12),
               Center(
                 child: GestureDetector(
@@ -117,16 +137,28 @@ Widget scanResultScreenPreview() => ProviderScope(
 class _PreviewScanFlowNotifier extends ScanFlowNotifier {
   @override
   ScanFlowState build() => const ScanFlowState(
-    items: [
-      ScanMenuItem(id: '0', koreanName: '김치찌개', englishName: 'Kimchi Jjigae'),
-      ScanMenuItem(id: '1', koreanName: '비빔밥', englishName: 'Bibimbap'),
-      ScanMenuItem(id: '2', koreanName: '불고기', englishName: 'Bulgogi'),
+    menus: [
+      AnalyzedMenu(
+        dishId: 12,
+        nameKo: '김치찌개',
+        nameEn: 'Kimchi Jjigae',
+        analysisId: 551,
+        verdict: 'avoid',
+      ),
+      AnalyzedMenu(
+        dishId: 13,
+        nameKo: '비빔밥',
+        nameEn: 'Bibimbap',
+        analysisId: 552,
+        verdict: 'safe',
+      ),
+      AnalyzedMenu(
+        dishId: 14,
+        nameKo: '불고기',
+        nameEn: 'Bulgogi',
+        analysisId: 553,
+        verdict: 'not_sure',
+      ),
     ],
-    selectedIds: {'0', '1', '2'},
-    answers: {
-      '0': StaffAnswer.contains,
-      '1': StaffAnswer.notContains,
-      '2': StaffAnswer.notSure,
-    },
   );
 }

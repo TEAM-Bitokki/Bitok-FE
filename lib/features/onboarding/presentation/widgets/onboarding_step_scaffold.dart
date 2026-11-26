@@ -59,6 +59,22 @@ class OnboardingStepScaffold extends StatelessWidget {
     final l10n = AppLocalizations.of(context);
     final onSkip = this.onSkip;
 
+    // 첫 단계는 go로 진입해 돌아갈 스택이 없어서, 시스템 뒤로 가기가 앱을 종료해 버립니다.
+    // 헤더 뒤로 가기와 똑같이 로그인 화면으로 돌아가게 합니다. (스택이 있으면 그대로 pop)
+    return PopScope(
+      canPop: context.canPop(),
+      onPopInvokedWithResult: (didPop, _) {
+        if (!didPop) _onBack(context);
+      },
+      child: _buildScaffold(context, l10n, onSkip),
+    );
+  }
+
+  Widget _buildScaffold(
+    BuildContext context,
+    AppLocalizations l10n,
+    VoidCallback? onSkip,
+  ) {
     return Scaffold(
       backgroundColor: BitokColors.white,
       body: SafeArea(

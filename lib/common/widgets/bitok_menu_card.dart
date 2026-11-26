@@ -241,18 +241,20 @@ class _MenuName extends StatelessWidget {
   final String englishName;
   final Color englishColor;
 
+  // 한글 이름 한 줄, 영문 이름 한 줄로 나눠 보여주고, 각 줄이 넘치면 '…'로 자릅니다.
+  // (한 줄에 나란히 두면 한글 이름이 줄어들 수 없어서, 긴 서버 메뉴명에서 overflow가 났습니다)
+  // 판정 없는 카드(BitokMenuDetailCard, status: null)와 같은 배치·간격입니다.
   @override
   Widget build(BuildContext context) {
-    return Row(
-      crossAxisAlignment: CrossAxisAlignment.baseline,
-      textBaseline: TextBaseline.alphabetic,
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
       children: [
         // 사용자가 직접 추가한 메뉴처럼 한글 이름이 없으면 영문 이름만 보여줍니다.
         if (koreanName.isNotEmpty) ...[
           _KoreanName(koreanName),
-          const SizedBox(width: 10),
+          const SizedBox(height: 6),
         ],
-        Flexible(child: _EnglishName(englishName, color: englishColor)),
+        _EnglishName(englishName, color: englishColor),
       ],
     );
   }
@@ -268,6 +270,7 @@ class _KoreanName extends StatelessWidget {
     return Text(
       text,
       maxLines: 1,
+      overflow: TextOverflow.ellipsis,
       style: BitokTextStyles.body1KOR.copyWith(color: BitokColors.text),
     );
   }

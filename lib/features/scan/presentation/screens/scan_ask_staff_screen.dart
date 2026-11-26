@@ -4,8 +4,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../common/widgets/bitok_button.dart';
 import '../../../../common/widgets/bitok_header.dart';
+import '../../../../common/widgets/saving_state_mixin.dart';
 import '../../../../core/design_system/bitok_colors.dart';
 import '../../../../core/design_system/bitok_text_styles.dart';
+import '../../../../l10n/generated/app_localizations.dart';
+import '../models/scan_error_message.dart';
 import '../../data/models/scan_menu_item.dart';
 import '../../data/models/staff_question.dart';
 import '../providers/scan_flow_provider.dart';
@@ -20,7 +23,9 @@ class ScanAskStaffScreen extends ConsumerStatefulWidget {
   const ScanAskStaffScreen({super.key, this.onBack, this.onComplete});
 
   final VoidCallback? onBack;
-  final VoidCallback? onComplete;
+
+  /// 마지막 질문에 답한 뒤 호출됩니다(최종 결과 요청). 끝날 때까지 버튼을 막습니다.
+  final Future<void> Function()? onComplete;
 
   @override
   ConsumerState<ScanAskStaffScreen> createState() => _ScanAskStaffScreenState();
@@ -31,7 +36,11 @@ class _ScanAskStaffScreenState extends ConsumerState<ScanAskStaffScreen> {
 
   int _index = 0;
 
+  /// 답변을 서버에 보내는 중이면 true입니다. 버튼과 뒤로가기를 막아 질문이 어긋나지 않게 합니다.
+  bool _submitting = false;
+
   void _goBack() {
+    if (_submitting) return;
     if (_index > 0) {
       setState(() => _index--);
     } else {
@@ -39,12 +48,32 @@ class _ScanAskStaffScreenState extends ConsumerState<ScanAskStaffScreen> {
     }
   }
 
-  void _answer(List<StaffQuestion> questions, StaffAnswer answer) {
-    ref.read(scanFlowProvider.notifier).answer(questions[_index].id, answer);
-    if (_index < questions.length - 1) {
-      setState(() => _index++);
-    } else {
-      widget.onComplete?.call();
+  /// 답변이 서버에 기록된 뒤에 다음 질문으로 넘어가고, 마지막 질문이면 [onComplete]를 기다립니다.
+  /// 실패하면 안내 스낵바를 띄우고 같은 질문에 머뭅니다. (다시 누르면 같은 답으로 덮어씁니다)
+  Future<void> _answer(
+    List<StaffQuestion> questions,
+    StaffAnswer answer,
+  ) async {
+    if (_submitting) return;
+    setState(() => _submitting = true);
+    try {
+      await ref
+          .read(scanFlowProvider.notifier)
+          .answer(questions[_index].id, answer);
+      if (_index < questions.length - 1) {
+        if (mounted) setState(() => _index++);
+      } else {
+        await widget.onComplete?.call();
+      }
+    } catch (e) {
+      if (mounted) {
+        showMessageSnackBar(
+          context,
+          scanErrorMessage(AppLocalizations.of(context), e),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _submitting = false);
     }
   }
 
@@ -61,7 +90,7 @@ class _ScanAskStaffScreenState extends ConsumerState<ScanAskStaffScreen> {
 
     return PopScope(
       // 두 번째 질문부터는 시스템 뒤로가기도 이전 질문으로 돌아가게 합니다.
-      canPop: index == 0,
+      canPop: index == 0 && !_submitting,
       onPopInvokedWithResult: (didPop, _) {
         if (!didPop) _goBack();
       },
@@ -105,19 +134,25 @@ class _ScanAskStaffScreenState extends ConsumerState<ScanAskStaffScreen> {
                 BitokButton(
                   label: '들어가요',
                   variant: BitokButtonVariant.red,
-                  onPressed: () => _answer(questions, StaffAnswer.contains),
+                  onPressed: _submitting
+                      ? null
+                      : () => _answer(questions, StaffAnswer.contains),
                 ),
                 const SizedBox(height: 8),
                 BitokButton(
                   label: '모르겠어요',
                   variant: BitokButtonVariant.yellow,
-                  onPressed: () => _answer(questions, StaffAnswer.notSure),
+                  onPressed: _submitting
+                      ? null
+                      : () => _answer(questions, StaffAnswer.notSure),
                 ),
                 const SizedBox(height: 8),
                 BitokButton(
                   label: '안 들어가요',
                   variant: BitokButtonVariant.green,
-                  onPressed: () => _answer(questions, StaffAnswer.notContains),
+                  onPressed: _submitting
+                      ? null
+                      : () => _answer(questions, StaffAnswer.notContains),
                 ),
               ],
             ),
@@ -175,26 +210,33 @@ Widget scanAskStaffScreenPreview() => ProviderScope(
 );
 
 class _PreviewScanFlowNotifier extends ScanFlowNotifier {
-  static const _kimchi = ScanMenuItem(
-    id: '0',
-    koreanName: '김치찌개',
-    englishName: 'Kimchi Jjigae',
-  );
-
   @override
-  ScanFlowState build() => ScanFlowState(
-    items: const [_kimchi],
-    selectedIds: const {'0'},
+  ScanFlowState build() => const ScanFlowState(
+    items: [
+      ScanMenuItem(id: 'i1', koreanName: '김치찌개', englishName: 'Kimchi Jjigae'),
+    ],
+    selectedIds: {'i1'},
     questions: [
       StaffQuestion(
-        itemId: _kimchi.id,
-        menuKoreanName: _kimchi.koreanName,
-        menuEnglishName: _kimchi.englishName,
-        ingredients: const [
-          StaffCheckIngredient(koreanName: '새우', englishName: 'shrimp'),
-          StaffCheckIngredient(koreanName: '멸치', englishName: 'anchovy'),
-        ],
+        id: 880,
+        dishId: 12,
+        ingredientId: 301,
+        koreanText: '이 김치찌개에 새우가 들어가나요?',
+        englishText: 'Does this kimchi jjigae contain shrimp?',
+      ),
+      StaffQuestion(
+        id: 881,
+        dishId: 12,
+        ingredientId: 302,
+        koreanText: '이 김치찌개에 멸치가 들어가나요?',
+        englishText: 'Does this kimchi jjigae contain anchovy?',
       ),
     ],
   );
+
+  // 미리보기에서는 서버에 보내지 않고 답변만 기록해, 버튼을 눌러 다음 질문으로 넘어갈 수 있게 합니다.
+  @override
+  Future<void> answer(int questionId, StaffAnswer answer) async {
+    state = state.copyWith(answers: {...state.answers, questionId: answer});
+  }
 }

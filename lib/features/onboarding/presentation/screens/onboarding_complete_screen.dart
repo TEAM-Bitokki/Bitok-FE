@@ -35,7 +35,8 @@ class OnboardingCompleteScreen extends ConsumerWidget {
                     BitokImages.wordmarkNavy,
                     width: 69,
                     height: 40,
-                    alignment: Alignment.bottomCenter,
+                    // 홈 상단 로고와 같은 설정입니다.
+                    fit: BoxFit.contain,
                   ),
                 ),
               ),

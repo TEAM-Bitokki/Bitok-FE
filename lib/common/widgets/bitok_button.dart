@@ -14,6 +14,9 @@ class BitokButton extends StatelessWidget {
     this.variant = BitokButtonVariant.primary,
   });
 
+  /// 버튼 높이입니다. 버튼 위에 다른 요소(예: 안내 토스트)를 띄울 때 씁니다.
+  static const double height = 60;
+
   final String label;
   final VoidCallback? onPressed;
   final BitokButtonVariant variant;
@@ -23,7 +26,7 @@ class BitokButton extends StatelessWidget {
     final s = _styleOf(variant, enabled: onPressed != null);
 
     return SizedBox(
-      height: 60,
+      height: height,
       width: double.infinity,
       child: Material(
         color: s.background,
