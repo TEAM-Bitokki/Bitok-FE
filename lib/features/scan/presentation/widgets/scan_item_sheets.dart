@@ -181,7 +181,7 @@ class _MenuNameField extends StatelessWidget {
           hintText: 'Enter menu name',
           textInputAction: TextInputAction.done,
           // 분석 요청의 raw_name은 1~100자입니다.
-          maxLength: ScanMenuItem.maxNameLength,
+          maxCodePoints: ScanMenuItem.maxNameLength,
         ),
       ],
     );
