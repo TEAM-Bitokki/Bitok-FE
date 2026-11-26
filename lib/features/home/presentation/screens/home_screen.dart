@@ -68,7 +68,8 @@ class HomeScreen extends StatelessWidget {
           BitokImages.wordmarkNavy,
           width: 69,
           height: 40,
-          fit: BoxFit.fill,
+          // 이미지(207×120)가 박스와 비율이 같아 그대로 맞고, 바뀌더라도 찌그러지지 않게 비율을 지킵니다.
+          fit: BoxFit.contain,
         ),
         onProfile: onProfileTap,
       ),
