@@ -156,15 +156,16 @@ GoRouter createAppRouter({String initialLocation = AppRoutes.login}) =>
                   path: AppRoutes.home,
                   builder: (context, state) => Consumer(
                     builder: (context, ref, _) => HomeScreen(
+                      // 불러오는 중이거나 실패하면 빈 목록(No checks yet)을 보여줍니다.
                       recentChecks: [
-                        for (final check in ref.watch(myChecksProvider))
+                        for (final check
+                            in ref.watch(myChecksProvider).value ?? const [])
                           RecentCheck(
                             menuId: check.menuId,
                             koreanName: check.koreanName,
                             englishName: check.englishName,
                             subtitle: _checkSubtitle(check),
                             status: check.status,
-                            checkedIngredients: check.checkedIngredients,
                           ),
                       ],
                       onProfileTap: () => context.push(AppRoutes.myPage),
@@ -333,14 +334,14 @@ GoRouter createAppRouter({String initialLocation = AppRoutes.login}) =>
           builder: (context, state) => Consumer(
             builder: (context, ref, _) => SavedMenusScreen(
               menus: [
-                for (final check in ref.watch(myChecksProvider))
+                for (final check
+                    in ref.watch(myChecksProvider).value ?? const [])
                   SavedMenu(
                     menuId: check.menuId,
                     koreanName: check.koreanName,
                     englishName: check.englishName,
                     subtitle: _checkSubtitle(check),
                     status: check.status,
-                    checkedIngredients: check.checkedIngredients,
                   ),
               ],
               onBack: () => context.pop(),

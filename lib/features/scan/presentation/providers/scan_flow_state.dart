@@ -54,11 +54,6 @@ class ScanFlowState {
   BitokMenuStatus statusOf(AnalyzedMenu menu) =>
       menuStatusOfVerdict(menu.verdict);
 
-  /// 메뉴에서 걸린 재료의 영문 이름입니다. 메뉴 상세의 판정 카드에 표시합니다.
-  List<String> checkedIngredientsOf(AnalyzedMenu menu) => [
-    for (final match in menu.matches) match.ingredientEn,
-  ];
-
   /// 예: '3 menu items checked'
   String get checkedLabel => menus.length == 1
       ? '1 menu item checked'

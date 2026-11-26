@@ -1,6 +1,11 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../common/widgets/bitok_status_chip.dart';
+import '../../../auth/presentation/providers/account_provider.dart';
+import '../../../explore/presentation/models/menu_verdict.dart';
+import '../../../explore/presentation/models/mock_menu_catalog.dart';
+import '../../data/models/my_check_item.dart';
+import '../../data/repositories/my_checks_repository.dart';
 
 /// 'Save to My Checks'로 저장한 메뉴 확인 결과 한 건입니다.
 ///
@@ -8,89 +13,72 @@ import '../../../../common/widgets/bitok_status_chip.dart';
 class MenuCheck {
   const MenuCheck({
     required this.id,
-    required this.menuId,
+    required this.analysisId,
+    required this.dishId,
     required this.koreanName,
     required this.englishName,
     required this.restaurantName,
     required this.status,
     required this.checkedAt,
-    this.checkedIngredients = const [],
+    this.restaurantId,
   });
 
-  /// 확인 결과 한 건의 id입니다.
-  final String id;
+  factory MenuCheck.fromItem(MyCheckItem item) => MenuCheck(
+    id: item.myCheckId,
+    analysisId: item.analysisId,
+    dishId: item.dishId,
+    restaurantId: item.restaurantId,
+    koreanName: item.nameKo,
+    englishName: item.nameEn,
+    restaurantName: item.restaurantName ?? '',
+    status: menuStatusOfVerdict(item.verdict),
+    // 서버 시각(+09:00)은 UTC로 읽히므로, 'Today' 같은 날짜 표시가 맞도록 기기 시간대로 바꿉니다.
+    checkedAt: item.savedAt.toLocal(),
+  );
 
-  /// 메뉴 상세('/menu/:id')로 이동할 때 쓰는 메뉴 id입니다.
-  final String menuId;
+  /// 서버의 my_check_id입니다.
+  final int id;
 
-  /// 사용자가 직접 추가한 메뉴는 비어 있을 수 있습니다.
+  /// 내 기록의 메뉴 상세(GET /api/analyses/{analysis_id})를 열 때 씁니다.
+  final int analysisId;
+
+  final int dishId;
+  final int? restaurantId;
   final String koreanName;
   final String englishName;
   final String restaurantName;
+
+  /// 현재 프로필 기준 판정입니다. 알레르기를 바꾸면 저장할 때와 달라질 수 있습니다.
   final BitokMenuStatus status;
+
+  /// 저장한 시각입니다.
   final DateTime checkedAt;
 
-  /// 직원에게 확인한 재료의 영문 이름입니다. 예: ['shrimp', 'anchovy']
-  /// 메뉴 상세의 판정 카드에 표시합니다.
-  final List<String> checkedIngredients;
+  /// 메뉴 상세('/menu/:id')로 이동할 때 쓰는 mock 메뉴 id입니다.
+  // TODO: 메뉴 상세를 analysisId로 열게 되면 삭제합니다.
+  String get menuId => mockMenuIdOf(englishName);
 }
 
-/// 저장한 메뉴 확인 결과 목록입니다. 최근에 저장한 것이 앞에 옵니다.
-class MyChecksNotifier extends Notifier<List<MenuCheck>> {
-  int _nextId = 0;
+/// 저장한 메뉴 확인 결과 목록(GET /api/my-checks)입니다. 최근에 저장한 것이 앞에 옵니다.
+///
+/// 로그인한 계정(userId)이 바뀌면 다시 불러옵니다. 새로 저장한 뒤에는 invalidate로 다시 불러옵니다.
+class MyChecksNotifier extends AsyncNotifier<List<MenuCheck>> {
+  /// 한 번에 불러오는 개수입니다(서버 최대값).
+  // TODO: Saved Menus에 무한 스크롤이 필요해지면 page.nextCursor로 다음 페이지를 불러옵니다.
+  static const int _limit = 50;
 
-  // TODO: My Checks 조회 API가 준비되면 서버 값으로 초기화합니다.
   @override
-  List<MenuCheck> build() {
-    final today = DateTime.now();
-    return [
-      _mock('bibimbap', '비빔밥', 'Bibimbap', BitokMenuStatus.safe, today, [
-        'shrimp',
-      ]),
-      _mock(
-        'kimchi-jjigae',
-        '김치찌개',
-        'Kimchi Jjigae',
-        BitokMenuStatus.avoid,
-        today,
-        ['shrimp', 'anchovy'],
-      ),
-      _mock('bulgogi', '불고기', 'Bulgogi', BitokMenuStatus.notSure, today, [
-        'meat',
-      ]),
-    ];
-  }
-
-  /// 확인 결과를 목록 맨 앞에 추가합니다.
-  // TODO: 저장 API를 연결합니다.
-  void addAll(List<MenuCheck> checks) {
-    state = [...checks, ...state];
-  }
-
-  /// 새 확인 결과의 id를 만듭니다. (서버 연동 전 임시)
-  String newId() => 'local-${_nextId++}';
-
-  MenuCheck _mock(
-    String menuId,
-    String koreanName,
-    String englishName,
-    BitokMenuStatus status,
-    DateTime checkedAt,
-    List<String> checkedIngredients,
-  ) {
-    return MenuCheck(
-      id: newId(),
-      menuId: menuId,
-      koreanName: koreanName,
-      englishName: englishName,
-      restaurantName: 'Myeongdong Kyoja',
-      status: status,
-      checkedAt: checkedAt,
-      checkedIngredients: checkedIngredients,
-    );
+  Future<List<MenuCheck>> build() async {
+    final userId = ref.watch(accountProvider.select((a) => a?.userId));
+    if (userId == null) return const [];
+    final response = await ref
+        .read(myChecksRepositoryProvider)
+        .list(limit: _limit);
+    return response.items.map(MenuCheck.fromItem).toList();
   }
 }
 
-final myChecksProvider = NotifierProvider<MyChecksNotifier, List<MenuCheck>>(
-  MyChecksNotifier.new,
-);
+final myChecksProvider =
+    AsyncNotifierProvider<MyChecksNotifier, List<MenuCheck>>(
+      MyChecksNotifier.new,
+    );

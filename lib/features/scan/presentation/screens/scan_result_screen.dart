@@ -5,6 +5,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../common/widgets/bitok_button.dart';
 import '../../../../common/widgets/bitok_header.dart';
 import '../../../../common/widgets/bitok_menu_card.dart';
+import '../../../../common/widgets/saving_state_mixin.dart';
 import '../../../../core/design_system/bitok_colors.dart';
 import '../../../../core/design_system/bitok_text_styles.dart';
 import '../../data/models/analyzed_menu.dart';
@@ -14,7 +15,8 @@ import '../providers/scan_flow_state.dart';
 /// REST-07 · 직원 확인 결과(메뉴별 Avoid / Safe / Not Sure)를 보여주는 화면입니다.
 ///
 /// Save to My Checks를 누르면 [onSave], Finish without Saving을 누르면 [onFinish]가 호출됩니다.
-class ScanResultScreen extends ConsumerWidget {
+/// 저장하는 동안 버튼을 막고, 실패하면 '다시 시도' 스낵바를 띄웁니다.
+class ScanResultScreen extends ConsumerStatefulWidget {
   const ScanResultScreen({
     super.key,
     this.onBack,
@@ -24,16 +26,26 @@ class ScanResultScreen extends ConsumerWidget {
   });
 
   final VoidCallback? onBack;
-  final VoidCallback? onSave;
+  final Future<void> Function()? onSave;
   final VoidCallback? onFinish;
   final ValueChanged<AnalyzedMenu>? onViewDetails;
 
+  @override
+  ConsumerState<ScanResultScreen> createState() => _ScanResultScreenState();
+}
+
+class _ScanResultScreenState extends ConsumerState<ScanResultScreen>
+    with SavingStateMixin {
   static const double _horizontalPadding = 24;
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  Widget build(BuildContext context) {
     final flow = ref.watch(scanFlowProvider);
     final menus = flow.menus;
+    final onBack = widget.onBack;
+    final onSave = widget.onSave;
+    final onFinish = widget.onFinish;
+    final onViewDetails = widget.onViewDetails;
 
     return Scaffold(
       backgroundColor: BitokColors.white,
@@ -82,7 +94,12 @@ class ScanResultScreen extends ConsumerWidget {
                 ),
               ),
               const SizedBox(height: 16),
-              BitokButton(label: 'Save to My Checks', onPressed: onSave),
+              BitokButton(
+                label: 'Save to My Checks',
+                onPressed: onSave == null || saving
+                    ? null
+                    : () => runSaving(onSave),
+              ),
               const SizedBox(height: 12),
               Center(
                 child: GestureDetector(

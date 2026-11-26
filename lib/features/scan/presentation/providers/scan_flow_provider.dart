@@ -1,6 +1,6 @@
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
-import '../../../explore/presentation/models/mock_menu_catalog.dart';
+import '../../../mypage/data/repositories/my_checks_repository.dart';
 import '../../../mypage/presentation/providers/my_checks_provider.dart';
 import '../../data/models/analyze_request.dart';
 import '../../data/models/scan_menu_item.dart';
@@ -201,30 +201,26 @@ class ScanFlowNotifier extends Notifier<ScanFlowState> {
     state = state.copyWith(menus: result.menus);
   }
 
-  /// REST-07 결과를 My Checks에 저장합니다.
+  /// REST-07 결과를 서버(POST /api/my-checks)에 저장합니다.
   ///
   /// 분석한 메뉴마다 확인 결과가 한 건씩 저장되어 홈 Recent Checks와 Saved Menus에 나타납니다.
-  /// 이미 저장한 결과를 다시 저장하면(REST-08 → REST-07로 돌아온 경우) 중복으로 추가하지 않습니다.
+  /// 이미 저장한 결과를 다시 저장하면(REST-08 → REST-07로 돌아온 경우) 다시 요청하지 않습니다.
+  /// (서버도 같은 스캔을 다시 저장하면 그대로 둡니다)
+  ///
+  /// 실패하면 상태를 바꾸지 않고 ApiException을 던집니다. 화면이 안내를 맡습니다.
   Future<void> save() async {
     if (state.savedAt != null) return;
-    // TODO: 저장 API를 연결합니다.
-    final checks = ref.read(myChecksProvider.notifier);
-    final now = DateTime.now();
-    checks.addAll([
-      for (final menu in state.menus)
-        MenuCheck(
-          id: checks.newId(),
-          // TODO: 메뉴 상세를 dish_id로 열게 되면 그 값을 씁니다.
-          menuId: mockMenuIdOf(menu.nameEn),
-          koreanName: menu.nameKo,
-          englishName: menu.nameEn,
-          restaurantName: state.restaurant?.name ?? '',
-          status: state.statusOf(menu),
-          checkedAt: now,
-          checkedIngredients: state.checkedIngredientsOf(menu),
-        ),
-    ]);
-    state = state.copyWith(savedAt: now);
+    final scanId = state.scanId;
+    if (scanId == null) {
+      throw StateError('save()는 loadResult()가 성공한 뒤에 호출해야 합니다.');
+    }
+
+    await ref.read(myChecksRepositoryProvider).save(scanId);
+    if (!ref.mounted) return;
+    // 홈 Recent Checks와 Saved Menus가 새로 저장한 메뉴를 보여주도록 다시 불러옵니다.
+    ref.invalidate(myChecksProvider);
+    if (state.scanId != scanId) return;
+    state = state.copyWith(savedAt: DateTime.now());
   }
 
   ScanMenuItem _newItem({
