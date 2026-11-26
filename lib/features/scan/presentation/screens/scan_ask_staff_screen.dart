@@ -4,8 +4,11 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../common/widgets/bitok_button.dart';
 import '../../../../common/widgets/bitok_header.dart';
+import '../../../../common/widgets/saving_state_mixin.dart';
 import '../../../../core/design_system/bitok_colors.dart';
 import '../../../../core/design_system/bitok_text_styles.dart';
+import '../../../../l10n/generated/app_localizations.dart';
+import '../models/scan_error_message.dart';
 import '../../data/models/scan_menu_item.dart';
 import '../../data/models/staff_question.dart';
 import '../providers/scan_flow_provider.dart';
@@ -31,7 +34,11 @@ class _ScanAskStaffScreenState extends ConsumerState<ScanAskStaffScreen> {
 
   int _index = 0;
 
+  /// 답변을 서버에 보내는 중이면 true입니다. 버튼과 뒤로가기를 막아 질문이 어긋나지 않게 합니다.
+  bool _submitting = false;
+
   void _goBack() {
+    if (_submitting) return;
     if (_index > 0) {
       setState(() => _index--);
     } else {
@@ -39,8 +46,27 @@ class _ScanAskStaffScreenState extends ConsumerState<ScanAskStaffScreen> {
     }
   }
 
-  void _answer(List<StaffQuestion> questions, StaffAnswer answer) {
-    ref.read(scanFlowProvider.notifier).answer(questions[_index].id, answer);
+  /// 답변이 서버에 기록된 뒤에 다음 질문으로 넘어갑니다.
+  /// 실패하면 안내 스낵바를 띄우고 같은 질문에 머뭅니다.
+  Future<void> _answer(List<StaffQuestion> questions, StaffAnswer answer) async {
+    if (_submitting) return;
+    setState(() => _submitting = true);
+    try {
+      await ref
+          .read(scanFlowProvider.notifier)
+          .answer(questions[_index].id, answer);
+    } catch (e) {
+      if (mounted) {
+        setState(() => _submitting = false);
+        showMessageSnackBar(
+          context,
+          scanErrorMessage(AppLocalizations.of(context), e),
+        );
+      }
+      return;
+    }
+    if (!mounted) return;
+    setState(() => _submitting = false);
     if (_index < questions.length - 1) {
       setState(() => _index++);
     } else {
@@ -61,7 +87,7 @@ class _ScanAskStaffScreenState extends ConsumerState<ScanAskStaffScreen> {
 
     return PopScope(
       // 두 번째 질문부터는 시스템 뒤로가기도 이전 질문으로 돌아가게 합니다.
-      canPop: index == 0,
+      canPop: index == 0 && !_submitting,
       onPopInvokedWithResult: (didPop, _) {
         if (!didPop) _goBack();
       },
@@ -105,19 +131,25 @@ class _ScanAskStaffScreenState extends ConsumerState<ScanAskStaffScreen> {
                 BitokButton(
                   label: '들어가요',
                   variant: BitokButtonVariant.red,
-                  onPressed: () => _answer(questions, StaffAnswer.contains),
+                  onPressed: _submitting
+                      ? null
+                      : () => _answer(questions, StaffAnswer.contains),
                 ),
                 const SizedBox(height: 8),
                 BitokButton(
                   label: '모르겠어요',
                   variant: BitokButtonVariant.yellow,
-                  onPressed: () => _answer(questions, StaffAnswer.notSure),
+                  onPressed: _submitting
+                      ? null
+                      : () => _answer(questions, StaffAnswer.notSure),
                 ),
                 const SizedBox(height: 8),
                 BitokButton(
                   label: '안 들어가요',
                   variant: BitokButtonVariant.green,
-                  onPressed: () => _answer(questions, StaffAnswer.notContains),
+                  onPressed: _submitting
+                      ? null
+                      : () => _answer(questions, StaffAnswer.notContains),
                 ),
               ],
             ),

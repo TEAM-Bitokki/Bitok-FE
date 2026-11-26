@@ -159,8 +159,27 @@ class ScanFlowNotifier extends Notifier<ScanFlowState> {
     );
   }
 
-  /// REST-06에서 직원의 답변을 기록합니다.
-  void answer(int questionId, StaffAnswer answer) {
+  /// REST-06에서 직원의 답변을 서버(POST /api/scans/{scan_id}/answers)에 기록합니다.
+  ///
+  /// 같은 질문에 다시 답하면 서버도 마지막 답으로 바꿉니다.
+  /// 식당을 고른 스캔이면 이 답변은 같은 식당·메뉴를 보는 다른 사용자에게도 집계됩니다.
+  ///
+  /// 실패하면 상태를 바꾸지 않고 ApiException을 던집니다. 화면이 안내를 맡습니다.
+  Future<void> answer(int questionId, StaffAnswer answer) async {
+    final scanId = state.scanId;
+    if (scanId == null) {
+      throw StateError('answer()는 recognize()가 성공한 뒤에 호출해야 합니다.');
+    }
+
+    await ref
+        .read(scanRepositoryProvider)
+        .answer(
+          scanId: scanId,
+          questionId: questionId,
+          answer: answer.apiValue,
+        );
+    if (!ref.mounted || state.scanId != scanId) return;
+
     state = state.copyWith(answers: {...state.answers, questionId: answer});
   }
 

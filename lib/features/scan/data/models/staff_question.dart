@@ -1,4 +1,5 @@
 import 'analyze_response.dart';
+import 'answer_request.dart';
 
 /// REST-06 · 직원에게 묻는 질문 한 개입니다.
 ///
@@ -39,11 +40,16 @@ class StaffQuestion {
 /// 직원의 답변입니다.
 enum StaffAnswer {
   /// 들어가요
-  contains,
+  contains(StaffAnswerValue.yes),
 
   /// 모르겠어요
-  notSure,
+  notSure(StaffAnswerValue.unsure),
 
   /// 안 들어가요
-  notContains,
+  notContains(StaffAnswerValue.no);
+
+  const StaffAnswer(this.apiValue);
+
+  /// POST /api/scans/{scan_id}/answers에 보내는 값입니다.
+  final StaffAnswerValue apiValue;
 }
