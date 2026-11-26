@@ -773,8 +773,13 @@ Future<void> _loadMoreMyChecks(
 /// 스캔 단계에서 요청을 기다린 뒤 다음 화면으로 넘어가기 전에, 사용자가 아직 그 화면에 있는지
 /// 확인할 때도 씁니다. 뒤로 가는 중인 화면은 `context.mounted`가 아직 true일 수 있기 때문입니다.
 /// (`context.mounted &&`와 함께 쓰세요)
+///
+/// `currentConfiguration.uri`는 `context.push`로 쌓은 화면을 반영하지 않고 처음 `go`한 경로
+/// (예: /home)에 머무릅니다. 스캔 화면들은 모두 push로 열리므로, 맨 위 화면의 경로인
+/// `last.matchedLocation`과 비교해야 합니다.
 bool _isShowing(BuildContext context, String path) =>
-    GoRouter.of(context).routerDelegate.currentConfiguration.uri.path == path;
+    GoRouter.of(context).routerDelegate.currentConfiguration.last.matchedLocation ==
+    path;
 
 String? _redirectUnlessInts(GoRouterState state, List<String> keys) =>
     keys.every((key) => int.tryParse(state.pathParameters[key] ?? '') != null)
