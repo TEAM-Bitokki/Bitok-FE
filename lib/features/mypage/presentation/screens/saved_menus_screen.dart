@@ -28,11 +28,16 @@ class SavedMenusScreen extends StatelessWidget {
   const SavedMenusScreen({
     super.key,
     required this.menus,
+    this.isLoading = false,
     this.onBack,
     this.onMenuTap,
   });
 
   final List<SavedMenu> menus;
+
+  /// 목록을 처음 불러오는 중이면 true입니다. 목록 대신 로딩 표시를 보여줍니다.
+  final bool isLoading;
+
   final VoidCallback? onBack;
   final ValueChanged<SavedMenu>? onMenuTap;
 
@@ -46,21 +51,25 @@ class SavedMenusScreen extends StatelessWidget {
       ),
       body: SafeArea(
         top: false,
-        child: ListView.separated(
-          padding: const EdgeInsets.fromLTRB(24, 12, 24, 24),
-          itemCount: menus.length,
-          separatorBuilder: (_, _) => const SizedBox(height: 8),
-          itemBuilder: (context, index) {
-            final menu = menus[index];
-            return BitokRecentMenuCard(
-              koreanName: menu.koreanName,
-              englishName: menu.englishName,
-              subtitle: menu.subtitle,
-              status: menu.status,
-              onTap: () => onMenuTap?.call(menu),
-            );
-          },
-        ),
+        child: isLoading
+            ? const Center(
+                child: CircularProgressIndicator(color: BitokColors.primary),
+              )
+            : ListView.separated(
+                padding: const EdgeInsets.fromLTRB(24, 12, 24, 24),
+                itemCount: menus.length,
+                separatorBuilder: (_, _) => const SizedBox(height: 8),
+                itemBuilder: (context, index) {
+                  final menu = menus[index];
+                  return BitokRecentMenuCard(
+                    koreanName: menu.koreanName,
+                    englishName: menu.englishName,
+                    subtitle: menu.subtitle,
+                    status: menu.status,
+                    onTap: () => onMenuTap?.call(menu),
+                  );
+                },
+              ),
       ),
     );
   }

@@ -32,6 +32,7 @@ class HomeScreen extends StatelessWidget {
   const HomeScreen({
     super.key,
     required this.recentChecks,
+    this.isLoading = false,
     this.onProfileTap,
     this.onCheckMenuTap,
     this.onRecentCheckTap,
@@ -39,6 +40,9 @@ class HomeScreen extends StatelessWidget {
 
   /// 최근 확인한 메뉴 목록입니다. 비어 있으면 안내 문구를 보여줍니다.
   final List<RecentCheck> recentChecks;
+
+  /// 목록을 처음 불러오는 중이면 true입니다. 목록 자리에 로딩 표시를 보여줍니다.
+  final bool isLoading;
 
   final VoidCallback? onProfileTap;
   final VoidCallback? onCheckMenuTap;
@@ -93,7 +97,21 @@ class HomeScreen extends StatelessWidget {
               ),
             ),
           ),
-          if (recentChecks.isEmpty)
+          if (isLoading)
+            SliverPadding(
+              padding: EdgeInsets.fromLTRB(
+                _horizontalPadding,
+                60,
+                _horizontalPadding,
+                contentBottomPadding,
+              ),
+              sliver: const SliverToBoxAdapter(
+                child: Center(
+                  child: CircularProgressIndicator(color: BitokColors.primary),
+                ),
+              ),
+            )
+          else if (recentChecks.isEmpty)
             SliverPadding(
               padding: EdgeInsets.fromLTRB(
                 _horizontalPadding,

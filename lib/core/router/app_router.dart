@@ -150,7 +150,9 @@ GoRouter createAppRouter({String initialLocation = AppRoutes.login}) =>
                   path: AppRoutes.home,
                   builder: (context, state) => Consumer(
                     builder: (context, ref, _) => HomeScreen(
-                      // 불러오는 중이거나 실패하면 빈 목록(No checks yet)을 보여줍니다.
+                      // 처음 불러오는 동안 로딩 표시, 실패하면 빈 목록(No checks yet)을 보여줍니다.
+                      // 저장 후 다시 불러올 때는 이전 목록을 그대로 보여줍니다.
+                      isLoading: _isFirstLoad(ref.watch(myChecksProvider)),
                       recentChecks: [
                         for (final check
                             in ref.watch(myChecksProvider).value ?? const [])
@@ -319,9 +321,10 @@ GoRouter createAppRouter({String initialLocation = AppRoutes.login}) =>
         ),
         GoRoute(
           path: AppRoutes.savedRestaurants,
-          // 불러오는 중이거나 실패하면 빈 목록을 보여줍니다.
+          // 처음 불러오는 동안 로딩 표시, 실패하면 빈 목록을 보여줍니다.
           builder: (context, state) => Consumer(
             builder: (context, ref, _) => SavedRestaurantsScreen(
+              isLoading: _isFirstLoad(ref.watch(savedRestaurantsProvider)),
               restaurants: [
                 for (final restaurant
                     in ref.watch(savedRestaurantsProvider).value ?? const [])
@@ -344,6 +347,7 @@ GoRouter createAppRouter({String initialLocation = AppRoutes.login}) =>
           // 홈 Recent Checks와 같은 My Checks 목록을 보여줍니다.
           builder: (context, state) => Consumer(
             builder: (context, ref, _) => SavedMenusScreen(
+              isLoading: _isFirstLoad(ref.watch(myChecksProvider)),
               menus: [
                 for (final check
                     in ref.watch(myChecksProvider).value ?? const [])
@@ -621,6 +625,11 @@ Widget _menuDetailPage(
   ),
   _ => ExploreLoadingScreen(title: 'Menu Detail', onBack: () => context.pop()),
 };
+
+/// 아직 한 번도 값을 받지 못한 채 불러오는 중이면 true입니다.
+/// 다시 불러오는 중(invalidate 뒤)에는 이전 값이 있으므로 false입니다.
+bool _isFirstLoad(AsyncValue<Object?> value) =>
+    value.isLoading && !value.hasValue;
 
 String? _redirectUnlessInts(GoRouterState state, List<String> keys) =>
     keys.every((key) => int.tryParse(state.pathParameters[key] ?? '') != null)
