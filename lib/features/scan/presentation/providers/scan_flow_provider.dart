@@ -69,12 +69,14 @@ class ScanFlowNotifier extends Notifier<ScanFlowState> {
     );
   }
 
-  /// 메뉴 이름(영문)을 바꿉니다.
+  /// 메뉴 이름(영문)을 바꿉니다. 이름이 실제로 바뀌면 분석에도 고친 이름을 보냅니다.
   void renameItem(String id, String englishName) {
     state = state.copyWith(
       items: [
         for (final item in state.items)
-          item.id == id ? item.copyWith(englishName: englishName) : item,
+          item.id == id && item.englishName != englishName
+              ? item.copyWith(englishName: englishName, renamed: true)
+              : item,
       ],
     );
   }
@@ -120,15 +122,9 @@ class ScanFlowNotifier extends Notifier<ScanFlowState> {
 
     final items = [
       for (final item in state.items)
-        AnalyzeItem(
-          tempId: item.id,
-          // 직접 추가한 메뉴는 메뉴판 이름이 없어서 입력한 이름으로 분석합니다.
-          rawName: item.koreanName.isEmpty ? item.englishName : item.koreanName,
-        ),
+        AnalyzeItem(tempId: item.id, rawName: item.nameForAnalysis),
     ];
-    final selectedTempIds = [
-      for (final item in state.selectedItems) item.id,
-    ];
+    final selectedTempIds = [for (final item in state.selectedItems) item.id];
     final requestKey = [
       scanId,
       for (final item in items) '${item.tempId}:${item.rawName}',

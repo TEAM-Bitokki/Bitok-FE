@@ -10,6 +10,8 @@ String scanErrorMessage(AppLocalizations l10n, Object error) {
     ErrorCode.ocrLowConfidence => l10n.scanErrorBlurry,
     ErrorCode.invalidImage => l10n.scanErrorInvalidImage,
     ErrorCode.profileRequired => l10n.scanErrorProfileRequired,
+    // 저장한 스캔은 다시 분석할 수 없어서(409), 다시 시도해도 계속 실패합니다.
+    ErrorCode.alreadyExists => l10n.scanErrorAlreadySaved,
     ErrorCode.llmUnavailable ||
     ErrorCode.llmTimeout ||
     ErrorCode.timeout => l10n.scanErrorSlow,

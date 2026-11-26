@@ -24,30 +24,43 @@ class SavedRestaurantsNotifier extends AsyncNotifier<List<RestaurantBrief>> {
   ///
   /// 화면이 바로 바뀌도록 먼저 목록을 고친 뒤 서버에 보냅니다.
   /// 서버에 아직 등록되지 않은 식당(restaurantId가 null)은 먼저 등록(POST /api/restaurants)합니다.
-  /// 실패하면 목록을 되돌리고 ApiException을 던집니다. 화면이 안내를 맡습니다.
+  /// 실패하면 이 식당만 원래대로 되돌리고 ApiException을 던집니다. 화면이 안내를 맡습니다.
+  /// (목록 전체를 되돌리면, 그사이 다른 식당을 저장·해제한 결과까지 화면에서 사라집니다)
   Future<void> toggle(RestaurantBrief restaurant) async {
     final placeId = restaurant.kakaoPlaceId;
     if (!_pending.add(placeId)) return;
+
+    // 기다리는 동안 계정이 바뀌었으면(탈퇴 등) 새 계정의 목록을 건드리지 않습니다.
+    final userId = ref.read(accountProvider)?.userId;
+    bool sameAccount() =>
+        ref.mounted && ref.read(accountProvider)?.userId == userId;
+
     try {
-      final before = await future;
-      final saved = before.any((r) => r.kakaoPlaceId == placeId);
-      if (saved) {
-        final target = before.firstWhere((r) => r.kakaoPlaceId == placeId);
-        state = AsyncData([
-          for (final r in before)
-            if (r.kakaoPlaceId != placeId) r,
-        ]);
-        await _send(before, () async {
+      final current = await future;
+      final index = current.indexWhere((r) => r.kakaoPlaceId == placeId);
+      if (index >= 0) {
+        final target = current[index];
+        _update((list) => _without(list, placeId));
+        try {
           final restaurantId = target.restaurantId ?? restaurant.restaurantId;
           if (restaurantId != null) {
             await ref
                 .read(savedRestaurantRepositoryProvider)
                 .unsave(restaurantId);
           }
-        });
+        } catch (_) {
+          if (sameAccount()) {
+            _update(
+              (list) => _contains(list, placeId)
+                  ? list
+                  : ([...list]..insert(index.clamp(0, list.length), target)),
+            );
+          }
+          rethrow;
+        }
       } else {
-        state = AsyncData([restaurant, ...before]);
-        await _send(before, () async {
+        _update((list) => [restaurant, ..._without(list, placeId)]);
+        try {
           final registered = restaurant.restaurantId != null
               ? restaurant
               : await ref
@@ -57,35 +70,37 @@ class SavedRestaurantsNotifier extends AsyncNotifier<List<RestaurantBrief>> {
               .read(savedRestaurantRepositoryProvider)
               .save(registered.restaurantId!);
           // 등록으로 받은 restaurantId가 목록에 남도록 바꿔 둡니다.
-          if (ref.mounted && !identical(registered, restaurant)) {
-            state = AsyncData([
-              for (final r in state.value ?? const <RestaurantBrief>[])
-                r.kakaoPlaceId == placeId ? registered : r,
-            ]);
+          if (sameAccount() && !identical(registered, restaurant)) {
+            _update(
+              (list) => [
+                for (final r in list)
+                  r.kakaoPlaceId == placeId ? registered : r,
+              ],
+            );
           }
-        });
+        } catch (_) {
+          if (sameAccount()) _update((list) => _without(list, placeId));
+          rethrow;
+        }
       }
     } finally {
       _pending.remove(placeId);
     }
   }
 
-  /// [request]가 실패하면 목록을 [before]로 되돌리고 예외를 다시 던집니다.
-  Future<void> _send(
-    List<RestaurantBrief> before,
-    Future<void> Function() request,
-  ) async {
-    final userId = ref.read(accountProvider)?.userId;
-    try {
-      await request();
-    } catch (_) {
-      // 기다리는 동안 계정이 바뀌었으면(탈퇴 등) 이전 계정의 목록으로 되돌리지 않습니다.
-      if (ref.mounted && ref.read(accountProvider)?.userId == userId) {
-        state = AsyncData(before);
-      }
-      rethrow;
-    }
-  }
+  void _update(List<RestaurantBrief> Function(List<RestaurantBrief>) change) =>
+      state = AsyncData(change(state.value ?? const []));
+
+  static bool _contains(List<RestaurantBrief> list, String placeId) =>
+      list.any((r) => r.kakaoPlaceId == placeId);
+
+  static List<RestaurantBrief> _without(
+    List<RestaurantBrief> list,
+    String placeId,
+  ) => [
+    for (final r in list)
+      if (r.kakaoPlaceId != placeId) r,
+  ];
 }
 
 final savedRestaurantsProvider =

@@ -230,6 +230,10 @@
   "@scanErrorProfileRequired": {
     "description": "Snackbar message when the user has no dietary profile"
   },
+  "scanErrorAlreadySaved": "This scan is already saved. Please start a new scan.",
+  "@scanErrorAlreadySaved": {
+    "description": "Snackbar message when re-analyzing a scan that was already saved"
+  },
   "scanErrorSlow": "The menu check is taking too long. Please try again.",
   "@scanErrorSlow": {
     "description": "Snackbar message when menu recognition or analysis times out"

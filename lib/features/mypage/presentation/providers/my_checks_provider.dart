@@ -71,10 +71,12 @@ class MyChecksNotifier extends AsyncNotifier<List<MenuCheck>> {
     final userId = ref.watch(accountProvider.select((a) => a?.userId));
     if (userId == null) return const [];
 
-    // watch로 두면 앱 시작 때 프로필이 처음 불러와지는 순간에도 목록을 한 번 더 요청합니다.
-    // 그래서 이미 불러온 프로필이 다른 값으로 바뀔 때(수정·저장)만 다시 불러옵니다.
+    // watch로 두면 프로필을 (다시) 불러오는 순간마다 목록도 한 번 더 요청합니다.
+    // (앱 시작, 계정이 바뀔 때 — 계정 변경은 위의 userId watch가 이미 다시 불러옵니다)
+    // 그래서 불러오기가 끝난 프로필이 다른 값으로 바로 바뀔 때, 즉 수정·저장했을 때만 다시 불러옵니다.
     ref.listen(dietaryProfileProvider, (previous, next) {
-      final before = previous?.value;
+      if (previous == null || previous.isLoading || next.isLoading) return;
+      final before = previous.value;
       final after = next.value;
       if (before != null && after != null && !identical(before, after)) {
         ref.invalidateSelf();

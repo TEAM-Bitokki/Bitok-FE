@@ -4,6 +4,7 @@ class ScanMenuItem {
     required this.id,
     required this.koreanName,
     required this.englishName,
+    this.renamed = false,
   });
 
   /// 목록 안에서 메뉴를 구분하는 값입니다.
@@ -16,11 +17,25 @@ class ScanMenuItem {
   /// 사용자에게 보여주는 영문 이름입니다.
   final String englishName;
 
-  ScanMenuItem copyWith({String? koreanName, String? englishName}) {
+  /// REST-04에서 사용자가 이름을 고쳤으면 true입니다.
+  /// OCR이 잘못 읽은 이름을 고친 것이므로, 분석에는 메뉴판 이름 대신 고친 이름을 보냅니다.
+  final bool renamed;
+
+  /// analyze 요청의 raw_name으로 보낼 이름입니다.
+  /// 고쳤거나 직접 추가한 메뉴는 입력한 이름, 그 밖에는 메뉴판에서 읽은 이름입니다.
+  String get nameForAnalysis =>
+      renamed || koreanName.isEmpty ? englishName : koreanName;
+
+  ScanMenuItem copyWith({
+    String? koreanName,
+    String? englishName,
+    bool? renamed,
+  }) {
     return ScanMenuItem(
       id: id,
       koreanName: koreanName ?? this.koreanName,
       englishName: englishName ?? this.englishName,
+      renamed: renamed ?? this.renamed,
     );
   }
 }
