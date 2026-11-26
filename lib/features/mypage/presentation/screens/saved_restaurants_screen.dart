@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/widget_previews.dart';
 
+import '../../../../common/widgets/bitok_empty_state.dart';
 import '../../../../common/widgets/bitok_header.dart';
 import '../../../../common/widgets/bitok_menu_card.dart';
 import '../../../../core/design_system/bitok_colors.dart';
@@ -50,6 +51,15 @@ class SavedRestaurantsScreen extends StatelessWidget {
         child: isLoading
             ? const Center(
                 child: CircularProgressIndicator(color: BitokColors.primary),
+              )
+            : restaurants.isEmpty
+            // 홈 Recent checks의 빈 상태와 같은 위치(목록 시작점 아래)에 둡니다.
+            ? const Align(
+                alignment: Alignment.topCenter,
+                child: Padding(
+                  padding: EdgeInsets.fromLTRB(24, 45, 24, 24),
+                  child: BitokEmptyState(message: 'No saved restaurants'),
+                ),
               )
             : ListView.separated(
                 padding: const EdgeInsets.fromLTRB(24, 12, 24, 24),
