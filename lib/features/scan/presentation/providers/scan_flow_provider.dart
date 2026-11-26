@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../mypage/data/repositories/my_checks_repository.dart';
@@ -11,13 +12,19 @@ import 'scan_flow_state.dart';
 
 /// 메뉴 스캔 플로우의 상태(이미지, 인식한 메뉴 목록, 선택한 메뉴)를 관리합니다.
 class ScanFlowNotifier extends Notifier<ScanFlowState> {
+  /// 분석 요청에 보낼 수 있는 메뉴 목록의 최대 개수입니다(서버 제한).
+  static const int maxItems = 100;
+
   int _nextId = 0;
 
   /// 가장 최근에 인식을 요청한 이미지 경로입니다. 늦게 도착한 이전 응답을 버릴 때 씁니다.
   String? _recognizingPath;
 
-  /// 마지막으로 성공한 분석 요청(목록·선택)입니다. 같은 요청을 다시 보내지 않을 때 씁니다.
-  String? _analyzedKey;
+  /// 마지막으로 성공한 분석 요청입니다. 같은 요청을 다시 보내지 않을 때 씁니다.
+  _AnalyzeRequestKey? _analyzedKey;
+
+  /// 분석 요청을 시작할 때마다 1씩 늘어납니다. 가장 최근 요청의 응답만 반영할 때 씁니다.
+  int _analyzeSeq = 0;
 
   @override
   ScanFlowState build() => const ScanFlowState();
@@ -96,8 +103,12 @@ class ScanFlowNotifier extends Notifier<ScanFlowState> {
     state = state.copyWith(selectedIds: selectedIds);
   }
 
-  /// 인식되지 않은 메뉴를 직접 추가합니다.
+  /// 메뉴를 더 추가할 수 있으면 true입니다. 목록이 [maxItems]개면 false입니다.
+  bool get canAddItem => state.items.length < maxItems;
+
+  /// 인식되지 않은 메뉴를 직접 추가합니다. 이미 [maxItems]개면 추가하지 않습니다.
   void addItem(String englishName) {
+    if (!canAddItem) return;
     state = state.copyWith(
       items: [
         ...state.items,
@@ -113,6 +124,9 @@ class ScanFlowNotifier extends Notifier<ScanFlowState> {
   /// (REST-06 → REST-05로 돌아갔다가 그대로 Next를 누르는 경우)
   /// 다시 분석해도 같은 질문 id에 대한 답변은 유지합니다.
   ///
+  /// 분석 중에 뒤로 갔다가 다시 분석하면 요청이 겹칠 수 있습니다. 이때는 가장 최근에 시작한
+  /// 요청의 응답만 반영하고, 그 전 요청의 응답은 (늦게 도착해도) 버립니다.
+  ///
   /// 실패하면 상태를 바꾸지 않고 ApiException을 던집니다. 화면이 안내를 맡습니다.
   Future<void> analyze() async {
     final scanId = state.scanId;
@@ -125,14 +139,14 @@ class ScanFlowNotifier extends Notifier<ScanFlowState> {
         AnalyzeItem(tempId: item.id, rawName: item.nameForAnalysis),
     ];
     final selectedTempIds = [for (final item in state.selectedItems) item.id];
-    final requestKey = [
-      scanId,
-      for (final item in items) '${item.tempId}:${item.rawName}',
-      '|',
-      ...selectedTempIds,
-    ].join(',');
+    final requestKey = _AnalyzeRequestKey(
+      scanId: scanId,
+      items: [for (final item in items) (item.tempId, item.rawName)],
+      selectedTempIds: selectedTempIds,
+    );
     if (state.menus.isNotEmpty && requestKey == _analyzedKey) return;
 
+    final seq = ++_analyzeSeq;
     final response = await ref
         .read(scanRepositoryProvider)
         .analyze(
@@ -140,8 +154,8 @@ class ScanFlowNotifier extends Notifier<ScanFlowState> {
           items: items,
           selectedTempIds: selectedTempIds,
         );
-    // 기다리는 동안 새 스캔을 시작했으면 이 응답은 버립니다.
-    if (!ref.mounted || state.scanId != scanId) return;
+    // 기다리는 동안 새 스캔을 시작했거나 더 최근 분석 요청이 있으면 이 응답은 버립니다.
+    if (!ref.mounted || state.scanId != scanId || seq != _analyzeSeq) return;
 
     _analyzedKey = requestKey;
     final questions = response.questions.map(StaffQuestion.fromResponse);
@@ -235,3 +249,33 @@ class ScanFlowNotifier extends Notifier<ScanFlowState> {
 final scanFlowProvider = NotifierProvider<ScanFlowNotifier, ScanFlowState>(
   ScanFlowNotifier.new,
 );
+
+/// 분석 요청 하나를 구분하는 값입니다. 필드를 하나하나 비교합니다.
+/// (문자열로 이어 붙여 비교하면 메뉴 이름에 쉼표·콜론이 있을 때 서로 다른 요청이 같다고 판단될 수 있습니다)
+class _AnalyzeRequestKey {
+  const _AnalyzeRequestKey({
+    required this.scanId,
+    required this.items,
+    required this.selectedTempIds,
+  });
+
+  final int scanId;
+
+  /// (temp_id, raw_name) 목록입니다.
+  final List<(String, String)> items;
+  final List<String> selectedTempIds;
+
+  @override
+  bool operator ==(Object other) =>
+      other is _AnalyzeRequestKey &&
+      other.scanId == scanId &&
+      listEquals(other.items, items) &&
+      listEquals(other.selectedTempIds, selectedTempIds);
+
+  @override
+  int get hashCode => Object.hash(
+    scanId,
+    Object.hashAll(items),
+    Object.hashAll(selectedTempIds),
+  );
+}

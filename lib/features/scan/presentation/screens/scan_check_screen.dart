@@ -5,8 +5,10 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 import '../../../../common/widgets/bitok_button.dart';
 import '../../../../common/widgets/bitok_header.dart';
 import '../../../../common/widgets/bitok_ocr_menu.dart';
+import '../../../../common/widgets/saving_state_mixin.dart';
 import '../../../../core/design_system/bitok_colors.dart';
 import '../../../../core/design_system/bitok_text_styles.dart';
+import '../../../../l10n/generated/app_localizations.dart';
 import '../../data/models/scan_menu_item.dart';
 import '../providers/scan_flow_provider.dart';
 import '../providers/scan_flow_state.dart';
@@ -65,8 +67,19 @@ class ScanCheckScreen extends ConsumerWidget {
                     ),
                   ),
                   _AddItemAction(
-                    onTap: () =>
-                        ScanAddItemSheet.show(context, onAdd: notifier.addItem),
+                    onTap: () {
+                      // 분석 요청에는 메뉴 목록을 최대 100개까지 보낼 수 있습니다.
+                      if (!notifier.canAddItem) {
+                        showMessageSnackBar(
+                          context,
+                          AppLocalizations.of(
+                            context,
+                          ).scanMaxItems(ScanFlowNotifier.maxItems),
+                        );
+                        return;
+                      }
+                      ScanAddItemSheet.show(context, onAdd: notifier.addItem);
+                    },
                   ),
                 ],
               ),

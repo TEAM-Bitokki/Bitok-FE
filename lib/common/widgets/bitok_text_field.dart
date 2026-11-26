@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter/widget_previews.dart';
 
 import '../../core/design_system/bitok_colors.dart';
@@ -30,6 +31,7 @@ class BitokTextField extends StatelessWidget {
     this.onSubmitted,
     this.enabled = true,
     this.autofocus = false,
+    this.maxLength,
   });
 
   /// 입력 텍스트를 읽거나 바꿀 때 사용하는 컨트롤러입니다.
@@ -64,6 +66,9 @@ class BitokTextField extends StatelessWidget {
 
   /// true면 화면에 나타날 때 자동으로 포커스를 받습니다. 기본값은 false입니다.
   final bool autofocus;
+
+  /// 입력할 수 있는 최대 글자 수입니다. 넘는 입력은 받지 않습니다(글자 수 표시는 없음). null이면 제한 없음.
+  final int? maxLength;
 
   static const double height = 52;
   static const double _horizontalPadding = 18;
@@ -103,6 +108,10 @@ class BitokTextField extends StatelessWidget {
               textInputAction: textInputAction,
               onChanged: onChanged,
               onSubmitted: onSubmitted,
+              inputFormatters: [
+                if (maxLength case final max?)
+                  LengthLimitingTextInputFormatter(max),
+              ],
               cursorColor: BitokColors.primary,
               style: BitokTextStyles.inputText.copyWith(
                 color: BitokColors.text,

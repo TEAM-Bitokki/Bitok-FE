@@ -36,7 +36,7 @@ class SavedRestaurantsNotifier extends AsyncNotifier<List<RestaurantBrief>> {
         ref.mounted && ref.read(accountProvider)?.userId == userId;
 
     try {
-      final current = await future;
+      final current = await _currentList();
       final index = current.indexWhere((r) => r.kakaoPlaceId == placeId);
       if (index >= 0) {
         final target = current[index];
@@ -86,6 +86,19 @@ class SavedRestaurantsNotifier extends AsyncNotifier<List<RestaurantBrief>> {
     } finally {
       _pending.remove(placeId);
     }
+  }
+
+  /// 지금 저장한 식당 목록입니다.
+  ///
+  /// 목록을 불러오지 못한 상태면 여기서 다시 불러옵니다. 실패한 provider의 [future]는 이전 오류를
+  /// 그대로 돌려주므로, 그대로 두면 네트워크가 돌아와도 북마크를 누를 때마다 같은 오류로 끝납니다.
+  /// 다시 불러오기도 실패하면 ApiException을 던집니다.
+  Future<List<RestaurantBrief>> _currentList() async {
+    if (state.hasValue) return state.requireValue;
+    if (!state.hasError) return future; // 처음 불러오는 중
+    final list = await ref.read(savedRestaurantRepositoryProvider).list();
+    if (ref.mounted) state = AsyncData(list);
+    return list;
   }
 
   void _update(List<RestaurantBrief> Function(List<RestaurantBrief>) change) =>

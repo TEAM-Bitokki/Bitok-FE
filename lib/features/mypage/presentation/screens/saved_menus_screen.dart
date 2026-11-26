@@ -7,6 +7,7 @@ import '../../../../common/widgets/bitok_load_more.dart';
 import '../../../../common/widgets/bitok_menu_card.dart';
 import '../../../../common/widgets/bitok_status_chip.dart';
 import '../../../../core/design_system/bitok_colors.dart';
+import '../../../../l10n/generated/app_localizations.dart';
 
 class SavedMenu {
   const SavedMenu({
@@ -31,6 +32,8 @@ class SavedMenusScreen extends StatefulWidget {
     super.key,
     required this.menus,
     this.isLoading = false,
+    this.loadFailed = false,
+    this.onRetry,
     this.loadingMore = false,
     this.loadMoreFailed = false,
     this.onLoadMore,
@@ -43,6 +46,11 @@ class SavedMenusScreen extends StatefulWidget {
 
   /// 목록을 처음 불러오는 중이면 true입니다. 목록 대신 로딩 표시를 보여줍니다.
   final bool isLoading;
+
+  /// 목록을 불러오지 못했으면 true입니다. 빈 화면 대신 안내 문구와 [onRetry] 버튼을 보여줍니다.
+  /// (저장한 메뉴가 없는 것과 불러오지 못한 것을 구분합니다)
+  final bool loadFailed;
+  final VoidCallback? onRetry;
 
   /// 다음 페이지를 불러오는 중이면 true입니다. 목록 끝에 로딩 표시를 보여줍니다.
   final bool loadingMore;
@@ -85,11 +93,19 @@ class _SavedMenusScreenState extends State<SavedMenusScreen>
               )
             : menus.isEmpty
             // 홈 Recent checks의 빈 상태와 같은 위치(목록 시작점 아래)에 둡니다.
-            ? const Align(
+            ? Align(
                 alignment: Alignment.topCenter,
                 child: Padding(
-                  padding: EdgeInsets.fromLTRB(24, 45, 24, 24),
-                  child: BitokEmptyState(message: 'No saved menus'),
+                  padding: const EdgeInsets.fromLTRB(24, 45, 24, 24),
+                  child: widget.loadFailed
+                      ? BitokLoadMoreFooter(
+                          loading: false,
+                          failed: true,
+                          onRetry: widget.onRetry,
+                        )
+                      : BitokEmptyState(
+                          message: AppLocalizations.of(context).savedMenusEmpty,
+                        ),
                 ),
               )
             : ListView.separated(

@@ -50,7 +50,10 @@ class _ScanAskStaffScreenState extends ConsumerState<ScanAskStaffScreen> {
 
   /// 답변이 서버에 기록된 뒤에 다음 질문으로 넘어가고, 마지막 질문이면 [onComplete]를 기다립니다.
   /// 실패하면 안내 스낵바를 띄우고 같은 질문에 머뭅니다. (다시 누르면 같은 답으로 덮어씁니다)
-  Future<void> _answer(List<StaffQuestion> questions, StaffAnswer answer) async {
+  Future<void> _answer(
+    List<StaffQuestion> questions,
+    StaffAnswer answer,
+  ) async {
     if (_submitting) return;
     setState(() => _submitting = true);
     try {
@@ -230,4 +233,10 @@ class _PreviewScanFlowNotifier extends ScanFlowNotifier {
       ),
     ],
   );
+
+  // 미리보기에서는 서버에 보내지 않고 답변만 기록해, 버튼을 눌러 다음 질문으로 넘어갈 수 있게 합니다.
+  @override
+  Future<void> answer(int questionId, StaffAnswer answer) async {
+    state = state.copyWith(answers: {...state.answers, questionId: answer});
+  }
 }

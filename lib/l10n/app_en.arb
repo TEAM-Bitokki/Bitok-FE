@@ -230,6 +230,23 @@
   "@scanErrorProfileRequired": {
     "description": "Snackbar message when the user has no dietary profile"
   },
+  "scanMaxItems": "You can add up to {count} menu items.",
+  "@scanMaxItems": {
+    "description": "Snackbar message when the user tries to add a menu item beyond the limit",
+    "placeholders": {
+      "count": {
+        "type": "int"
+      }
+    }
+  },
+  "savedMenusEmpty": "No saved menus",
+  "@savedMenusEmpty": {
+    "description": "Empty state message on the Saved Menus screen"
+  },
+  "savedRestaurantsEmpty": "No saved restaurants",
+  "@savedRestaurantsEmpty": {
+    "description": "Empty state message on the Saved Restaurants screen"
+  },
   "scanErrorAlreadySaved": "This scan is already saved. Please start a new scan.",
   "@scanErrorAlreadySaved": {
     "description": "Snackbar message when re-analyzing a scan that was already saved"

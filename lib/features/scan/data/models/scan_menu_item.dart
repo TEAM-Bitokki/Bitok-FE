@@ -7,6 +7,9 @@ class ScanMenuItem {
     this.renamed = false,
   });
 
+  /// 메뉴 이름의 최대 글자 수입니다. 분석 요청의 raw_name이 1~100자라서 입력도 여기까지만 받습니다.
+  static const int maxNameLength = 100;
+
   /// 목록 안에서 메뉴를 구분하는 값입니다.
   /// 인식한 메뉴는 서버의 temp_id(예: i1)를 그대로 쓰고, analyze 요청의 temp_id로 보냅니다.
   final String id;

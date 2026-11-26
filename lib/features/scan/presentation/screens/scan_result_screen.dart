@@ -88,7 +88,11 @@ class _ScanResultScreenState extends ConsumerState<ScanResultScreen>
                       koreanName: menu.nameKo,
                       englishName: menu.nameEn,
                       status: flow.statusOf(menu),
-                      onViewDetailsTap: () => onViewDetails?.call(menu),
+                      // 저장하는 동안에는 상세로 가지 않게 막습니다.
+                      // (상세를 보는 중에 저장이 끝나면 그 위에 저장 완료 화면이 열립니다)
+                      onViewDetailsTap: saving
+                          ? null
+                          : () => onViewDetails?.call(menu),
                     );
                   },
                 ),

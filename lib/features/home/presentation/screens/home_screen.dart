@@ -34,6 +34,8 @@ class HomeScreen extends StatefulWidget {
     super.key,
     required this.recentChecks,
     this.isLoading = false,
+    this.loadFailed = false,
+    this.onRetry,
     this.loadingMore = false,
     this.loadMoreFailed = false,
     this.onLoadMore,
@@ -48,6 +50,10 @@ class HomeScreen extends StatefulWidget {
 
   /// 목록을 처음 불러오는 중이면 true입니다. 목록 자리에 로딩 표시를 보여줍니다.
   final bool isLoading;
+
+  /// 목록을 불러오지 못했으면 true입니다. 'No checks yet' 대신 안내 문구와 [onRetry] 버튼을 보여줍니다.
+  final bool loadFailed;
+  final VoidCallback? onRetry;
 
   /// 다음 페이지를 불러오는 중이면 true입니다. 목록 끝에 로딩 표시를 보여줍니다.
   final bool loadingMore;
@@ -136,6 +142,22 @@ class _HomeScreenState extends State<HomeScreen> with LoadMoreOnScroll {
               sliver: const SliverToBoxAdapter(
                 child: Center(
                   child: CircularProgressIndicator(color: BitokColors.primary),
+                ),
+              ),
+            )
+          else if (recentChecks.isEmpty && widget.loadFailed)
+            SliverPadding(
+              padding: EdgeInsets.fromLTRB(
+                _horizontalPadding,
+                45,
+                _horizontalPadding,
+                contentBottomPadding,
+              ),
+              sliver: SliverToBoxAdapter(
+                child: BitokLoadMoreFooter(
+                  loading: false,
+                  failed: true,
+                  onRetry: widget.onRetry,
                 ),
               ),
             )

@@ -6,6 +6,7 @@ import '../../../../common/widgets/bitok_modal.dart';
 import '../../../../common/widgets/bitok_text_field.dart';
 import '../../../../core/design_system/bitok_colors.dart';
 import '../../../../core/design_system/bitok_text_styles.dart';
+import '../../data/models/scan_menu_item.dart';
 
 /// REST-04 · 메뉴 이름을 고치거나 메뉴를 지우는 바텀시트입니다.
 ///
@@ -179,6 +180,8 @@ class _MenuNameField extends StatelessWidget {
           controller: controller,
           hintText: 'Enter menu name',
           textInputAction: TextInputAction.done,
+          // 분석 요청의 raw_name은 1~100자입니다.
+          maxLength: ScanMenuItem.maxNameLength,
         ),
       ],
     );
