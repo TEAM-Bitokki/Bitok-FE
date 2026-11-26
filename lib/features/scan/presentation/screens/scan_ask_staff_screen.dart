@@ -23,7 +23,9 @@ class ScanAskStaffScreen extends ConsumerStatefulWidget {
   const ScanAskStaffScreen({super.key, this.onBack, this.onComplete});
 
   final VoidCallback? onBack;
-  final VoidCallback? onComplete;
+
+  /// 마지막 질문에 답한 뒤 호출됩니다(최종 결과 요청). 끝날 때까지 버튼을 막습니다.
+  final Future<void> Function()? onComplete;
 
   @override
   ConsumerState<ScanAskStaffScreen> createState() => _ScanAskStaffScreenState();
@@ -46,8 +48,8 @@ class _ScanAskStaffScreenState extends ConsumerState<ScanAskStaffScreen> {
     }
   }
 
-  /// 답변이 서버에 기록된 뒤에 다음 질문으로 넘어갑니다.
-  /// 실패하면 안내 스낵바를 띄우고 같은 질문에 머뭅니다.
+  /// 답변이 서버에 기록된 뒤에 다음 질문으로 넘어가고, 마지막 질문이면 [onComplete]를 기다립니다.
+  /// 실패하면 안내 스낵바를 띄우고 같은 질문에 머뭅니다. (다시 누르면 같은 답으로 덮어씁니다)
   Future<void> _answer(List<StaffQuestion> questions, StaffAnswer answer) async {
     if (_submitting) return;
     setState(() => _submitting = true);
@@ -55,22 +57,20 @@ class _ScanAskStaffScreenState extends ConsumerState<ScanAskStaffScreen> {
       await ref
           .read(scanFlowProvider.notifier)
           .answer(questions[_index].id, answer);
+      if (_index < questions.length - 1) {
+        if (mounted) setState(() => _index++);
+      } else {
+        await widget.onComplete?.call();
+      }
     } catch (e) {
       if (mounted) {
-        setState(() => _submitting = false);
         showMessageSnackBar(
           context,
           scanErrorMessage(AppLocalizations.of(context), e),
         );
       }
-      return;
-    }
-    if (!mounted) return;
-    setState(() => _submitting = false);
-    if (_index < questions.length - 1) {
-      setState(() => _index++);
-    } else {
-      widget.onComplete?.call();
+    } finally {
+      if (mounted) setState(() => _submitting = false);
     }
   }
 

@@ -551,11 +551,13 @@ GoRouter createAppRouter({String initialLocation = AppRoutes.login}) =>
             // 분석에 실패하면 예외가 화면까지 올라가 안내 스낵바가 뜹니다.
             onNext: () async {
               final container = ProviderScope.containerOf(context);
-              await container.read(scanFlowProvider.notifier).analyze();
+              final scan = container.read(scanFlowProvider.notifier);
+              await scan.analyze();
               if (!context.mounted) return;
               if (container.read(scanFlowProvider).questions.isEmpty) {
-                // 직원에게 확인할 질문이 없으면 REST-06을 건너뜁니다.
-                context.push(AppRoutes.scanResult);
+                // 직원에게 확인할 질문이 없으면 REST-06을 건너뛰고 바로 최종 결과를 받습니다.
+                await scan.loadResult();
+                if (context.mounted) context.push(AppRoutes.scanResult);
                 return;
               }
               context.push(AppRoutes.scanAskStaff);
@@ -566,7 +568,13 @@ GoRouter createAppRouter({String initialLocation = AppRoutes.login}) =>
           path: AppRoutes.scanAskStaff,
           builder: (context, state) => ScanAskStaffScreen(
             onBack: () => context.pop(),
-            onComplete: () => context.push(AppRoutes.scanResult),
+            // 마지막 답변 뒤 최종 결과를 받습니다. 실패하면 화면에 안내 스낵바가 뜹니다.
+            onComplete: () async {
+              await ProviderScope.containerOf(
+                context,
+              ).read(scanFlowProvider.notifier).loadResult();
+              if (context.mounted) context.push(AppRoutes.scanResult);
+            },
           ),
         ),
         GoRoute(
@@ -580,18 +588,15 @@ GoRouter createAppRouter({String initialLocation = AppRoutes.login}) =>
               if (context.mounted) context.push(AppRoutes.scanSaved);
             },
             onFinish: () => context.go(AppRoutes.home),
-            // TODO: 최종 결과 연동 때 menu.dishId로 restaurantMenuDetail을 엽니다.
+            // 스캔한 식당의 메뉴 상세('/restaurant/:id/menu/:dishId')를 엽니다.
+            // 스캔은 항상 식당 선택(REST-01)에서 시작하므로 restaurantId가 있습니다.
             onViewDetails: (menu) {
-              // 결과 화면의 판정과 걸린 재료를 상세에도 그대로 보여줍니다.
-              final scan = ProviderScope.containerOf(
+              final restaurantId = ProviderScope.containerOf(
                 context,
-              ).read(scanFlowProvider);
+              ).read(scanFlowProvider).restaurant?.restaurantId;
+              if (restaurantId == null) return;
               context.push(
-                AppRoutes.menuDetailOf(
-                  mockMenuIdOf(menu.nameEn),
-                  status: scan.statusOf(menu),
-                  checkedIngredients: scan.checkedIngredientsOf(menu),
-                ),
+                AppRoutes.restaurantMenuDetailOf(restaurantId, menu.dishId),
               );
             },
           ),

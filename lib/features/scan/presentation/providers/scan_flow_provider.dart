@@ -183,6 +183,24 @@ class ScanFlowNotifier extends Notifier<ScanFlowState> {
     state = state.copyWith(answers: {...state.answers, questionId: answer});
   }
 
+  /// 직원 응답을 반영한 최종 판정(GET /api/scans/{scan_id}/result)으로 [ScanFlowState.menus]를 바꿉니다.
+  ///
+  /// 모든 질문에 답한 뒤(질문이 없으면 분석 직후) REST-07로 가기 전에 호출합니다.
+  /// 확인하지 않은 차단 성분이 남아 있으면 safe가 나오지 않고, '모르겠어요'는 not_sure가 됩니다.
+  ///
+  /// 실패하면 상태를 바꾸지 않고 ApiException을 던집니다. 화면이 안내를 맡습니다.
+  Future<void> loadResult() async {
+    final scanId = state.scanId;
+    if (scanId == null) {
+      throw StateError('loadResult()는 analyze()가 성공한 뒤에 호출해야 합니다.');
+    }
+
+    final result = await ref.read(scanRepositoryProvider).result(scanId);
+    if (!ref.mounted || state.scanId != scanId) return;
+
+    state = state.copyWith(menus: result.menus);
+  }
+
   /// REST-07 결과를 My Checks에 저장합니다.
   ///
   /// 분석한 메뉴마다 확인 결과가 한 건씩 저장되어 홈 Recent Checks와 Saved Menus에 나타납니다.
