@@ -208,7 +208,11 @@
   },
   "scanRecognizingHint": "This can take up to 30 seconds.",
   "@scanRecognizingHint": {
-    "description": "Shown over the photo while the menu is being recognized"
+    "description": "Shown while the menu is being recognized or analyzed"
+  },
+  "scanAnalyzing": "Analyzing menus…",
+  "@scanAnalyzing": {
+    "description": "Button label while the selected menus are being analyzed"
   },
   "scanErrorNoMenu": "We couldn’t find any menu items. Please retake the photo.",
   "@scanErrorNoMenu": {

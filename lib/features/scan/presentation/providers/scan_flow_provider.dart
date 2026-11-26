@@ -2,6 +2,7 @@ import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../explore/presentation/models/mock_menu_catalog.dart';
 import '../../../mypage/presentation/providers/my_checks_provider.dart';
+import '../../data/models/analyze_request.dart';
 import '../../data/models/scan_menu_item.dart';
 import '../../data/models/scan_restaurant.dart';
 import '../../data/models/staff_question.dart';
@@ -14,6 +15,9 @@ class ScanFlowNotifier extends Notifier<ScanFlowState> {
 
   /// 가장 최근에 인식을 요청한 이미지 경로입니다. 늦게 도착한 이전 응답을 버릴 때 씁니다.
   String? _recognizingPath;
+
+  /// 마지막으로 성공한 분석 요청(목록·선택)입니다. 같은 요청을 다시 보내지 않을 때 씁니다.
+  String? _analyzedKey;
 
   @override
   ScanFlowState build() => const ScanFlowState();
@@ -100,31 +104,55 @@ class ScanFlowNotifier extends Notifier<ScanFlowState> {
     );
   }
 
-  /// REST-05에서 고른 메뉴를 분석해 직원에게 확인할 질문을 만듭니다.
+  /// REST-05에서 고른 메뉴를 서버(POST /api/scans/{scan_id}/analyze)에서 분석합니다.
   ///
-  /// 고른 메뉴마다 질문이 한 개씩 만들어집니다(고르지 않은 메뉴는 질문하지 않습니다).
-  /// 이미 답한 메뉴의 답변은 유지합니다.
-  /// (REST-06 → REST-05로 돌아가 선택을 바꾼 뒤 다시 Next를 누르는 경우)
+  /// 메뉴별 판정([ScanFlowState.menus])과 직원에게 확인할 질문(0~5개)을 받습니다.
+  /// 목록과 선택이 지난번 분석과 같으면 다시 요청하지 않습니다.
+  /// (REST-06 → REST-05로 돌아갔다가 그대로 Next를 누르는 경우)
+  /// 다시 분석해도 같은 질문 id에 대한 답변은 유지합니다.
+  ///
+  /// 실패하면 상태를 바꾸지 않고 ApiException을 던집니다. 화면이 안내를 맡습니다.
   Future<void> analyze() async {
-    // TODO: 메뉴 분석 API를 연결하면 응답으로 메뉴별 확인할 재료를 채웁니다.
-    // 연동 전까지는 임시 데이터(_mockIngredientsToCheck)로 질문을 만듭니다.
-    final questions = [
-      for (final item in state.selectedItems)
-        StaffQuestion(
-          itemId: item.id,
-          // 직접 추가한 메뉴는 한글 이름이 없어서 입력한 이름으로 질문합니다.
-          menuKoreanName: item.koreanName.isEmpty
-              ? item.englishName
-              : item.koreanName,
-          menuEnglishName: item.englishName,
-          ingredients:
-              _mockIngredientsToCheck[item.koreanName] ??
-              _mockDefaultIngredients,
+    final scanId = state.scanId;
+    if (scanId == null) {
+      throw StateError('analyze()는 recognize()가 성공한 뒤에 호출해야 합니다.');
+    }
+
+    final items = [
+      for (final item in state.items)
+        AnalyzeItem(
+          tempId: item.id,
+          // 직접 추가한 메뉴는 메뉴판 이름이 없어서 입력한 이름으로 분석합니다.
+          rawName: item.koreanName.isEmpty ? item.englishName : item.koreanName,
         ),
     ];
+    final selectedTempIds = [
+      for (final item in state.selectedItems) item.id,
+    ];
+    final requestKey = [
+      scanId,
+      for (final item in items) '${item.tempId}:${item.rawName}',
+      '|',
+      ...selectedTempIds,
+    ].join(',');
+    if (state.menus.isNotEmpty && requestKey == _analyzedKey) return;
+
+    final response = await ref
+        .read(scanRepositoryProvider)
+        .analyze(
+          scanId: scanId,
+          items: items,
+          selectedTempIds: selectedTempIds,
+        );
+    // 기다리는 동안 새 스캔을 시작했으면 이 응답은 버립니다.
+    if (!ref.mounted || state.scanId != scanId) return;
+
+    _analyzedKey = requestKey;
+    final questions = response.questions.map(StaffQuestion.fromResponse);
     final questionIds = questions.map((question) => question.id).toSet();
     state = state.copyWith(
-      questions: questions,
+      menus: response.menus,
+      questions: questions.toList(),
       answers: Map.fromEntries(
         state.answers.entries.where((e) => questionIds.contains(e.key)),
       ),
@@ -132,13 +160,13 @@ class ScanFlowNotifier extends Notifier<ScanFlowState> {
   }
 
   /// REST-06에서 직원의 답변을 기록합니다.
-  void answer(String questionId, StaffAnswer answer) {
+  void answer(int questionId, StaffAnswer answer) {
     state = state.copyWith(answers: {...state.answers, questionId: answer});
   }
 
   /// REST-07 결과를 My Checks에 저장합니다.
   ///
-  /// 고른 메뉴마다 확인 결과가 한 건씩 저장되어 홈 Recent Checks와 Saved Menus에 나타납니다.
+  /// 분석한 메뉴마다 확인 결과가 한 건씩 저장되어 홈 Recent Checks와 Saved Menus에 나타납니다.
   /// 이미 저장한 결과를 다시 저장하면(REST-08 → REST-07로 돌아온 경우) 중복으로 추가하지 않습니다.
   Future<void> save() async {
     if (state.savedAt != null) return;
@@ -146,17 +174,17 @@ class ScanFlowNotifier extends Notifier<ScanFlowState> {
     final checks = ref.read(myChecksProvider.notifier);
     final now = DateTime.now();
     checks.addAll([
-      for (final item in state.selectedItems)
+      for (final menu in state.menus)
         MenuCheck(
           id: checks.newId(),
-          // TODO: 메뉴 분석 API가 메뉴 id를 주면 그 값을 씁니다.
-          menuId: mockMenuIdOf(item.englishName),
-          koreanName: item.koreanName,
-          englishName: item.englishName,
+          // TODO: 메뉴 상세를 dish_id로 열게 되면 그 값을 씁니다.
+          menuId: mockMenuIdOf(menu.nameEn),
+          koreanName: menu.nameKo,
+          englishName: menu.nameEn,
           restaurantName: state.restaurant?.name ?? '',
-          status: state.statusOf(item.id),
+          status: state.statusOf(menu),
           checkedAt: now,
-          checkedIngredients: state.checkedIngredientsOf(item.id),
+          checkedIngredients: state.checkedIngredientsOf(menu),
         ),
     ]);
     state = state.copyWith(savedAt: now);
@@ -178,18 +206,3 @@ class ScanFlowNotifier extends Notifier<ScanFlowState> {
 final scanFlowProvider = NotifierProvider<ScanFlowNotifier, ScanFlowState>(
   ScanFlowNotifier.new,
 );
-
-// TODO: 메뉴 분석 API 연동 후 삭제합니다. 메뉴(한글 이름)별로 직원에게 확인할 재료입니다.
-const Map<String, List<StaffCheckIngredient>> _mockIngredientsToCheck = {
-  '김치찌개': [
-    StaffCheckIngredient(koreanName: '새우', englishName: 'shrimp'),
-    StaffCheckIngredient(koreanName: '멸치', englishName: 'anchovy'),
-  ],
-  '불고기': [StaffCheckIngredient(koreanName: '고기', englishName: 'meat')],
-};
-
-// TODO: 메뉴 분석 API 연동 후 삭제합니다.
-// 위 표에 없는 메뉴(직접 추가한 메뉴 포함)에 쓰는 기본 재료입니다.
-const List<StaffCheckIngredient> _mockDefaultIngredients = [
-  StaffCheckIngredient(koreanName: '새우', englishName: 'shrimp'),
-];

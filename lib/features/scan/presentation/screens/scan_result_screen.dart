@@ -7,8 +7,7 @@ import '../../../../common/widgets/bitok_header.dart';
 import '../../../../common/widgets/bitok_menu_card.dart';
 import '../../../../core/design_system/bitok_colors.dart';
 import '../../../../core/design_system/bitok_text_styles.dart';
-import '../../data/models/scan_menu_item.dart';
-import '../../data/models/staff_question.dart';
+import '../../data/models/analyzed_menu.dart';
 import '../providers/scan_flow_provider.dart';
 import '../providers/scan_flow_state.dart';
 
@@ -27,14 +26,14 @@ class ScanResultScreen extends ConsumerWidget {
   final VoidCallback? onBack;
   final VoidCallback? onSave;
   final VoidCallback? onFinish;
-  final ValueChanged<ScanMenuItem>? onViewDetails;
+  final ValueChanged<AnalyzedMenu>? onViewDetails;
 
   static const double _horizontalPadding = 24;
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final flow = ref.watch(scanFlowProvider);
-    final items = flow.selectedItems;
+    final menus = flow.menus;
 
     return Scaffold(
       backgroundColor: BitokColors.white,
@@ -68,16 +67,16 @@ class ScanResultScreen extends ConsumerWidget {
               Expanded(
                 child: ListView.separated(
                   padding: EdgeInsets.zero,
-                  itemCount: items.length,
+                  itemCount: menus.length,
                   separatorBuilder: (_, _) => const SizedBox(height: 8),
                   itemBuilder: (context, index) {
-                    final item = items[index];
+                    final menu = menus[index];
                     return BitokMenuDetailCard(
-                      key: ValueKey(item.id),
-                      koreanName: item.koreanName,
-                      englishName: item.englishName,
-                      status: flow.statusOf(item.id),
-                      onViewDetailsTap: () => onViewDetails?.call(item),
+                      key: ValueKey(menu.analysisId),
+                      koreanName: menu.nameKo,
+                      englishName: menu.nameEn,
+                      status: flow.statusOf(menu),
+                      onViewDetailsTap: () => onViewDetails?.call(menu),
                     );
                   },
                 ),
@@ -117,16 +116,28 @@ Widget scanResultScreenPreview() => ProviderScope(
 class _PreviewScanFlowNotifier extends ScanFlowNotifier {
   @override
   ScanFlowState build() => const ScanFlowState(
-    items: [
-      ScanMenuItem(id: '0', koreanName: '김치찌개', englishName: 'Kimchi Jjigae'),
-      ScanMenuItem(id: '1', koreanName: '비빔밥', englishName: 'Bibimbap'),
-      ScanMenuItem(id: '2', koreanName: '불고기', englishName: 'Bulgogi'),
+    menus: [
+      AnalyzedMenu(
+        dishId: 12,
+        nameKo: '김치찌개',
+        nameEn: 'Kimchi Jjigae',
+        analysisId: 551,
+        verdict: 'avoid',
+      ),
+      AnalyzedMenu(
+        dishId: 13,
+        nameKo: '비빔밥',
+        nameEn: 'Bibimbap',
+        analysisId: 552,
+        verdict: 'safe',
+      ),
+      AnalyzedMenu(
+        dishId: 14,
+        nameKo: '불고기',
+        nameEn: 'Bulgogi',
+        analysisId: 553,
+        verdict: 'not_sure',
+      ),
     ],
-    selectedIds: {'0', '1', '2'},
-    answers: {
-      '0': StaffAnswer.contains,
-      '1': StaffAnswer.notContains,
-      '2': StaffAnswer.notSure,
-    },
   );
 }

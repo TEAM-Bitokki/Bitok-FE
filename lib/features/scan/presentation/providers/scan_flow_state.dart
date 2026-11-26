@@ -1,4 +1,6 @@
 import '../../../../common/widgets/bitok_status_chip.dart';
+import '../../../explore/presentation/models/menu_verdict.dart';
+import '../../data/models/analyzed_menu.dart';
 import '../../data/models/scan_menu_item.dart';
 import '../../data/models/scan_restaurant.dart';
 import '../../data/models/staff_question.dart';
@@ -11,6 +13,7 @@ class ScanFlowState {
     this.scanId,
     this.items = const [],
     this.selectedIds = const {},
+    this.menus = const [],
     this.questions = const [],
     this.answers = const {},
     this.savedAt,
@@ -31,11 +34,14 @@ class ScanFlowState {
   /// REST-05에서 분석하려고 고른 메뉴의 id입니다.
   final Set<String> selectedIds;
 
-  /// REST-06에서 직원에게 확인할 질문 목록입니다.
+  /// 서버가 분석한 메뉴별 판정입니다. REST-07에 이 목록을 보여줍니다.
+  final List<AnalyzedMenu> menus;
+
+  /// REST-06에서 직원에게 확인할 질문 목록입니다. 비어 있으면 REST-06을 건너뜁니다.
   final List<StaffQuestion> questions;
 
   /// 질문 id([StaffQuestion.id])별 직원 답변입니다.
-  final Map<String, StaffAnswer> answers;
+  final Map<int, StaffAnswer> answers;
 
   /// REST-07에서 결과를 저장한 시각입니다. 저장 전에는 null입니다.
   final DateTime? savedAt;
@@ -44,29 +50,19 @@ class ScanFlowState {
   List<ScanMenuItem> get selectedItems =>
       items.where((item) => selectedIds.contains(item.id)).toList();
 
-  /// REST-07에 표시할 메뉴의 판정 결과입니다.
-  ///
-  /// 직원 답변이 '들어가요'면 Avoid, '모르겠어요'면 Not Sure, '안 들어가요'면 Safe입니다.
-  /// 아직 답하지 않은 메뉴는 Not Sure로 표시합니다.
-  /// 메뉴에 대해 직원에게 확인한 재료의 영문 이름입니다. 질문하지 않은 메뉴는 비어 있습니다.
-  List<String> checkedIngredientsOf(String itemId) => [
-    for (final question in questions)
-      if (question.itemId == itemId)
-        for (final ingredient in question.ingredients) ingredient.englishName,
+  /// REST-07에 표시할 메뉴의 판정 결과입니다. 서버 verdict를 그대로 씁니다.
+  BitokMenuStatus statusOf(AnalyzedMenu menu) =>
+      menuStatusOfVerdict(menu.verdict);
+
+  /// 메뉴에서 걸린 재료의 영문 이름입니다. 메뉴 상세의 판정 카드에 표시합니다.
+  List<String> checkedIngredientsOf(AnalyzedMenu menu) => [
+    for (final match in menu.matches) match.ingredientEn,
   ];
 
-  BitokMenuStatus statusOf(String itemId) {
-    return switch (answers[itemId]) {
-      StaffAnswer.contains => BitokMenuStatus.avoid,
-      StaffAnswer.notContains => BitokMenuStatus.safe,
-      StaffAnswer.notSure || null => BitokMenuStatus.notSure,
-    };
-  }
-
   /// 예: '3 menu items checked'
-  String get checkedLabel => selectedIds.length == 1
+  String get checkedLabel => menus.length == 1
       ? '1 menu item checked'
-      : '${selectedIds.length} menu items checked';
+      : '${menus.length} menu items checked';
 
   /// 예: '3 menu items recognized'
   String get recognizedLabel => items.length == 1
@@ -79,8 +75,9 @@ class ScanFlowState {
     int? scanId,
     List<ScanMenuItem>? items,
     Set<String>? selectedIds,
+    List<AnalyzedMenu>? menus,
     List<StaffQuestion>? questions,
-    Map<String, StaffAnswer>? answers,
+    Map<int, StaffAnswer>? answers,
     DateTime? savedAt,
   }) {
     return ScanFlowState(
@@ -89,6 +86,7 @@ class ScanFlowState {
       scanId: scanId ?? this.scanId,
       items: items ?? this.items,
       selectedIds: selectedIds ?? this.selectedIds,
+      menus: menus ?? this.menus,
       questions: questions ?? this.questions,
       answers: answers ?? this.answers,
       savedAt: savedAt ?? this.savedAt,

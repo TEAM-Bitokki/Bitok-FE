@@ -548,6 +548,7 @@ GoRouter createAppRouter({String initialLocation = AppRoutes.login}) =>
           path: AppRoutes.scanSelect,
           builder: (context, state) => ScanSelectScreen(
             onBack: () => context.pop(),
+            // 분석에 실패하면 예외가 화면까지 올라가 안내 스낵바가 뜹니다.
             onNext: () async {
               final container = ProviderScope.containerOf(context);
               await container.read(scanFlowProvider.notifier).analyze();
@@ -579,17 +580,17 @@ GoRouter createAppRouter({String initialLocation = AppRoutes.login}) =>
               if (context.mounted) context.push(AppRoutes.scanSaved);
             },
             onFinish: () => context.go(AppRoutes.home),
-            // TODO: 메뉴 분석 API가 메뉴 id를 주면 그 값을 씁니다.
-            onViewDetails: (item) {
-              // 직원 답변으로 정한 판정과 확인한 재료를 상세에도 그대로 보여줍니다.
+            // TODO: 최종 결과 연동 때 menu.dishId로 restaurantMenuDetail을 엽니다.
+            onViewDetails: (menu) {
+              // 결과 화면의 판정과 걸린 재료를 상세에도 그대로 보여줍니다.
               final scan = ProviderScope.containerOf(
                 context,
               ).read(scanFlowProvider);
               context.push(
                 AppRoutes.menuDetailOf(
-                  mockMenuIdOf(item.englishName),
-                  status: scan.statusOf(item.id),
-                  checkedIngredients: scan.checkedIngredientsOf(item.id),
+                  mockMenuIdOf(menu.nameEn),
+                  status: scan.statusOf(menu),
+                  checkedIngredients: scan.checkedIngredientsOf(menu),
                 ),
               );
             },

@@ -175,25 +175,26 @@ Widget scanAskStaffScreenPreview() => ProviderScope(
 );
 
 class _PreviewScanFlowNotifier extends ScanFlowNotifier {
-  static const _kimchi = ScanMenuItem(
-    id: '0',
-    koreanName: '김치찌개',
-    englishName: 'Kimchi Jjigae',
-  );
-
   @override
-  ScanFlowState build() => ScanFlowState(
-    items: const [_kimchi],
-    selectedIds: const {'0'},
+  ScanFlowState build() => const ScanFlowState(
+    items: [
+      ScanMenuItem(id: 'i1', koreanName: '김치찌개', englishName: 'Kimchi Jjigae'),
+    ],
+    selectedIds: {'i1'},
     questions: [
       StaffQuestion(
-        itemId: _kimchi.id,
-        menuKoreanName: _kimchi.koreanName,
-        menuEnglishName: _kimchi.englishName,
-        ingredients: const [
-          StaffCheckIngredient(koreanName: '새우', englishName: 'shrimp'),
-          StaffCheckIngredient(koreanName: '멸치', englishName: 'anchovy'),
-        ],
+        id: 880,
+        dishId: 12,
+        ingredientId: 301,
+        koreanText: '이 김치찌개에 새우가 들어가나요?',
+        englishText: 'Does this kimchi jjigae contain shrimp?',
+      ),
+      StaffQuestion(
+        id: 881,
+        dishId: 12,
+        ingredientId: 302,
+        koreanText: '이 김치찌개에 멸치가 들어가나요?',
+        englishText: 'Does this kimchi jjigae contain anchovy?',
       ),
     ],
   );
