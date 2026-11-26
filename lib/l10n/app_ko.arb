@@ -45,5 +45,12 @@
   "locationDenied": "내 위치를 보려면 위치 접근을 허용해 주세요.",
   "locationDeniedForever": "이 앱의 위치 접근이 꺼져 있어요.",
   "locationOpenSettings": "설정",
-  "locationUnavailable": "내 위치를 찾지 못했어요."
+  "locationUnavailable": "내 위치를 찾지 못했어요.",
+  "scanRecognizing": "메뉴판을 읽고 있어요…",
+  "scanRecognizingHint": "최대 30초 정도 걸릴 수 있어요.",
+  "scanErrorNoMenu": "메뉴를 찾지 못했어요. 다시 촬영해 주세요.",
+  "scanErrorBlurry": "사진이 흐려요. 다시 촬영해 주세요.",
+  "scanErrorInvalidImage": "사용할 수 없는 사진이에요. 다른 사진으로 시도해 주세요.",
+  "scanErrorProfileRequired": "먼저 식단 프로필을 등록해 주세요.",
+  "scanErrorSlow": "메뉴 확인이 오래 걸리고 있어요. 다시 시도해 주세요."
 }

@@ -413,6 +413,7 @@ GoRouter createAppRouter({String initialLocation = AppRoutes.login}) =>
                   .select(registered.restaurantId);
               // 이전 스캔 결과가 남지 않도록 초기화한 뒤 선택한 식당으로 스캔을 시작합니다.
               final scanRestaurant = ScanRestaurant(
+                restaurantId: registered.restaurantId,
                 name: registered.name,
                 category: registered.category ?? '',
                 address: registered.address ?? '',
@@ -526,6 +527,7 @@ GoRouter createAppRouter({String initialLocation = AppRoutes.login}) =>
           builder: (context, state) => ScanPreviewScreen(
             imagePath: state.extra! as String,
             onBack: () => context.pop(),
+            // 인식에 실패하면 예외가 화면까지 올라가 안내 스낵바가 뜹니다.
             onNext: () async {
               // 라우터는 위젯 트리 밖에 있으므로 ProviderScope에서 직접 provider를 읽습니다.
               await ProviderScope.containerOf(

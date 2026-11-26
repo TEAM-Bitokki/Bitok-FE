@@ -8,6 +8,7 @@ class ScanFlowState {
   const ScanFlowState({
     this.restaurant,
     this.imagePath,
+    this.scanId,
     this.items = const [],
     this.selectedIds = const {},
     this.questions = const [],
@@ -20,6 +21,9 @@ class ScanFlowState {
 
   /// 스캔한 메뉴판 이미지 경로입니다.
   final String? imagePath;
+
+  /// POST /api/scans가 돌려준 스캔 id입니다. 분석·응답·결과 요청에 씁니다. 인식 전에는 null입니다.
+  final int? scanId;
 
   /// 인식한 메뉴 목록입니다. REST-04에서 수정/추가/삭제할 수 있습니다.
   final List<ScanMenuItem> items;
@@ -72,6 +76,7 @@ class ScanFlowState {
   ScanFlowState copyWith({
     ScanRestaurant? restaurant,
     String? imagePath,
+    int? scanId,
     List<ScanMenuItem>? items,
     Set<String>? selectedIds,
     List<StaffQuestion>? questions,
@@ -81,6 +86,7 @@ class ScanFlowState {
     return ScanFlowState(
       restaurant: restaurant ?? this.restaurant,
       imagePath: imagePath ?? this.imagePath,
+      scanId: scanId ?? this.scanId,
       items: items ?? this.items,
       selectedIds: selectedIds ?? this.selectedIds,
       questions: questions ?? this.questions,

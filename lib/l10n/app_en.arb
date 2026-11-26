@@ -201,5 +201,33 @@
   "locationUnavailable": "Could not find your location.",
   "@locationUnavailable": {
     "description": "Snackbar message when the location could not be determined"
+  },
+  "scanRecognizing": "Reading the menu…",
+  "@scanRecognizing": {
+    "description": "Button label while the menu photo is being recognized"
+  },
+  "scanRecognizingHint": "This can take up to 30 seconds.",
+  "@scanRecognizingHint": {
+    "description": "Shown over the photo while the menu is being recognized"
+  },
+  "scanErrorNoMenu": "We couldn’t find any menu items. Please retake the photo.",
+  "@scanErrorNoMenu": {
+    "description": "Snackbar message when no menu text was detected in the photo"
+  },
+  "scanErrorBlurry": "The photo looks blurry. Please retake it.",
+  "@scanErrorBlurry": {
+    "description": "Snackbar message when the menu photo is too blurry to read"
+  },
+  "scanErrorInvalidImage": "This photo can’t be used. Please try another one.",
+  "@scanErrorInvalidImage": {
+    "description": "Snackbar message when the photo format or size is not supported"
+  },
+  "scanErrorProfileRequired": "Please set up your dietary profile first.",
+  "@scanErrorProfileRequired": {
+    "description": "Snackbar message when the user has no dietary profile"
+  },
+  "scanErrorSlow": "The menu check is taking too long. Please try again.",
+  "@scanErrorSlow": {
+    "description": "Snackbar message when menu recognition or analysis times out"
   }
 }

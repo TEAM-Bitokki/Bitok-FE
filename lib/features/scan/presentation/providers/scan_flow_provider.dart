@@ -5,11 +5,15 @@ import '../../../mypage/presentation/providers/my_checks_provider.dart';
 import '../../data/models/scan_menu_item.dart';
 import '../../data/models/scan_restaurant.dart';
 import '../../data/models/staff_question.dart';
+import '../../data/repositories/scan_repository.dart';
 import 'scan_flow_state.dart';
 
 /// 메뉴 스캔 플로우의 상태(이미지, 인식한 메뉴 목록, 선택한 메뉴)를 관리합니다.
 class ScanFlowNotifier extends Notifier<ScanFlowState> {
   int _nextId = 0;
+
+  /// 가장 최근에 인식을 요청한 이미지 경로입니다. 늦게 도착한 이전 응답을 버릴 때 씁니다.
+  String? _recognizingPath;
 
   @override
   ScanFlowState build() => const ScanFlowState();
@@ -21,23 +25,42 @@ class ScanFlowNotifier extends Notifier<ScanFlowState> {
   void start(ScanRestaurant restaurant) =>
       state = ScanFlowState(restaurant: restaurant);
 
-  /// 메뉴판 이미지에서 메뉴를 인식합니다.
+  /// 메뉴판 이미지를 서버(POST /api/scans)에 올려 메뉴를 인식합니다. 10~25초 걸립니다.
   ///
   /// 이미 인식한 이미지와 같으면 다시 인식하지 않아, REST-04에서 고친 목록이 유지됩니다.
   /// (REST-04 → REST-03으로 돌아갔다가 다시 Next를 누르는 경우)
   /// 다른 이미지면 이전 스캔 결과를 지우고 새로 인식합니다.
+  ///
+  /// 실패하면 상태를 바꾸지 않고 ApiException을 던집니다. 화면이 안내를 맡습니다.
   Future<void> recognize(String imagePath) async {
-    if (state.imagePath == imagePath) return;
+    if (state.imagePath == imagePath && state.scanId != null) return;
 
-    // TODO: OCR API를 연결하면 응답으로 메뉴 목록을 채웁니다.
-    // 연동 전까지는 화면 확인을 위해 임시 데이터를 사용합니다.
+    _recognizingPath = imagePath;
+    final restaurant = state.restaurant;
+    final response = await ref
+        .read(scanRepositoryProvider)
+        .createScan(
+          imagePath: imagePath,
+          restaurantId: restaurant?.restaurantId,
+        );
+    // 기다리는 동안 다른 사진으로 다시 인식했거나 새 스캔을 시작했으면 이 응답은 버립니다.
+    if (!ref.mounted ||
+        _recognizingPath != imagePath ||
+        !identical(state.restaurant, restaurant)) {
+      return;
+    }
+
     state = ScanFlowState(
-      restaurant: state.restaurant,
+      restaurant: restaurant,
       imagePath: imagePath,
+      scanId: response.scanId,
       items: [
-        _newItem(koreanName: '김치찌개', englishName: 'Kimchi Jjigae'),
-        _newItem(koreanName: '비빔밥', englishName: 'Bibimbap'),
-        _newItem(koreanName: '불고기', englishName: 'Bulgogi'),
+        for (final item in response.items)
+          ScanMenuItem(
+            id: item.tempId,
+            koreanName: item.rawName,
+            englishName: item.nameEn ?? item.rawName,
+          ),
       ],
     );
   }
@@ -144,7 +167,8 @@ class ScanFlowNotifier extends Notifier<ScanFlowState> {
     required String englishName,
   }) {
     return ScanMenuItem(
-      id: '${_nextId++}',
+      // 서버 temp_id(i1, i2, ...)와 겹치지 않도록 접두어를 다르게 둡니다.
+      id: 'm${_nextId++}',
       koreanName: koreanName,
       englishName: englishName,
     );

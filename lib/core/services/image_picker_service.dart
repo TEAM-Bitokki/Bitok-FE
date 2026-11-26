@@ -10,7 +10,8 @@ class ImagePickerService {
 
   final ImagePicker _picker;
 
-  static const double _maxDimension = 2048;
+  // POST /api/scans 권장값: 긴 변 1600px, JPEG 85. 더 크면 인식이 느려집니다.
+  static const double _maxDimension = 1600;
   static const int _imageQuality = 85;
 
   /// 카메라로 메뉴판을 촬영합니다.
